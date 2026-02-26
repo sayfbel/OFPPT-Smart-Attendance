@@ -1,0 +1,203 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: #000000;
+  --surface: #0a0a0a;
+  --surface-hover: #111111;
+  --primary: #ffffff;
+  --primary-text: #000000;
+  --text: #ffffff;
+  --text-muted: #888888;
+  --border: rgba(255, 255, 255, 0.1);
+  --border-strong: rgba(255, 255, 255, 0.3);
+
+  /* Smoothness */
+  --ease-out-expo: cubic-bezier(0.19, 1, 0.22, 1);
+  --transition-slow: 0.6s var(--ease-out-expo);
+  --transition-base: 0.3s var(--ease-out-expo);
+}
+
+.light-mode {
+  --background: #f5f5f5;
+  --surface: #ffffff;
+  --surface-hover: #f0f0f0;
+  --primary: #000000;
+  --primary-text: #ffffff;
+  --text: #000000;
+  --text-muted: #666666;
+  --border: rgba(0, 0, 0, 0.1);
+  --border-strong: rgba(0, 0, 0, 0.3);
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Outfit', sans-serif;
+  background-color: var(--background);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Minimalist Noir Panel */
+.noir-panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 0;
+  /* Fashion often uses sharp corners or very subtle ones */
+  transition: var(--transition-base);
+}
+
+.noir-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  padding: 1.5rem;
+  transition: var(--transition-base);
+}
+
+.noir-card:hover {
+  border-color: var(--border-strong);
+  background: var(--surface-hover);
+}
+
+/* Typography Scale */
+h1 {
+  font-weight: 700;
+  letter-spacing: -0.05em;
+}
+
+h2 {
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+/* Ultra Smooth Animations */
+.fade-up {
+  opacity: 0;
+  transform: translateY(20px);
+  animation: fadeUp var(--transition-slow) forwards;
+}
+
+@keyframes fadeUp {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.page-transition {
+  animation: pageIn var(--transition-slow);
+}
+
+@keyframes pageIn {
+  from {
+    opacity: 0;
+    filter: blur(10px);
+  }
+
+  to {
+    opacity: 1;
+    filter: blur(0);
+  }
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 4px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--background);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+}
+
+/* Modern Noir Button */
+.btn-noir {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.75rem 2rem;
+  background: var(--primary);
+  color: var(--primary-text);
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  border: none;
+  cursor: pointer;
+  transition: var(--transition-base);
+}
+
+.btn-noir:hover {
+  filter: invert(0.1);
+  transform: scale(1.02);
+}
+
+.btn-outline {
+  background: transparent;
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+
+.btn-outline:hover {
+  background: var(--primary);
+  color: var(--primary-text);
+}
+
+input {
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--border);
+  color: var(--text);
+  padding: 1rem 0;
+  outline: none;
+  transition: var(--transition-base);
+}
+
+input:focus {
+  border-bottom-color: var(--primary);
+}
+
+/* 3D Card Flip Animation */
+.perspective-1000 {
+  perspective: 1000px;
+}
+
+.card-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transition: transform 0.6s cubic-bezier(0.19, 1, 0.22, 1);
+  transform-style: preserve-3d;
+}
+
+.card-flipped {
+  transform: rotateY(180deg);
+}
+
+.card-front,
+.card-back {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  top: 0;
+  left: 0;
+}
+
+.card-back {
+  transform: rotateY(180deg);
+  background: var(--surface);
+  border: 1px solid var(--primary);
+}
