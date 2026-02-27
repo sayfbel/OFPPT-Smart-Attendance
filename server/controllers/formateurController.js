@@ -78,7 +78,7 @@ exports.getUsersByClass = async (req, res) => {
         }
 
         const [users] = await pool.query(
-            'SELECT id, name, email, role, class_id FROM users WHERE class_id = ? AND role = "stagiaire"',
+            'SELECT id, name, email, role, class_id, face_id FROM users WHERE class_id = ? AND role = "stagiaire"',
             [classId]
         );
 
@@ -131,5 +131,54 @@ exports.clearCheckins = async (req, res) => {
     } catch (err) {
         console.error("CLEAR CHECKINS ERROR:", err);
         res.status(500).json({ message: 'Reset protocol failed.' });
+    }
+};
+
+// Get FORMATEUR profile
+exports.getProfile = async (req, res) => {
+    try {
+        const formateur_id = req.user.id;
+        const [profile] = await pool.query(`
+            SELECT u.id, u.name, u.email, u.role, u.image 
+            FROM users u
+            WHERE u.id = ?
+        `, [formateur_id]);
+
+        if (profile.length === 0) {
+            return res.status(404).json({ message: 'Neural Node not found.' });
+        }
+
+        res.json({ profile: profile[0] });
+    } catch (err) {
+        console.error("GET FORMATEUR PROFILE ERROR:", err);
+        res.status(500).json({ message: 'Internal Server Error: Neural disconnect.' });
+    }
+};
+
+// Update FORMATEUR profile (specifically image)
+exports.updateProfile = async (req, res) => {
+    try {
+        const formateur_id = req.user.id;
+        const { image } = req.body;
+
+        await pool.query('UPDATE users SET image = ? WHERE id = ?', [image, formateur_id]);
+
+        res.json({ message: 'Neural Identity updated.' });
+    } catch (err) {
+        console.error("UPDATE FORMATEUR PROFILE ERROR:", err);
+        res.status(500).json({ message: 'Internal Server Error: Identity rewrite failed.' });
+    }
+};
+
+// Neural Portal: Get all students face ids
+exports.getAllStudentsFaceIds = async (req, res) => {
+    try {
+        const [users] = await pool.query(
+            'SELECT id, name, class_id, face_id FROM users WHERE role = "stagiaire" AND face_id IS NOT NULL'
+        );
+        res.json({ users });
+    } catch (err) {
+        console.error("GET ALL STUDENTS ERROR:", err);
+        res.status(500).json({ message: 'Internal Server Error' });
     }
 };

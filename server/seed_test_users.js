@@ -16,9 +16,6 @@ async function seed() {
         const dev101Id = classMap['DEV101'];
         const dev102Id = classMap['DEV102'];
 
-        const defaultPassword = 'password123';
-        const hashedPassword = await bcrypt.hash(defaultPassword, 10);
-
         // STAGIAIRES
         const stags = [
             { name: 'saif belfaquir', email: 'saif.belfaquir@stagiaire.ma' },
@@ -29,10 +26,10 @@ async function seed() {
 
         for (let s of stags) {
             const [existing] = await db.query(`SELECT id FROM users WHERE email=?`, [s.email]);
-            let userId;
             if (existing.length === 0) {
-                const [res] = await db.query(`INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, 'stagiaire')`, [s.name, s.email, hashedPassword]);
-                userId = res.insertId;
+                const sPwd = await bcrypt.hash(s.email.split('@')[0], 10);
+                const [res] = await db.query(`INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, 'stagiaire')`, [s.name, s.email, sPwd]);
+                const userId = res.insertId;
                 const qrValue = `QR-${s.name.replace(/\s/g, '').toUpperCase()}`;
                 await db.query(`INSERT INTO stagiaires (user_id, class_id, qr_code_value) VALUES (?, ?, ?)`, [userId, dev101Id, qrValue]);
             }
@@ -46,10 +43,10 @@ async function seed() {
 
         for (let f of forms) {
             const [existing] = await db.query(`SELECT id FROM users WHERE email=?`, [f.email]);
-            let userId;
             if (existing.length === 0) {
-                const [res] = await db.query(`INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, 'formateur')`, [f.name, f.email, hashedPassword]);
-                userId = res.insertId;
+                const fPwd = await bcrypt.hash(f.email.split('@')[0], 10);
+                const [res] = await db.query(`INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, 'formateur')`, [f.name, f.email, fPwd]);
+                const userId = res.insertId;
                 const [fRes] = await db.query(`INSERT INTO formateurs (user_id) VALUES (?)`, [userId]);
                 const formateurId = fRes.insertId;
 
@@ -58,7 +55,7 @@ async function seed() {
             }
         }
 
-        console.log("Seeding complete. Default password is 'password123'.");
+        console.log("Seeding complete. Passwords are set to email prefixes.");
     } catch (e) {
         console.error("Error seeding DB:", e);
     }

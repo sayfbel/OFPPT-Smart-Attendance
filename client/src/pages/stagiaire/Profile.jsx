@@ -11,6 +11,12 @@ const Profile = () => {
     const [isIdModalOpen, setIsIdModalOpen] = useState(false);
     const [uploading, setUploading] = useState(false);
 
+    const getImageUrl = (path) => {
+        if (!path) return null;
+        if (path.startsWith('http') || path.startsWith('data:')) return path;
+        return `http://localhost:5000${path}`;
+    };
+
     const fetchProfile = async () => {
         try {
             const token = localStorage.getItem('token');
@@ -100,7 +106,7 @@ const Profile = () => {
                             className="w-40 h-40 bg-[var(--background)] border border-[var(--border-strong)] flex items-center justify-center text-5xl font-black text-[var(--primary)] group-hover:border-[var(--primary)] group-hover:shadow-[0_0_30px_rgba(var(--primary-rgb),0.2)] transition-all duration-700 relative z-10 overflow-hidden cursor-pointer block"
                         >
                             {profile?.image ? (
-                                <img src={profile.image} alt="Profile" className="w-full h-full object-cover" />
+                                <img src={getImageUrl(profile.image)} alt="Profile" className="w-full h-full object-cover" />
                             ) : (
                                 profile?.name?.split(' ').map(n => n[0]).join('')
                             )}
@@ -113,7 +119,7 @@ const Profile = () => {
                         </label>
                     </div>
 
-                    <h2 className="text-3xl font-black italic text-white uppercase tracking-tighter mb-2 relative z-10">{profile?.name}</h2>
+                    <h2 className="text-3xl font-black italic text-[var(--text)] uppercase tracking-tighter mb-2 relative z-10">{profile?.name}</h2>
                     <p className="text-[10px] font-black tracking-[0.4em] text-[var(--primary)] uppercase mb-8 relative z-10">{profile?.role}</p>
 
                     <div className="w-full space-y-4 pt-8 border-t border-[var(--border-strong)] relative z-10">
@@ -123,7 +129,7 @@ const Profile = () => {
                         </div>
                         <div className="flex items-center justify-between">
                             <span className="text-[9px] font-black tracking-widest text-[var(--text-muted)] uppercase italic">Registry_ID</span>
-                            <span className="text-[9px] font-black tracking-widest text-white uppercase">#00{profile?.id}</span>
+                            <span className="text-[9px] font-black tracking-widest text-[var(--text)] uppercase">#00{profile?.id}</span>
                         </div>
                     </div>
                 </div>
@@ -136,7 +142,7 @@ const Profile = () => {
                                 <Mail className="w-4 h-4 text-[var(--primary)]" />
                                 <span className="text-[10px] font-black tracking-[0.3em] text-[var(--text-muted)] uppercase">Comms Key</span>
                             </div>
-                            <p className="text-sm font-bold text-white tracking-widest uppercase truncate">{profile?.email}</p>
+                            <p className="text-sm font-bold text-[var(--text)] tracking-widest uppercase truncate">{profile?.email}</p>
                         </div>
 
                         <div className="p-8 border border-[var(--border-strong)] bg-[var(--background)] group hover:border-[var(--primary)] transition-colors">
@@ -144,7 +150,7 @@ const Profile = () => {
                                 <Cpu className="w-4 h-4 text-[var(--primary)]" />
                                 <span className="text-[10px] font-black tracking-[0.3em] text-[var(--text-muted)] uppercase">Assigned Cluster</span>
                             </div>
-                            <p className="text-sm font-bold text-white tracking-widest uppercase italic">{profile?.class_id || 'NONE'}</p>
+                            <p className="text-sm font-bold text-[var(--text)] tracking-widest uppercase italic">{profile?.class_id || 'NONE'}</p>
                         </div>
 
                         <div className="p-8 border border-[var(--border-strong)] bg-[var(--background)] group hover:border-[var(--primary)] transition-colors">
@@ -152,7 +158,7 @@ const Profile = () => {
                                 <Book className="w-4 h-4 text-[var(--primary)]" />
                                 <span className="text-[10px] font-black tracking-[0.3em] text-[var(--text-muted)] uppercase">Squadron Title</span>
                             </div>
-                            <p className="text-sm font-bold text-white tracking-widest uppercase truncate">{profile?.class_name || 'NO_ASSIGNMENT'}</p>
+                            <p className="text-sm font-bold text-[var(--text)] tracking-widest uppercase truncate">{profile?.class_name || 'NO_ASSIGNMENT'}</p>
                         </div>
 
                         <div className="p-8 border border-[var(--border-strong)] bg-[var(--background)] group hover:border-[var(--primary)] transition-colors">
@@ -160,14 +166,14 @@ const Profile = () => {
                                 <Globe className="w-4 h-4 text-[var(--primary)]" />
                                 <span className="text-[10px] font-black tracking-[0.3em] text-[var(--text-muted)] uppercase">Cluster Stream</span>
                             </div>
-                            <p className="text-sm font-bold text-white tracking-widest uppercase">{profile?.stream || 'N/A'}</p>
+                            <p className="text-sm font-bold text-[var(--text)] tracking-widest uppercase">{profile?.stream || 'N/A'}</p>
                         </div>
                     </div>
 
                     {/* Operational Summary */}
                     <div className="p-12 border border-[var(--border-strong)] bg-[var(--surface)] relative overflow-hidden group">
                         <div className="flex items-center justify-between mb-8">
-                            <h3 className="text-xs font-black tracking-[0.5em] text-white uppercase italic">System Logs</h3>
+                            <h3 className="text-xs font-black tracking-[0.5em] text-[var(--text)] uppercase italic">System Logs</h3>
                             <Shield className="w-4 h-4 text-[var(--primary)]" />
                         </div>
                         <div className="space-y-6">
@@ -177,7 +183,7 @@ const Profile = () => {
                                 </div>
                                 <div>
                                     <p className="text-[9px] font-black tracking-widest text-[var(--text-muted)] uppercase">Last Access Sync</p>
-                                    <p className="text-xs font-bold text-white uppercase mt-1 tracking-widest">{new Date().toLocaleDateString()} @ {new Date().toLocaleTimeString()}</p>
+                                    <p className="text-xs font-bold text-[var(--text)] uppercase mt-1 tracking-widest">{new Date().toLocaleDateString()} @ {new Date().toLocaleTimeString()}</p>
                                 </div>
                             </div>
                             <div className="flex items-center gap-8">

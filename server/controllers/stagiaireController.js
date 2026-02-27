@@ -1,4 +1,19 @@
 const pool = require('../config/db');
+const fs = require('fs');
+const path = require('path');
+
+// Helper to save base64 to file
+const saveBase64Image = (base64Data, subfolder, filename) => {
+    if (!base64Data) return null;
+    const base64Image = base64Data.split(';base64,').pop();
+    const uploadDir = path.join(__dirname, '..', 'uploads', subfolder);
+    if (!fs.existsSync(uploadDir)) {
+        fs.mkdirSync(uploadDir, { recursive: true });
+    }
+    const filePath = path.join(uploadDir, filename);
+    fs.writeFileSync(filePath, base64Image, { encoding: 'base64' });
+    return `/uploads/${subfolder}/${filename}`;
+};
 
 // Get STAGIAIRE profile
 exports.getProfile = async (req, res) => {
@@ -71,11 +86,61 @@ exports.updateProfile = async (req, res) => {
         const student_id = req.user.id;
         const { image } = req.body;
 
-        await pool.query('UPDATE users SET image = ? WHERE id = ?', [image, student_id]);
+        if (!image) return res.status(400).json({ message: 'No image data provided.' });
 
-        res.json({ message: 'Neural Identity updated.' });
+        const filename = `profile_${student_id}_${Date.now()}.jpg`;
+        const relativePath = saveBase64Image(image, 'profiles', filename);
+
+        await pool.query('UPDATE users SET image = ? WHERE id = ?', [relativePath, student_id]);
+
+        res.json({ message: 'Neural Identity updated.', path: relativePath });
     } catch (err) {
         console.error("UPDATE STAGIAIRE PROFILE ERROR:", err);
         res.status(500).json({ message: 'Internal Server Error: Identity rewrite failed.' });
+    }
+};
+
+// Update STAGIAIRE Face ID (multi-angle scan)
+exports.updateFaceId = async (req, res) => {
+    try {
+        const student_id = req.user.id;
+        const { faces } = req.body; // Expecting { front, left, right }
+
+        if (!faces || !faces.front) {
+            return res.status(400).json({ message: 'Invalid face telemetry data.' });
+        }
+
+        const savedPaths = {};
+        for (const [angle, base64] of Object.entries(faces)) {
+            if (base64) {
+                const filename = `face_${student_id}_${angle}_${Date.now()}.jpg`;
+                savedPaths[angle] = saveBase64Image(base64, 'faceids', filename);
+            }
+        }
+
+        await pool.query('UPDATE users SET face_id = ? WHERE id = ?', [JSON.stringify(savedPaths), student_id]);
+
+        res.json({ message: 'Biometric Face ID synchronized.', paths: savedPaths });
+    } catch (err) {
+        console.error("UPDATE STAGIAIRE FACE ID ERROR:", err);
+        res.status(500).json({ message: 'Internal Server Error: Biometric rewrite failed.' });
+    }
+};
+
+// Save Generated Identity Card
+exports.saveIdentityCard = async (req, res) => {
+    try {
+        const student_id = req.user.id;
+        const { cardImage } = req.body;
+
+        if (!cardImage) return res.status(400).json({ message: 'No card image data.' });
+
+        const filename = `card_${student_id}_${Date.now()}.png`;
+        const relativePath = saveBase64Image(cardImage, 'cards', filename);
+
+        res.json({ message: 'Identity Card archived in neural vault.', path: relativePath });
+    } catch (err) {
+        console.error("SAVE IDENTITY CARD ERROR:", err);
+        res.status(500).json({ message: 'Internal Server Error: Archive failed.' });
     }
 };

@@ -6,7 +6,8 @@
     "scripts": {
         "start": "node app.js",
         "dev": "nodemon app.js",
-        "db:init": "node init-db.js"
+        "db:init": "node init-db.js",
+        "update-passwords": "node update_passwords.js"
     },
     "dependencies": {
         "bcryptjs": "^2.4.3",

@@ -168,36 +168,48 @@ input:focus {
   border-bottom-color: var(--primary);
 }
 
-/* 3D Card Flip Animation */
-.perspective-1000 {
-  perspective: 1000px;
+@keyframes bounce-horizontal {
+
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+
+  50% {
+    transform: translateX(-10px);
+  }
 }
 
-.card-inner {
-  position: relative;
-  width: 100%;
-  height: 100%;
-  transition: transform 0.6s cubic-bezier(0.19, 1, 0.22, 1);
-  transform-style: preserve-3d;
+@keyframes bounce-horizontal-right {
+
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+
+  50% {
+    transform: translateX(10px);
+  }
 }
 
-.card-flipped {
-  transform: rotateY(180deg);
+.animate-bounce-horizontal {
+  animation: bounce-horizontal 2s infinite;
 }
 
-.card-front,
-.card-back {
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  -webkit-backface-visibility: hidden;
-  backface-visibility: hidden;
-  top: 0;
-  left: 0;
+.animate-bounce-horizontal-right {
+  animation: bounce-horizontal-right 2s infinite;
 }
 
-.card-back {
-  transform: rotateY(180deg);
-  background: var(--surface);
-  border: 1px solid var(--primary);
+.animate-spin-slow {
+  animation: spin 8s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
 }

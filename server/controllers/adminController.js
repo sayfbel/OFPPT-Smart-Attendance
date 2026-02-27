@@ -241,9 +241,10 @@ exports.createUser = async (req, res) => {
             return res.status(400).json({ message: 'Name, Email, and Role are mandatory.' });
         }
 
-        // Use a dummy hash for now
+        // Use the first part of email as default password
+        const defaultPassword = email.split('@')[0];
         const bcrypt = require('bcryptjs');
-        const hash = await bcrypt.hash('password123', 10);
+        const hash = await bcrypt.hash(defaultPassword, 10);
 
         // For stagiaires, class_id must be a single valid ID
         // For formateurs, class_id might be a comma-separated string from frontend

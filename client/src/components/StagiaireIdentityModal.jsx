@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useRef, useState, useEffect, useCallback } from 'react';
 import ReactDOM from 'react-dom';
 import { X, Download, Shield, Cpu, ExternalLink, QrCode, ChevronRight, Loader2, Scan, Camera, Zap } from 'lucide-react';
 import axios from 'axios';
@@ -12,6 +12,25 @@ const StagiaireIdentityModal = ({ isOpen, onClose, profile, onUpdate }) => {
     const [isExporting, setIsExporting] = useState(false);
     const [isScanning, setIsScanning] = useState(false);
     const [scanLoading, setScanLoading] = useState(false);
+    const [scanStep, setScanStep] = useState('FRONT'); // FRONT
+    const [capturedFaces, setCapturedFaces] = useState({ front: null });
+    const [isLocked, setIsLocked] = useState(false);
+    const [lockProgress, setLockProgress] = useState(0);
+    const [signalValid, setSignalValid] = useState(false);
+    const [isCalibrating, setIsCalibrating] = useState(false);
+    const [currentPose, setCurrentPose] = useState(null); // { direction, yawRatio }
+    const [isCentered, setIsCentered] = useState(false);
+    const [stepConfirmed, setStepConfirmed] = useState(false);
+
+    const faceMeshRef = useRef(null);
+    const canvasRef = useRef(null);
+    const requestRef = useRef();
+
+    const getImageUrl = (path) => {
+        if (!path) return null;
+        if (path.startsWith('http') || path.startsWith('data:')) return path;
+        return `http://localhost:5000${path}`;
+    };
 
     // Dynamic Engine Loader (Bypassing local install restrictions)
     useEffect(() => {
@@ -29,20 +48,199 @@ const StagiaireIdentityModal = ({ isOpen, onClose, profile, onUpdate }) => {
 
         const initEngines = async () => {
             try {
-                if (!window.html2canvas) {
-                    await loadScript('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js');
+                if (!window.html2canvas) await loadScript('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js');
+                if (!window.jspdf) await loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
+
+                // Load AI Face Tracking Engines
+                if (!window.FaceMesh) {
+                    await loadScript('https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js');
                 }
-                if (!window.jspdf) {
-                    await loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
+
+                if (window.FaceMesh && !faceMeshRef.current) {
+                    const faceMesh = new window.FaceMesh({
+                        locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`
+                    });
+
+                    faceMesh.setOptions({
+                        maxNumFaces: 1,
+                        refineLandmarks: true,
+                        minDetectionConfidence: 0.6,
+                        minTrackingConfidence: 0.6
+                    });
+
+                    faceMesh.onResults(onResults);
+                    faceMeshRef.current = faceMesh;
                 }
+
                 setIsEngineReady(true);
             } catch (err) {
-                console.error("Neural PDF Logic Failure:", err);
+                console.error("Neural AI Engine Failure:", err);
             }
         };
 
         initEngines();
     }, [isOpen]);
+
+    const onResults = (results) => {
+        if (!canvasRef.current || !videoRef.current) return;
+
+        const video = videoRef.current;
+        const canvas = canvasRef.current;
+        const ctx = canvas.getContext('2d');
+
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        if (results.multiFaceLandmarks && results.multiFaceLandmarks.length > 0) {
+            const landmarks = results.multiFaceLandmarks[0];
+
+            // 1. Calculate Pose
+            const nose = landmarks[1];
+            const l_cheek = landmarks[234];
+            const r_cheek = landmarks[454];
+            const top = landmarks[10];
+            const chin = landmarks[152];
+
+            const d_left = Math.abs(nose.x - l_cheek.x);
+            const d_right = Math.abs(nose.x - r_cheek.x);
+            const yaw = d_left / (d_right + 0.001);
+
+            let direction = "Center";
+            // yaw = d_left (camera left) / d_right (camera right)
+            if (yaw < 0.65) direction = "Left";
+            else if (yaw > 1.45) direction = "Right";
+
+            setCurrentPose({ direction, yaw });
+
+            // 2. Check Centering (Relaxed Grid)
+            const noseX = nose.x;
+            const noseY = nose.y;
+            const centered = noseX > 0.25 && noseX < 0.75 && noseY > 0.15 && noseY < 0.85;
+            setIsCentered(centered);
+
+            // 3. Draw HUD Tracking Points
+            ctx.fillStyle = centered ? '#3b82f6' : '#ef4444';
+            ctx.beginPath();
+            ctx.arc(nose.x * canvas.width, nose.y * canvas.height, 4, 0, 2 * Math.PI);
+            ctx.fill();
+
+            // Draw eye landmarks for "Person Presence" visual
+            [33, 263].forEach(idx => {
+                const landmark = landmarks[idx];
+                ctx.fillStyle = 'rgba(59, 130, 246, 0.5)';
+                ctx.beginPath();
+                ctx.arc(landmark.x * canvas.width, landmark.y * canvas.height, 2, 0, 2 * Math.PI);
+                ctx.fill();
+            });
+        } else {
+            setCurrentPose(null);
+            setIsCentered(false);
+        }
+    };
+
+    const captureFrame = useCallback(async () => {
+        if (videoRef.current && isScanning && faceMeshRef.current) {
+            if (videoRef.current.readyState >= 2) {
+                await faceMeshRef.current.send({ image: videoRef.current });
+            }
+        }
+        requestRef.current = requestAnimationFrame(captureFrame);
+    }, [isScanning]);
+
+    useEffect(() => {
+        if (isScanning) {
+            requestRef.current = requestAnimationFrame(captureFrame);
+        } else {
+            cancelAnimationFrame(requestRef.current);
+        }
+        return () => cancelAnimationFrame(requestRef.current);
+    }, [isScanning, captureFrame]);
+
+    const validateOpticalSignal = () => {
+        if (!videoRef.current || videoRef.current.readyState < 2) return false;
+        try {
+            const video = videoRef.current;
+            const canvas = document.createElement('canvas');
+            canvas.width = 100; canvas.height = 100;
+            const ctx = canvas.getContext('2d');
+            const sx = Math.max(0, video.videoWidth / 2 - 50);
+            const sy = Math.max(0, video.videoHeight / 2 - 50);
+            ctx.drawImage(video, sx, sy, 100, 100, 0, 0, 100, 100);
+            const data = ctx.getImageData(0, 0, 100, 100).data;
+
+            let skinPixels = 0;
+            let lumSum = 0;
+            let variance = 0;
+
+            for (let i = 0; i < data.length; i += 4) {
+                const r = data[i], g = data[i + 1], b = data[i + 2];
+                const lum = (r + g + b) / 3;
+                lumSum += lum;
+
+                // Broad presence detection logic
+                if (r > g && r > 40 && (r - g) > 5) skinPixels++;
+            }
+
+            const avgLum = lumSum / (data.length / 4);
+            const skinRatio = skinPixels / (data.length / 4);
+
+            for (let i = 0; i < data.length; i += 4) {
+                const lum = (data[i] + data[i + 1] + data[i + 2]) / 3;
+                variance += Math.pow(lum - avgLum, 2);
+            }
+            const stdDev = Math.sqrt(variance / (data.length / 4));
+
+            // AI-POSE VALIDATION (HIGH-QUALITY FRONT ONLY):
+            const poseMatch = currentPose && (
+                (scanStep === 'FRONT' && currentPose.direction === 'Center')
+            );
+
+            // Stricter requirements: Need good lighting (avgLum > 25) and sharp focus (stdDev > 8)
+            return stdDev > 8 && avgLum > 25 && isCentered && poseMatch;
+        } catch (e) { return false; }
+    };
+
+    // Simulated Neural Verification Loop (Automatic Capture)
+    useEffect(() => {
+        if (!isScanning || scanLoading || isCalibrating) {
+            setIsLocked(false);
+            setLockProgress(0);
+            return;
+        }
+
+        const interval = setInterval(() => {
+            const hasSignal = validateOpticalSignal();
+            setSignalValid(hasSignal);
+
+            if (!hasSignal) {
+                setLockProgress(prev => Math.max(0, prev - 15)); // Rapid decay if signal lost
+                return;
+            }
+
+            setLockProgress(prev => {
+                const next = prev + Math.floor(Math.random() * 12) + 4;
+                if (next >= 100) {
+                    clearInterval(interval);
+                    setIsLocked(true);
+                    return 100;
+                }
+                return next;
+            });
+        }, 300);
+
+        return () => clearInterval(interval);
+    }, [isScanning, scanStep, scanLoading]);
+
+    // Trigger capture automatically when signal is locked
+    useEffect(() => {
+        if (isLocked && !scanLoading) {
+            const timer = setTimeout(() => {
+                handleCapture();
+            }, 800);
+            return () => clearTimeout(timer);
+        }
+    }, [isLocked, scanLoading]);
 
     if (!isOpen || !profile) return null;
 
@@ -67,11 +265,22 @@ const StagiaireIdentityModal = ({ isOpen, onClose, profile, onUpdate }) => {
             videoRef.current.srcObject = null;
         }
         setIsScanning(false);
+        setScanStep('FRONT');
+        setCapturedFaces({ front: null });
+        setIsLocked(false);
+        setLockProgress(0);
     };
 
     const handleCapture = async () => {
-        if (!videoRef.current) return;
+        if (!videoRef.current || scanLoading) return;
+
+        setStepConfirmed(true);
         setScanLoading(true);
+        setIsLocked(false);
+        setLockProgress(0);
+
+        // Flash confirmation
+        setTimeout(() => setStepConfirmed(false), 1000);
 
         try {
             const video = videoRef.current;
@@ -81,15 +290,46 @@ const StagiaireIdentityModal = ({ isOpen, onClose, profile, onUpdate }) => {
             const ctx = canvas.getContext('2d');
             ctx.drawImage(video, 0, 0);
 
-            const base64Image = canvas.toDataURL('image/jpeg', 0.8);
+            const base64Image = canvas.toDataURL('image/jpeg', 0.9); // higher quality
+            const currentStep = scanStep;
+            const nextStepMap = { 'FRONT': 'COMPLETE' };
+            const nextStep = nextStepMap[currentStep];
 
-            const token = localStorage.getItem('token');
-            const config = { headers: { Authorization: `Bearer ${token}` } };
-            await axios.put('http://localhost:5000/api/stagiaire/profile', { image: base64Image }, config);
+            // Use functional update to ensure we have the absolute latest state of all faces
+            setCapturedFaces(prev => {
+                const updated = { ...prev, [currentStep.toLowerCase()]: base64Image };
 
-            addNotification("Biometric scan verified.", "success");
-            onUpdate();
-            stopScan();
+                // If this was the final angle, trigger the sync protocol
+                if (nextStep === 'COMPLETE') {
+                    const syncFinalFaces = async () => {
+                        try {
+                            const token = localStorage.getItem('token');
+                            const config = { headers: { Authorization: `Bearer ${token}` } };
+                            await axios.put('http://localhost:5000/api/stagiaire/face-id', { faces: updated }, config);
+                            addNotification("Biometric Neural Link Synchronized.", "success");
+                            onUpdate();
+                            stopScan();
+                        } catch (err) {
+                            console.error("Sync Failure:", err);
+                            addNotification("Neural sync aborted.", "error");
+                        }
+                    };
+                    syncFinalFaces();
+                }
+                return updated;
+            });
+
+            if (nextStep !== 'COMPLETE') {
+                setIsCalibrating(true);
+                setScanStep(nextStep);
+                addNotification(`Angle ${currentStep} captured. Rotate to ${nextStep}.`, "success");
+
+                // 1.5s Re-calibration window
+                setTimeout(() => {
+                    setIsCalibrating(false);
+                }, 1500);
+            }
+
         } catch (err) {
             console.error("Biometric Capture Failure:", err);
             addNotification("Sync failure during scan.", "error");
@@ -122,8 +362,15 @@ const StagiaireIdentityModal = ({ isOpen, onClose, profile, onUpdate }) => {
 
             pdf.addImage(imgData, 'PNG', 0, 0, 158.6, 101.6);
             pdf.save(`IDENTITY_CARD_${profile.name.replace(/\s+/g, '_').toUpperCase()}.pdf`);
+
+            // NEW: Save to Server Neural Vault
+            const token = localStorage.getItem('token');
+            const config = { headers: { Authorization: `Bearer ${token}` } };
+            await axios.post('http://localhost:5000/api/stagiaire/card', { cardImage: imgData }, config);
+            addNotification("Identity Card archived in server vault.", "success");
         } catch (error) {
             console.error("Export Protocol Failure:", error);
+            addNotification("Archive failure.", "error");
         } finally {
             setIsExporting(false);
         }
@@ -198,10 +445,10 @@ const StagiaireIdentityModal = ({ isOpen, onClose, profile, onUpdate }) => {
 
                     <div className="w-full max-w-xl mb-12">
                         <h3 className="text-3xl font-black italic tracking-tighter text-[var(--primary)] uppercase mb-3">
-                            {isScanning ? 'INITIALIZING_NEURAL_SCAN' : 'IDENTITY CARD PREVIEW'}
+                            {isScanning ? `NEURAL_SCAN :: ${scanStep}` : 'IDENTITY CARD PREVIEW'}
                         </h3>
                         <p className="text-[10px] font-bold tracking-[0.3em] text-[var(--text-muted)] uppercase leading-relaxed">
-                            {isScanning ? 'Maintain eye contact with the optical sensor. Verification required.' : 'Verified visual identification grid for external authentication protocols.'}
+                            {isScanning ? `POSITION YOUR FACE: [${scanStep}]. Verification in progress.` : 'Verified visual identification grid for external authentication protocols.'}
                         </p>
                     </div>
 
@@ -212,18 +459,102 @@ const StagiaireIdentityModal = ({ isOpen, onClose, profile, onUpdate }) => {
                                 ref={videoRef}
                                 autoPlay
                                 playsInline
-                                className="w-full h-full object-cover grayscale brightness-125 contrast-125"
+                                className="w-full h-full object-cover brightness-110 contrast-110"
                             />
-                            {/* Scanning Overlays */}
-                            <div className="absolute inset-0 pointer-events-none">
-                                <div className="absolute top-0 left-0 w-full h-1 bg-[var(--primary)] animate-scan shadow-[0_0_15px_var(--primary)]"></div>
-                                <div className="absolute inset-0 border-[40px] border-black/40"></div>
-                                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-48 h-48 border border-[var(--primary)]/30 rounded-full"></div>
-                                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-32 h-32 border-2 border-[var(--primary)] border-dashed rounded-full animate-spin-slow"></div>
+
+                            <canvas
+                                ref={canvasRef}
+                                className="absolute inset-0 w-full h-full pointer-events-none z-20"
+                            />
+
+                            {/* Tracking Circle HUD */}
+                            <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-48 h-48 border-2 rounded-full z-10 transition-all duration-500 pointer-events-none ${isCentered ? 'border-blue-500/50 scale-100 shadow-[0_0_50px_rgba(59,130,246,0.3)]' : 'border-red-500/30 scale-95'}`}>
+                                <div className={`absolute inset-0 rounded-full border border-white/10 ${isCentered ? 'animate-ping' : ''}`}></div>
                             </div>
-                            <div className="absolute bottom-4 left-4 flex items-center gap-2">
-                                <div className="w-2 h-2 bg-[var(--primary)] animate-pulse"></div>
-                                <span className="text-[8px] font-black tracking-widest text-[var(--primary)] uppercase">LIVE_FEED :: OPTICAL_MOD_01</span>
+
+                            {/* Neural Progress Tracker */}
+                            <div className="absolute top-6 left-1/2 -translate-x-1/2 flex items-center gap-4 z-30">
+                                {['FRONT'].map((step) => {
+                                    const isCompleted = (step === 'FRONT' && capturedFaces.front);
+                                    const isActive = scanStep === step;
+
+                                    return (
+                                        <div key={step} className="flex flex-col items-center gap-2">
+                                            <div className={`w-20 h-1 ${isCompleted ? 'bg-[var(--primary)]' : isActive ? 'bg-amber-500 animate-pulse' : 'bg-white/10'}`}></div>
+                                            <span className={`text-[9px] font-black tracking-widest ${isActive ? 'text-amber-500 scale-110' : 'text-white/40'} transition-all`}>HIGH_RES_IDENTIFICATION</span>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+
+                            {/* Directional Overlay Guide */}
+                            <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
+                                <div className="relative w-48 h-48">
+                                    {/* Scan Frame */}
+                                    <div className={`absolute inset-0 border border-[var(--primary)]/30 rounded-full transition-all duration-700 ${scanStep === 'FRONT' ? 'scale-100 opacity-100' : 'scale-90 opacity-20'}`}></div>
+
+                                    {/* Signal Analysis Ring */}
+                                    <div className="absolute inset-[-10px] border-t-2 border-r-2 border-amber-500/40 rounded-full animate-spin transition-opacity duration-500" style={{ opacity: isScanning ? 1 : 0 }}></div>
+                                    <div className="absolute inset-[-20px] border-b-2 border-l-2 border-[var(--primary)]/20 rounded-full animate-spin-slow transition-opacity duration-500" style={{ opacity: isScanning ? 1 : 0 }}></div>
+
+                                    {/* Lock Indicator */}
+                                    <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center transition-all duration-500 ${isLocked ? 'scale-110 opacity-100' : 'scale-100 opacity-40'}`}>
+                                        <div className={`w-8 h-8 rounded-full border-2 border-dashed animate-spin-slow mb-2 ${isLocked ? 'border-[var(--primary)]' : 'border-amber-500'}`}></div>
+                                        <span className={`text-[8px] font-black tracking-[0.2em] ${isLocked ? 'text-[var(--primary)]' : 'text-amber-500'}`}>
+                                            {isLocked ? 'SIGNAL_LOCKED' : 'ANALYZING...'}
+                                        </span>
+                                    </div>
+
+
+
+                                    {/* 3D Ghost Guidance HUD */}
+                                    <div className="absolute inset-0 pointer-events-none z-30 flex items-center justify-center -translate-y-[10%]">
+                                        <div className={`w-40 h-56 border-2 border-dashed rounded-[40%] transition-all duration-700 flex items-center justify-center ${signalValid ? 'border-blue-500 scale-110 bg-blue-500/10' : 'border-white/20 scale-100'}`}>
+                                            <div className={`w-2 h-2 rounded-full ${signalValid ? 'bg-blue-500 shadow-[0_0_15px_#3b82f6]' : 'bg-white/20'}`}></div>
+                                        </div>
+                                    </div>
+
+                                    {/* Confirmation Flash */}
+                                    {stepConfirmed && (
+                                        <div className="absolute inset-0 z-50 bg-blue-500/40 backdrop-blur-sm flex items-center justify-center animate-in fade-in zoom-in duration-300">
+                                            <div className="bg-black/80 px-10 py-5 border-2 border-blue-500 shadow-[0_0_50px_rgba(59,130,246,0.5)]">
+                                                <h4 className="text-blue-500 font-black italic tracking-widest text-2xl uppercase">SIGNAL_AUTHORIZED</h4>
+                                                <p className="text-white/40 text-[8px] font-black tracking-[0.5em] mt-2">ENCODING_BIOMETRIC_DATA...</p>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* Central AI Instruction LCD (Enhanced) */}
+                                    <div className="absolute bottom-6 left-1/2 -translate-x-1/2 w-[280px] text-center z-40">
+                                        <div className={`text-[10px] font-black tracking-[0.2em] px-4 py-3 border-2 backdrop-blur-lg transition-all duration-300 shadow-2xl ${!isEngineReady ? 'text-white/20 border-white/5' : !currentPose ? 'text-red-500 border-red-500/30 bg-red-500/5' : !isCentered ? 'text-amber-500 border-amber-500/30 bg-amber-500/5' : signalValid ? 'text-blue-500 border-blue-400 scale-105 bg-blue-500/20' : 'text-white border-white/10 bg-black/60'}`}>
+                                            {!isEngineReady ? 'WAKING_NEURAL_CORE...' : isCalibrating ? 'RE_ALIGNING_OPTICS...' : !currentPose ? 'SEARCHING_BIOMETRIC_SIGNAL...' : !isCentered ? 'MOVE_FACE_INTO_CIRCLE' : signalValid ? 'STAY_STILL_AUTHORIZED' : 'LOOK_STRAIGHT_AHEAD'}
+                                        </div>
+                                    </div>
+
+                                    {/* Center Target */}
+                                    <div className="absolute inset-4 border-2 border-[var(--primary)] border-dashed rounded-full animate-spin-slow opacity-20"></div>
+                                </div>
+                            </div>
+
+                            {/* Scanning Pulse Overlays */}
+                            <div className="absolute inset-0 pointer-events-none">
+                                <div className="absolute top-0 left-0 w-full h-[1px] bg-[var(--primary)] animate-scan shadow-[0_0_15px_var(--primary)]"></div>
+                                <div className="absolute inset-0 border-[20px] border-black/20"></div>
+                            </div>
+
+                            <div className="absolute bottom-4 left-4 flex flex-col gap-2 w-full pr-8">
+                                <div className="flex items-center gap-2">
+                                    <div className={`w-2 h-2 ${isLocked ? 'bg-[var(--primary)] shadow-[0_0_10px_var(--primary)]' : signalValid ? 'bg-amber-500 animate-ping' : 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]'}`}></div>
+                                    <span className={`text-[8px] font-black tracking-widest uppercase ${isLocked ? 'text-[var(--primary)]' : signalValid ? 'text-amber-500' : 'text-red-500'}`}>
+                                        BIOMETRIC_RECOGNITION :: {isLocked ? 'SIGNAL_LOCKED' : signalValid ? `ANALYZING_${scanStep}` : 'WAITING_FOR_SUBJECT'}
+                                    </span>
+                                </div>
+                                <div className="w-full max-w-[200px] h-[2px] bg-white/10 relative overflow-hidden">
+                                    <div
+                                        className={`absolute top-0 left-0 h-full transition-all duration-300 ${isLocked ? 'bg-[var(--primary)]' : 'bg-amber-500'}`}
+                                        style={{ width: `${lockProgress}%` }}
+                                    ></div>
+                                </div>
                             </div>
                         </div>
                     ) : (
@@ -253,7 +584,7 @@ const StagiaireIdentityModal = ({ isOpen, onClose, profile, onUpdate }) => {
                                 <div className="flex flex-col justify-between h-full py-2">
                                     <div className="w-28 h-28 bg-[var(--surface)] border border-[var(--border-strong)] flex items-center justify-center relative transition-colors overflow-hidden">
                                         {profile.image ? (
-                                            <img src={profile.image} alt="Identity" className="w-full h-full object-cover" />
+                                            <img src={getImageUrl(profile.image)} alt="Identity" className="w-full h-full object-cover" />
                                         ) : (
                                             <div className="text-4xl font-black text-[var(--primary)] italic">
                                                 {profile.name.split(' ').map(n => n[0]).join('')}
@@ -309,14 +640,10 @@ const StagiaireIdentityModal = ({ isOpen, onClose, profile, onUpdate }) => {
                                 >
                                     ABORT_SCAN
                                 </button>
-                                <button
-                                    onClick={handleCapture}
-                                    disabled={scanLoading}
-                                    className="px-14 py-5 font-black tracking-[0.4em] text-[11px] bg-[var(--primary)] text-[var(--background)] border border-[var(--primary)] hover:bg-white hover:text-black uppercase transition-all flex items-center gap-3"
-                                >
-                                    {scanLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4" />}
-                                    {scanLoading ? 'ENCODING_BIOMETRICS...' : 'CAPTURE_SIGNATURE'}
-                                </button>
+                                <div className="px-14 py-5 font-black tracking-[0.4em] text-[11px] bg-white/5 text-white/20 border border-white/10 uppercase cursor-wait flex items-center gap-3">
+                                    {scanLoading || isLocked || isCalibrating ? <Loader2 className="w-4 h-4 animate-spin text-blue-500" /> : <div className={`w-2 h-2 rounded-full animate-pulse ${currentPose ? 'bg-blue-500' : 'bg-red-500'}`} />}
+                                    {scanLoading ? 'ENCODING...' : isLocked ? 'SYNCING_NEURAL_LINK...' : isCalibrating ? 'RE_CALIBRATING_SENSORS...' : !currentPose ? 'SEARCHING_FOR_FACE...' : !isCentered ? 'ALIGN_FACE_IN_CENTER' : signalValid ? `SYNCING_${scanStep}_POSE` : `ROTATE_HEAD_${scanStep}`}
+                                </div>
                             </div>
                         ) : (
                             <>

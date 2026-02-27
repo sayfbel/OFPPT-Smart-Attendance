@@ -12,7 +12,9 @@ import {
     AlertTriangle,
     Check,
     Camera,
-    Zap
+    Zap,
+    Scan,
+    Contact
 } from 'lucide-react';
 import axios from 'axios';
 import { useNotification } from '../../context/NotificationContext';
@@ -206,15 +208,22 @@ const FormateurDashboard = () => {
                                 onClick={() => setIsConfirming(true)}
                                 className="btn-noir btn-outline px-8 py-3 group hover:border-[var(--primary)]"
                             >
-                                <ClipboardCheck className="w-3 h-3 mr-2 group-hover:text-[var(--primary)] transition-colors" />
-                                <span className="group-hover:text-[var(--primary)] transition-colors">Confirm Cluster</span>
+                                <ClipboardCheck className="w-3 h-3 mr-2 group-hover:text-[var(--primary-text)] transition-colors" />
+                                <span className="group-hover:text-[var(--primary-text)] transition-colors">Confirm Cluster</span>
                             </button>
                             <button
-                                className="btn-noir px-8 py-3"
-                                onClick={() => window.open(`/scanner?classId=${activeSession.class}`, '_blank')}
+                                className="btn-noir px-8 py-3 flex items-center justify-center"
+                                onClick={() => window.open(`/scanner?classId=${activeSession.class}&mode=face&subject=${encodeURIComponent(activeSession.subject)}&room=${encodeURIComponent(activeSession.room)}&formateurName=${encodeURIComponent(user?.name)}&time=${activeSession.time}`, '_blank')}
+                                title="Face Scan"
                             >
-                                <span>Activate Portal</span>
-                                <ArrowRight className="w-3 h-3 ml-2" />
+                                <Scan className="w-5 h-5" />
+                            </button>
+                            <button
+                                className="btn-noir px-8 py-3 flex items-center justify-center"
+                                onClick={() => window.open(`/scanner?classId=${activeSession.class}&mode=card&subject=${encodeURIComponent(activeSession.subject)}&room=${encodeURIComponent(activeSession.room)}&formateurName=${encodeURIComponent(user?.name)}&time=${activeSession.time}`, '_blank')}
+                                title="Card Scan"
+                            >
+                                <Contact className="w-5 h-5" />
                             </button>
                         </div>
                     )}

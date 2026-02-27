@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
+const path = require('path');
 const authRoutes = require('./routes/authRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const formateurRoutes = require('./routes/formateurRoutes');
@@ -12,7 +13,11 @@ const app = express();
 
 // Middleware
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
+
+// Static Files - Neural Assets
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Routes
 app.use('/api/auth', authRoutes);
@@ -140,20 +145,29 @@ const initScheduleData = async () => {
             const pwd = await bcrypt.hash('password123', 10);
 
             // 2 Formateurs
-            await pool.query(`
-                INSERT IGNORE INTO users (name, email, password, role) VALUES 
-                ('Dr. Alami', 'alami@ofppt.ma', '${pwd}', 'formateur'),
-                ('Leila Filali', 'filali@ofppt.ma', '${pwd}', 'formateur')
-            `);
+            const drAlamiEmail = 'alami@ofppt.ma';
+            const drAlamiPwd = await bcrypt.hash(drAlamiEmail.split('@')[0], 10);
+            await pool.query(`INSERT IGNORE INTO users (name, email, password, role) VALUES ('Dr. Alami', ?, ?, 'formateur')`, [drAlamiEmail, drAlamiPwd]);
+
+            const leilaEmail = 'filali@ofppt.ma';
+            const leilaPwd = await bcrypt.hash(leilaEmail.split('@')[0], 10);
+            await pool.query(`INSERT IGNORE INTO users (name, email, password, role) VALUES ('Leila Filali', ?, ?, 'formateur')`, [leilaEmail, leilaPwd]);
 
             // 4 Stagiaires
-            await pool.query(`
-                INSERT IGNORE INTO users (name, email, password, role, class_id) VALUES 
-                ('Omar Student', 'omar@student.ma', '${pwd}', 'stagiaire', 'DEV101'),
-                ('Sara Student', 'sara@student.ma', '${pwd}', 'stagiaire', 'DEV101'),
-                ('Karim Student', 'karim@student.ma', '${pwd}', 'stagiaire', 'DEV102'),
-                ('Hind Student', 'hind@student.ma', '${pwd}', 'stagiaire', 'DEV102')
-            `);
+            const stagiaires = [
+                { name: 'Omar Student', email: 'omar@student.ma', class: 'DEV101' },
+                { name: 'Sara Student', email: 'sara@student.ma', class: 'DEV101' },
+                { name: 'Karim Student', email: 'karim@student.ma', class: 'DEV102' },
+                { name: 'Hind Student', email: 'hind@student.ma', class: 'DEV102' }
+            ];
+
+            for (const s of stagiaires) {
+                const sPwd = await bcrypt.hash(s.email.split('@')[0], 10);
+                await pool.query(
+                    `INSERT IGNORE INTO users (name, email, password, role, class_id) VALUES (?, ?, ?, 'stagiaire', ?)`,
+                    [s.name, s.email, sPwd, s.class]
+                );
+            }
 
             // Ensure System Admin exists with admin123
             const adminHash = await bcrypt.hash('admin123', 10);
@@ -202,6 +216,22 @@ const initScheduleData = async () => {
             );
             console.log(`✅ Targeted Test Session Active: THURSDAY 06:00 - 11:00 for Dr. Alami (DEV101)`);
         }
+
+        // Synchronize Identity Schema
+        await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS image LONGTEXT`);
+        await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS face_id LONGTEXT`);
+
+        // 7. SYNC PASSWORDS POLICY (One-time or persistent sync)
+        console.log('--- Syncing Passwords to Email Prefix Protocol ---');
+        const [usersToSync] = await pool.query('SELECT id, email FROM users WHERE role IN ("formateur", "stagiaire")');
+        const bcryptSync = require('bcryptjs');
+        for (const u of usersToSync) {
+            const prefix = u.email.split('@')[0];
+            const hash = await bcryptSync.hash(prefix, 10);
+            await pool.query('UPDATE users SET password = ? WHERE id = ?', [hash, u.id]);
+        }
+        console.log(`✅ Synced ${usersToSync.length} user passwords.`);
+
     } catch (err) {
         console.error('Failed to synchronize database:', err);
     }

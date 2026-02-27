@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Plus, BookOpen, Layers, Save, X, Filter, ChevronDown, Edit3, Trash2 } from 'lucide-react';
+import { Search, Plus, BookOpen, Layers, Save, X, Filter, ChevronDown, Edit3, Trash2, CheckSquare, Square } from 'lucide-react';
 import axios from 'axios';
 import ClassDossierModal from '../../components/ClassDossierModal';
 import { useNotification } from '../../context/NotificationContext';
