@@ -92,7 +92,7 @@ function App() {
                             <ProtectedRoute roles={['stagiaire']}>
                                 <DashboardLayout>
                                     <Routes>
-                                        <Route index element={<StagiaireProfile />} />
+                                        <Route index element={<StagiaireDashboard />} />
                                         <Route path="profile" element={<StagiaireProfile />} />
                                         <Route path="timetable" element={<StagiaireTimelines />} />
                                         <Route path="absences" element={<StagiaireAbsence />} />

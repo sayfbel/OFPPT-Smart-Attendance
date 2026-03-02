@@ -20,11 +20,12 @@ exports.getProfile = async (req, res) => {
     try {
         const student_id = req.user.id;
         const [profile] = await pool.query(`
-            SELECT u.id, u.name, u.email, u.role, u.class_id, u.image, c.title as class_name, c.stream 
+            SELECT u.id, u.name, u.email, u.role, u.class_id, u.image, u.face_id, c.title as class_name, c.stream 
             FROM users u
             LEFT JOIN classes c ON u.class_id = c.id
             WHERE u.id = ?
         `, [student_id]);
+
 
         if (profile.length === 0) {
             return res.status(404).json({ message: 'Neural Node not found.' });
@@ -136,9 +137,10 @@ exports.saveIdentityCard = async (req, res) => {
         if (!cardImage) return res.status(400).json({ message: 'No card image data.' });
 
         const filename = `card_${student_id}_${Date.now()}.png`;
-        const relativePath = saveBase64Image(cardImage, 'cards', filename);
+        const relativePath = saveBase64Image(cardImage, 'card_id', filename);
 
         res.json({ message: 'Identity Card archived in neural vault.', path: relativePath });
+
     } catch (err) {
         console.error("SAVE IDENTITY CARD ERROR:", err);
         res.status(500).json({ message: 'Internal Server Error: Archive failed.' });

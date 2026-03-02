@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { User, Mail, Shield, Book, Globe, Cpu, Clock, Calendar, ExternalLink, QrCode } from 'lucide-react';
+import { User, Mail, Shield, Book, Globe, Cpu, Clock, Calendar, ExternalLink, QrCode, Zap } from 'lucide-react';
 import axios from 'axios';
 import { useNotification } from '../../context/NotificationContext';
 import StagiaireIdentityModal from '../../components/StagiaireIdentityModal';
@@ -86,6 +86,65 @@ const Profile = () => {
                 profile={profile}
                 onUpdate={fetchProfile}
             />
+
+            {/* NEW: Activation Tasks Section */}
+            {(!profile?.image || !profile?.face_id) && (
+                <div className="border-2 border-[var(--primary)] bg-[var(--primary)]/5 p-8 relative overflow-hidden fade-up">
+                    <div className="absolute top-0 right-0 p-4 opacity-10">
+                        <Zap className="w-24 h-24 text-[var(--primary)]" />
+                    </div>
+
+                    <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-8">
+                        <div className="space-y-4">
+                            <div className="flex items-center gap-3">
+                                <div className="w-2 h-2 bg-[var(--primary)]"></div>
+                                <h2 className="text-xl font-black tracking-widest uppercase italic text-[var(--primary)]">Neural Activation Required</h2>
+                            </div>
+                            <p className="text-[10px] font-bold tracking-[0.2em] text-[var(--text-muted)] uppercase max-w-2xl leading-relaxed">
+                                Your account is currently in a restricted state. To synchronize with the squadron network and enable full operational capabilities, you must complete the following identification protocols.
+                            </p>
+
+                            <div className="flex flex-wrap gap-8 pt-4">
+                                <div className="flex items-center gap-4">
+                                    <div className={`w-4 h-4 border-2 flex items-center justify-center ${profile?.image ? 'border-[var(--primary)] bg-[var(--primary)]' : 'border-[var(--border-strong)]'}`}>
+                                        {profile?.image && <div className="w-2 h-2 bg-[var(--background)]"></div>}
+                                    </div>
+                                    <span className={`text-[10px] font-black tracking-[0.3em] uppercase ${profile?.image ? 'text-[var(--text)]' : 'text-[var(--text-muted)]'}`}>
+                                        1. Digital Avatar Sync {profile?.image ? '[COMPLETED]' : '[PENDING]'}
+                                    </span>
+                                </div>
+                                <div className="flex items-center gap-4">
+                                    <div className={`w-4 h-4 border-2 flex items-center justify-center ${profile?.face_id ? 'border-[var(--primary)] bg-[var(--primary)]' : 'border-[var(--border-strong)]'}`}>
+                                        {profile?.face_id && <div className="w-2 h-2 bg-[var(--background)]"></div>}
+                                    </div>
+                                    <span className={`text-[10px] font-black tracking-[0.3em] uppercase ${profile?.face_id ? 'text-[var(--text)]' : 'text-[var(--text-muted)]'}`}>
+                                        2. Biometric Neural Scan {profile?.face_id ? '[COMPLETED]' : '[PENDING]'}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="flex gap-4">
+                            {!profile?.image && (
+                                <button
+                                    onClick={() => document.getElementById('avatar-upload').click()}
+                                    className="px-8 py-4 bg-[var(--primary)] text-[var(--background)] font-black text-[10px] tracking-[0.3em] uppercase hover:bg-white hover:text-black transition-all"
+                                >
+                                    Sync_Avatar
+                                </button>
+                            )}
+                            {!profile?.face_id && (
+                                <button
+                                    onClick={() => setIsIdModalOpen(true)}
+                                    className="px-8 py-4 bg-transparent border-2 border-[var(--primary)] text-[var(--primary)] font-black text-[10px] tracking-[0.3em] uppercase hover:bg-[var(--primary)] hover:text-[var(--background)] transition-all"
+                                >
+                                    Initiate_Scan
+                                </button>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
                 {/* Visual ID Card */}

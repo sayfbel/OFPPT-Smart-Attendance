@@ -1,8 +1,10 @@
 import React, { useRef, useState, useEffect, useCallback } from 'react';
 import ReactDOM from 'react-dom';
-import { X, Download, Shield, Cpu, ExternalLink, QrCode, ChevronRight, Loader2, Scan, Camera, Zap } from 'lucide-react';
+import { X, Download, Shield, Cpu, ExternalLink, QrCode, ChevronRight, Loader2, Scan, Camera, Zap, Check } from 'lucide-react';
 import axios from 'axios';
+import ConfirmationModal from './ConfirmationModal';
 import { useNotification } from '../context/NotificationContext';
+
 
 const StagiaireIdentityModal = ({ isOpen, onClose, profile, onUpdate }) => {
     const cardRef = useRef(null);
@@ -21,6 +23,8 @@ const StagiaireIdentityModal = ({ isOpen, onClose, profile, onUpdate }) => {
     const [currentPose, setCurrentPose] = useState(null); // { direction, yawRatio }
     const [isCentered, setIsCentered] = useState(false);
     const [stepConfirmed, setStepConfirmed] = useState(false);
+    const [isConfirmingUpdate, setIsConfirmingUpdate] = useState(false);
+
 
     const faceMeshRef = useRef(null);
     const canvasRef = useRef(null);
@@ -345,23 +349,26 @@ const StagiaireIdentityModal = ({ isOpen, onClose, profile, onUpdate }) => {
         try {
             const card = cardRef.current;
             const canvas = await window.html2canvas(card, {
-                scale: 3, // High resolution
+                scale: 4, // Ultra high resolution for print
                 useCORS: true,
                 backgroundColor: '#050505'
             });
 
+
             const imgData = canvas.toDataURL('image/png');
 
-            // PDF Initialization (jspdf uses umd format in CDN)
             const { jsPDF } = window.jspdf;
+            const pdfWidth = 85.6;
+            const pdfHeight = 54;
             const pdf = new jsPDF({
                 orientation: 'landscape',
                 unit: 'mm',
-                format: [158.6, 101.6] // ID Card proportions in mm
+                format: [pdfWidth, pdfHeight]
             });
 
-            pdf.addImage(imgData, 'PNG', 0, 0, 158.6, 101.6);
+            pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
             pdf.save(`IDENTITY_CARD_${profile.name.replace(/\s+/g, '_').toUpperCase()}.pdf`);
+
 
             // NEW: Save to Server Neural Vault
             const token = localStorage.getItem('token');
@@ -561,8 +568,9 @@ const StagiaireIdentityModal = ({ isOpen, onClose, profile, onUpdate }) => {
                         /* IDENTITY CARD PREVIEW */
                         <div
                             ref={cardRef}
-                            className="w-full max-w-[500px] h-[320px] bg-[#050505] border border-[var(--border-strong)] relative overflow-hidden group shadow-2xl scale-100 md:scale-110"
+                            className="w-full max-w-[500px] h-[315px] bg-[#050505] border border-[var(--border-strong)] relative overflow-hidden group shadow-2xl scale-100 md:scale-110"
                         >
+
                             <div className="absolute inset-0 opacity-[0.05] pointer-events-none">
                                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,var(--primary)_0%,transparent_70%)]"></div>
                                 <div className="h-px w-full bg-gradient-to-r from-transparent via-[var(--primary)] to-transparent absolute top-1/3"></div>
@@ -582,18 +590,50 @@ const StagiaireIdentityModal = ({ isOpen, onClose, profile, onUpdate }) => {
 
                             <div className="px-8 py-6 flex gap-8 relative z-10 h-[calc(100%-80px)]">
                                 <div className="flex flex-col justify-between h-full py-2">
-                                    <div className="w-28 h-28 bg-[var(--surface)] border border-[var(--border-strong)] flex items-center justify-center relative transition-colors overflow-hidden">
+                                    <div className={`w-32 h-40 bg-[var(--surface)] border flex items-center justify-center relative transition-all duration-700 overflow-hidden group/img ${!profile.image ? 'border-[var(--primary)] shadow-[0_0_20px_rgba(var(--primary-rgb),0.3)]' : 'border-[var(--border-strong)]'}`}>
+                                        {!profile.image && (
+                                            <div className="absolute inset-0 border-2 border-[var(--primary)]/20 animate-pulse pointer-events-none"></div>
+                                        )}
                                         {profile.image ? (
-                                            <img src={getImageUrl(profile.image)} alt="Identity" className="w-full h-full object-cover" />
+                                            <img src={getImageUrl(profile.image)} alt="Identity" className="w-full h-full object-cover" style={{ objectFit: 'cover', width: '8rem', height: '10rem' }} />
                                         ) : (
                                             <div className="text-4xl font-black text-[var(--primary)] italic">
                                                 {profile.name.split(' ').map(n => n[0]).join('')}
                                             </div>
                                         )}
+
+                                        {/* Profile Update Overlay */}
+                                        <label className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover/img:opacity-100 cursor-pointer transition-opacity">
+                                            <input
+                                                type="file"
+                                                className="hidden"
+                                                accept="image/*"
+                                                onChange={async (e) => {
+                                                    const file = e.target.files[0];
+                                                    if (!file) return;
+                                                    const reader = new FileReader();
+                                                    reader.onloadend = async () => {
+                                                        try {
+                                                            const token = localStorage.getItem('token');
+                                                            const config = { headers: { Authorization: `Bearer ${token}` } };
+                                                            await axios.put('http://localhost:5000/api/stagiaire/profile', { image: reader.result }, config);
+                                                            addNotification('Neural avatar updated.', 'success');
+                                                            onUpdate();
+                                                        } catch (err) {
+                                                            addNotification('Sync failure.', 'error');
+                                                        }
+                                                    };
+                                                    reader.readAsDataURL(file);
+                                                }}
+                                            />
+                                            <Camera className="w-5 h-5 text-white" />
+                                        </label>
+
                                         <div className="absolute -bottom-2 -right-2 bg-[var(--primary)] p-1 text-[var(--background)]">
                                             <Cpu className="w-3 h-3" />
                                         </div>
                                     </div>
+
                                     <div className="space-y-1">
                                         <p className="text-[var(--text-muted)] text-[6px] font-black tracking-[0.3em] uppercase">CREDENTIAL_STATUS</p>
                                         <p className="text-[var(--primary)] text-[9px] font-black tracking-widest uppercase italic border-l-2 border-[var(--primary)] pl-2">SECURE_ACTIVE</p>
@@ -648,12 +688,21 @@ const StagiaireIdentityModal = ({ isOpen, onClose, profile, onUpdate }) => {
                         ) : (
                             <>
                                 <button
-                                    onClick={handleStartScan}
-                                    title="SCAN_FACIAL_BIOMETRICS"
-                                    className="p-5 bg-transparent text-[var(--primary)] border border-[var(--primary)]/30 hover:border-[var(--primary)] transition-all flex items-center justify-center group"
+                                    onClick={() => profile?.face_id ? setIsConfirmingUpdate(true) : handleStartScan()}
+                                    title={profile?.face_id ? "UPDATE_BIometric_DATA" : "SCAN_FACIAL_BIOMETRICS"}
+                                    className={`p-5 bg-transparent border transition-all flex items-center justify-center group relative ${profile?.face_id ? 'border-green-500/30 hover:border-green-500 text-green-500' : 'border-[var(--primary)] hover:scale-105 shadow-[0_0_20px_rgba(var(--primary-rgb),0.3)] text-[var(--primary)]'}`}
                                 >
+                                    {!profile?.face_id && (
+                                        <div className="absolute inset-0 border border-[var(--primary)] animate-ping opacity-20 pointer-events-none"></div>
+                                    )}
                                     <Scan className="w-5 h-5 group-hover:scale-110 transition-transform" />
+                                    {profile?.face_id && (
+                                        <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full flex items-center justify-center border-2 border-black">
+                                            <Check className="w-2.5 h-2.5 text-black stroke-[4]" />
+                                        </div>
+                                    )}
                                 </button>
+
                                 <button
                                     onClick={handleExport}
                                     disabled={!isEngineReady || isExporting}
@@ -671,7 +720,19 @@ const StagiaireIdentityModal = ({ isOpen, onClose, profile, onUpdate }) => {
                     </div>
                 </div>
             </div>
-        </div>,
+
+            <ConfirmationModal
+                isOpen={isConfirmingUpdate}
+                onClose={() => setIsConfirmingUpdate(false)}
+                onConfirm={() => {
+                    setIsConfirmingUpdate(false);
+                    handleStartScan();
+                }}
+                title="NEURAL_RE_CONFIGURATION"
+                message="ARE YOU SURE YOU WANT TO OVERWRITE YOUR CURRENT BIOMETRIC TELEMETRY? THIS ACTION WILL SYNC NEW FACE-ID DATA TO THE SQUADRON GRID."
+            />
+        </div>
+        ,
         document.body
     );
 };

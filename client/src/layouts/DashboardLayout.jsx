@@ -4,6 +4,7 @@ import { useNavigate, Link, useLocation } from 'react-router-dom';
 import {
     LayoutDashboard,
     Users,
+    User,
     BookOpen,
     Calendar,
     LogOut,
@@ -56,7 +57,8 @@ const DashboardLayout = ({ children }) => {
                 ];
             case 'stagiaire':
                 return [
-                    { icon: LayoutDashboard, label: 'PROFILE', path: '/stagiaire/profile' },
+                    { icon: LayoutDashboard, label: 'OVERVIEW', path: '/stagiaire' },
+                    { icon: User, label: 'PROFILE', path: '/stagiaire/profile' },
                     { icon: Calendar, label: 'TIMELINES', path: '/stagiaire/timetable' },
                     { icon: FileText, label: 'ABSENCES', path: '/stagiaire/absences' },
                 ];

@@ -2,7 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { Search, Plus, BookOpen, Layers, Save, X, Filter, ChevronDown, Edit3, Trash2, CheckSquare, Square } from 'lucide-react';
 import axios from 'axios';
 import ClassDossierModal from '../../components/ClassDossierModal';
+import ConfirmationModal from '../../components/ConfirmationModal';
 import { useNotification } from '../../context/NotificationContext';
+
 
 const Squadrons = () => {
     const { addNotification } = useNotification();
@@ -16,6 +18,8 @@ const Squadrons = () => {
     const [streamFilter, setStreamFilter] = useState('ALL');
     const [isFilterDropdownOpen, setIsFilterDropdownOpen] = useState(false);
     const [isEditDropdownOpen, setIsEditDropdownOpen] = useState(false);
+    const [purgeInfo, setPurgeInfo] = useState({ isOpen: false, classId: '' });
+
 
     useEffect(() => {
         const fetchClasses = async () => {
@@ -79,19 +83,22 @@ const Squadrons = () => {
         }
     };
 
-    const handlePurgeClass = async (id) => {
-        if (!window.confirm(`ARE YOU SURE YOU WANT TO PURGE SQUADRON ${id}? THIS WILL DELETE ALL ASSOCIATED SCHEDULE ENTRIES.`)) return;
+    const handlePurgeClass = async () => {
+        const id = purgeInfo.classId;
         try {
             const token = localStorage.getItem('token');
             const config = { headers: { Authorization: `Bearer ${token}` } };
             await axios.delete(`http://localhost:5000/api/admin/classes/${id}`, config);
             setClasses(prev => prev.filter(c => c.id !== id));
             addNotification('Squadron purged from network.', 'success');
+            setPurgeInfo({ isOpen: false, classId: '' });
         } catch (error) {
             console.error('Error deleting class', error);
             addNotification('Neural Link Failure: Error during squadron deletion.', 'error');
+            setPurgeInfo({ isOpen: false, classId: '' });
         }
     };
+
 
     const handleFlip = (cls) => {
         if (flippedCardId === cls.id) {
@@ -176,7 +183,7 @@ const Squadrons = () => {
                                         <button
                                             onClick={(e) => {
                                                 e.stopPropagation();
-                                                handlePurgeClass(cls.id);
+                                                setPurgeInfo({ isOpen: true, classId: cls.id });
                                             }}
                                             className="p-2 bg-[var(--background)] border border-[var(--border-strong)] hover:border-red-500 hover:text-red-500 text-[var(--text-muted)] transition-colors"
                                         >
@@ -185,7 +192,7 @@ const Squadrons = () => {
                                     </div>
                                 </div>
 
-                                <div onClick={() => handleFlip(cls)} className="cursor-pointer flex-1 flex flex-col">
+                                <div className="flex-1 flex flex-col">
                                     <h2 className="text-4xl font-black italic text-[var(--primary)] mb-2 transition-colors duration-500">{cls.title || cls.name}</h2>
                                     <p className="text-xs uppercase tracking-widest text-[var(--text-muted)] font-bold mb-8 transition-colors duration-500">{cls.stream}</p>
 
@@ -241,7 +248,10 @@ const Squadrons = () => {
                                             <span className={`text-[10px] font-bold tracking-widest uppercase truncate ${editData.lead.length > 0 ? 'text-[var(--primary)]' : 'text-[var(--text-muted)]'}`}>
                                                 {editData.lead.length > 0 ? editData.lead.join(', ') : 'SELECT SUPERVISORS...'}
                                             </span>
-                                            <ChevronDown className={`w-3 h-3 text-[var(--primary)] transition-transform ${isEditDropdownOpen ? 'rotate-180' : ''}`} />
+                                            <div className="w-6 h-6 rounded-full border border-[var(--border-strong)] flex items-center justify-center transition-colors group-hover/lead:border-[var(--primary)]">
+                                                <Plus className={`w-3 h-3 text-[var(--primary)] transition-transform ${isEditDropdownOpen ? 'rotate-45' : ''}`} />
+                                            </div>
+
                                         </div>
 
                                         {isEditDropdownOpen && (
@@ -302,7 +312,16 @@ const Squadrons = () => {
                 handleAddClass={handleAddClass}
                 formateurs={formateurs}
             />
+
+            <ConfirmationModal
+                isOpen={purgeInfo.isOpen}
+                onClose={() => setPurgeInfo({ isOpen: false, classId: '' })}
+                onConfirm={handlePurgeClass}
+                title="SQUADRON_PURGE_INITIATED"
+                message={`ARE YOU SURE YOU WANT TO PURGE SQUADRON ${purgeInfo.classId}? THIS WILL DELETE ALL ASSOCIATED SCHEDULE ENTRIES.`}
+            />
         </div>
+
     );
 };
 
