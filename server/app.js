@@ -26,10 +26,14 @@ app.use('/api/formateur', formateurRoutes);
 app.use('/api/stagiaire', stagiaireRoutes);
 
 // Error Handling Middleware
+const fs = require('fs');
 app.use((err, req, res, next) => {
+    const logMessage = `[${new Date().toISOString()}] ${err.stack}\n`;
+    fs.appendFileSync(path.join(__dirname, 'error.log'), logMessage);
     console.error(err.stack);
     res.status(500).json({ message: 'Something went wrong!', error: err.message });
 });
+
 
 const pool = require('./config/db');
 

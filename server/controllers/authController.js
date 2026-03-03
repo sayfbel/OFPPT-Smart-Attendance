@@ -39,8 +39,13 @@ const login = async (req, res) => {
             }
         });
     } catch (error) {
+        const fs = require('fs');
+        const path = require('path');
+        const logMessage = `[${new Date().toISOString()}] Login error: ${error.stack}\n`;
+        fs.appendFileSync(path.join(__dirname, '../error.log'), logMessage);
         res.status(500).json({ message: 'Server error', error: error.message });
     }
+
 };
 
 const getMe = async (req, res) => {

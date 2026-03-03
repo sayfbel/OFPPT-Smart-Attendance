@@ -53,9 +53,9 @@ const StagiaireIdentityModal = ({ isOpen, onClose, profile, onUpdate }) => {
         const initEngines = async () => {
             try {
                 if (!window.html2canvas) await loadScript('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js');
-                if (!window.jspdf) await loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
 
                 // Load AI Face Tracking Engines
+
                 if (!window.FaceMesh) {
                     await loadScript('https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js');
                 }
@@ -357,17 +357,14 @@ const StagiaireIdentityModal = ({ isOpen, onClose, profile, onUpdate }) => {
 
             const imgData = canvas.toDataURL('image/png');
 
-            const { jsPDF } = window.jspdf;
-            const pdfWidth = 85.6;
-            const pdfHeight = 54;
-            const pdf = new jsPDF({
-                orientation: 'landscape',
-                unit: 'mm',
-                format: [pdfWidth, pdfHeight]
-            });
+            // Download as Image (Neural Artifact)
+            const link = document.createElement('a');
+            link.href = imgData;
+            link.download = `IDENTITY_CARD_${profile.name.replace(/\s+/g, '_').toUpperCase()}.png`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
 
-            pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-            pdf.save(`IDENTITY_CARD_${profile.name.replace(/\s+/g, '_').toUpperCase()}.pdf`);
 
 
             // NEW: Save to Server Neural Vault

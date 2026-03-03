@@ -202,27 +202,57 @@ const Scanner = () => {
                         }
                     }
                     const html5QrCode = scannerRef.current;
-                    const config = { fps: 24, qrbox: { width: 350, height: 350 }, aspectRatio: 1.0 };
+                    const config = {
+                        fps: 30,
+                        qrbox: (viewfinderWidth, viewfinderHeight) => {
+                            const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
+                            const size = Math.floor(minEdge * 0.8);
+                            return { width: size, height: size };
+                        },
+                        aspectRatio: 1.0,
+                        disableFlip: false
+                    };
+
 
                     await html5QrCode.start(
                         { facingMode: "user" },
                         config,
                         (result) => {
-                            const idMatch = result.match(/STAGIAIRE_ID:(\d+)/);
+                            // Fix: Robust Match Logic for Identity Cards
+                            const idMatch = result.match(/STAGIAIRE_ID:(\d+)/i);
                             if (idMatch) {
                                 const sId = Number(idMatch[1]);
-                                // Check if already scanned to avoid redundant API hits
+
+                                // Check if already scanned in current session
                                 if (checkedInRef.current.includes(sId)) {
-                                    setStatus('warning');
-                                    setMessage('Entity Already Synchronized');
-                                    setTimeout(() => setStatus('idle'), 3000);
+                                    if (status !== 'warning') {
+                                        setStatus('warning');
+                                        setMessage('IDENTITY ALREADY SYNCED');
+                                        setTimeout(() => setStatus('idle'), 3000);
+                                    }
                                     return;
                                 }
 
                                 const found = studentsRef.current.find(s => s.id === sId);
-                                handleCheckIn(sId, 'QR_LINK_ESTABLISHED', found);
+                                if (!found) {
+                                    setStatus('error');
+                                    setMessage('ENTITY NOT IN SQUADRON');
+                                    setTimeout(() => setStatus('idle'), 3000);
+                                    return;
+                                }
+
+                                handleCheckIn(sId, 'SQUADRON_CARD_VERIFIED', found);
+                            } else {
+                                // Fallback for raw ID if needed
+                                const rawIdMatch = result.match(/^(\d+)$/);
+                                if (rawIdMatch) {
+                                    const sId = Number(rawIdMatch[1]);
+                                    const found = studentsRef.current.find(s => s.id === sId);
+                                    if (found) handleCheckIn(sId, 'RAW_ID_LINK', found);
+                                }
                             }
                         },
+
                         () => { }
                     );
                 } else {
@@ -263,6 +293,8 @@ const Scanner = () => {
                 });
 
                 const allStudents = res.data.users;
+
+
                 const signatures = [];
                 for (const st of allStudents) {
                     if (st.face_id && st.face_id !== 'none') {
@@ -399,16 +431,34 @@ const Scanner = () => {
                         <h1 className="text-5xl lg:text-7xl font-black tracking-tighter text-[var(--text)] uppercase italic leading-none">
                             Session :: {classId || 'IDLE'}
                         </h1>
-                        {subject && room ? (
-                            <p className="text-[var(--text-muted)] text-[10px] font-bold tracking-[0.3em] uppercase mt-4">
-                                {decodeURIComponent(subject)} @ {decodeURIComponent(room)}
-                            </p>
-                        ) : (
-                            <p className="text-[var(--text-muted)] text-[10px] font-bold tracking-[0.3em] uppercase mt-4">
-                                Manual Session Overview
-                            </p>
-                        )}
+                        <div className="flex items-center gap-6 mt-4">
+                            {subject && room && (
+                                <p className="text-[var(--text-muted)] text-[10px] font-bold tracking-[0.2em] uppercase">
+                                    {decodeURIComponent(subject)} @ {decodeURIComponent(room)}
+                                </p>
+                            )}
+                            <button
+                                onClick={async () => {
+                                    if (!window.confirm("ARE YOU SURE YOU WANT TO RESET THIS SESSION'S ATTENDANCE? THIS WILL MARK ALL STUDENTS AS ABSENT.")) return;
+                                    try {
+                                        const token = localStorage.getItem('token');
+                                        const config = { headers: { Authorization: `Bearer ${token}` } };
+                                        await axios.post('http://localhost:5000/api/formateur/clear-checkins', { classId }, config);
+                                        setCheckedInIds([]);
+                                        setStatus('warning');
+                                        setMessage('MATRIX_RESET_SUCCESSFUL');
+                                        setTimeout(() => setStatus('idle'), 3000);
+                                    } catch (err) {
+                                        console.error("Reset Failure:", err);
+                                    }
+                                }}
+                                className="text-[9px] font-black tracking-[0.2em] text-red-500 uppercase hover:text-white transition-colors border border-red-500/20 px-3 py-1 bg-red-500/5"
+                            >
+                                [RESET_SESSION]
+                            </button>
+                        </div>
                     </div>
+
                     <div className="text-right">
                         <p className="text-[10px] font-bold text-[var(--text-muted)] tracking-widest uppercase">Nodes in Cluster</p>
                         <p className="text-3xl font-black text-[var(--text)]">{activeStudents.length.toString().padStart(2, '0')}</p>
@@ -452,8 +502,33 @@ const Scanner = () => {
                         <div className="absolute bottom-4 right-4 w-8 h-8 border-b-2 border-r-2 border-[var(--primary)] z-10 pointer-events-none"></div>
 
                         {mode === 'card' && (
-                            <div id="reader" className="w-full h-full object-cover"></div>
+                            <>
+                                <div id="reader" className="w-full h-full overflow-hidden"></div>
+                                {/* Center Alignment Square HUD */}
+
+                                <div className="absolute inset-0 z-30 pointer-events-none flex items-center justify-center">
+                                    <div className="w-[300px] h-[300px] border-2 border-white/10 rounded-[2rem] relative shadow-[0_0_0_1000px_rgba(0,0,0,0.4)]">
+                                        {/* Corner Accents */}
+                                        <div className="absolute top-0 left-0 w-12 h-12 border-t-4 border-l-4 border-[var(--primary)] rounded-tl-[2rem] -translate-x-1 -translate-y-1 shadow-[0_0_15px_var(--primary)]"></div>
+                                        <div className="absolute top-0 right-0 w-12 h-12 border-t-4 border-r-4 border-[var(--primary)] rounded-tr-[2rem] translate-x-1 -translate-y-1 shadow-[0_0_15px_var(--primary)]"></div>
+                                        <div className="absolute bottom-0 left-0 w-12 h-12 border-b-4 border-l-4 border-[var(--primary)] rounded-bl-[2rem] -translate-x-1 translate-y-1 shadow-[0_0_15px_var(--primary)]"></div>
+                                        <div className="absolute bottom-0 right-0 w-12 h-12 border-b-4 border-r-4 border-[var(--primary)] rounded-br-[2rem] translate-x-1 translate-y-1 shadow-[0_0_15px_var(--primary)]"></div>
+
+                                        {/* Target Pulse */}
+                                        <div className="absolute inset-4 border border-[var(--primary)]/20 rounded-2xl animate-pulse"></div>
+
+                                        {/* Scan Line for Card Mode */}
+                                        <div className="absolute left-0 right-0 h-[2px] bg-[var(--primary)] shadow-[0_0_10px_var(--primary)] animate-scan opacity-50"></div>
+                                    </div>
+
+                                    {/* Instruction Label */}
+                                    <div className="absolute bottom-[20%] left-1/2 -translate-x-1/2 bg-black/80 px-6 py-2 border border-[var(--primary)]/30 backdrop-blur-md">
+                                        <span className="text-[9px] font-black text-[var(--primary)] tracking-[0.4em] uppercase">Align QR Code with Edges</span>
+                                    </div>
+                                </div>
+                            </>
                         )}
+
 
                         {/* UI Overlays */}
                         {scanState === 'idle' && (
@@ -585,13 +660,14 @@ const Scanner = () => {
                                                 <span className="text-[8px] font-bold text-[var(--text-muted)] mt-1 tracking-[0.2em]">ID_{s.id.toString().padStart(3, '0')}</span>
                                             </div>
                                         </div>
-                                        <div className={`px-4 py-2 rounded-lg text-[9px] font-black tracking-[0.2em] uppercase transition-all flex items-center gap-2 ${isScanned ? 'bg-[var(--primary)] text-[var(--primary-text)]' : 'bg-[var(--surface-hover)] text-[var(--text-muted)]'} `}>
+                                        <div className={`px-4 py-2 rounded-lg text-[9px] font-black tracking-[0.2em] uppercase transition-all flex items-center gap-2 ${isScanned ? 'bg-[var(--primary)] text-[var(--primary-text)] shadow-[0_0_15px_rgba(var(--primary-rgb),0.3)]' : 'bg-red-500/10 text-red-500 border border-red-500/30'} `}>
                                             {isScanned ? (
                                                 <><CheckCircle2 className="w-3 h-3" /> PRESENT</>
                                             ) : (
                                                 <><AlertCircle className="w-3 h-3" /> ABSENT</>
                                             )}
                                         </div>
+
                                     </div>
                                 );
                             })
@@ -666,7 +742,18 @@ const Scanner = () => {
                     animation: scanLineLight 2.5s ease-in-out infinite alternate;
                     z-index: 25;
                 }
+
+                #reader video {
+                    width: 100% !important;
+                    height: 100% !important;
+                    object-fit: cover !important;
+                }
+                
+                #reader__scan_region {
+                    background: transparent !important;
+                }
             `}</style>
+
         </div >
     );
 };

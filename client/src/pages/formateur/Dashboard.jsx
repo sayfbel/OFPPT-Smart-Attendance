@@ -93,8 +93,9 @@ const FormateurDashboard = () => {
             const config = { headers: { Authorization: `Bearer ${token}` } };
             const res = await axios.get(`http://localhost:5000/api/formateur/users/by-class/${classId}`, config);
             const fetchedUsers = res.data.users || [];
-            // Initialize all as PRESENT
-            setStudents(fetchedUsers.map(u => ({ ...u, status: 'PRESENT' })));
+            // Initialize all as ABSENT by default
+            setStudents(fetchedUsers.map(u => ({ ...u, status: 'ABSENT' })));
+
         } catch (error) {
             console.error('Error fetching session students', error);
         }
@@ -111,11 +112,10 @@ const FormateurDashboard = () => {
                 const res = await axios.get(`http://localhost:5000/api/formateur/active-checkins/${activeSession.class}`, config);
                 const checkedInIds = res.data.checkins || [];
 
-                if (checkedInIds.length > 0) {
-                    setStudents(prev => prev.map(s =>
-                        checkedInIds.includes(s.id) ? { ...s, status: 'PRESENT' } : s
-                    ));
-                }
+                setStudents(prev => prev.map(s =>
+                    checkedInIds.includes(s.id) ? { ...s, status: 'PRESENT' } : { ...s, status: 'ABSENT' }
+                ));
+
             } catch (err) {
                 console.error("Polling Error:", err);
             }
