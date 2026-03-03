@@ -68,32 +68,32 @@ const RapportModal = ({ isOpen, onClose, rapport }) => {
                         <div>
                             <label className="block text-[10px] font-black tracking-[0.3em] text-[var(--text-muted)] uppercase mb-2">MODULE SESSION</label>
                             <div className="w-full bg-transparent border-b border-[var(--border-strong)] py-4">
-                                <span className="text-md font-black tracking-widest text-[var(--text-main)] uppercase">{rapport.subject}</span>
+                                <span className="text-md font-black tracking-widest text-[var(--text)] uppercase">{rapport.subject}</span>
                             </div>
                         </div>
                         <div className="grid grid-cols-2 gap-8">
                             <div>
                                 <label className="block text-[10px] font-black tracking-[0.3em] text-[var(--text-muted)] uppercase mb-2">FORMATEUR</label>
                                 <div className="w-full bg-transparent border-b border-[var(--border-strong)] py-4">
-                                    <span className="text-md font-black tracking-widest text-[var(--text-main)] uppercase">{rapport.formateur}</span>
+                                    <span className="text-md font-black tracking-widest text-[var(--text)] uppercase">{rapport.formateur}</span>
                                 </div>
                             </div>
                             <div>
                                 <label className="block text-[10px] font-black tracking-[0.3em] text-[var(--text-muted)] uppercase mb-2">DATE UTC</label>
                                 <div className="w-full bg-transparent border-b border-[var(--border-strong)] py-4">
-                                    <span className="text-md font-black font-mono tracking-widest text-[var(--text-main)] uppercase">{rapport.date}</span>
+                                    <span className="text-md font-black font-mono tracking-widest text-[var(--text)] uppercase">{rapport.date}</span>
                                 </div>
                             </div>
                             <div>
                                 <label className="block text-[10px] font-black tracking-[0.3em] text-[var(--text-muted)] uppercase mb-2">SALLE (ROOM)</label>
                                 <div className="w-full bg-transparent border-b border-[var(--border-strong)] py-4">
-                                    <span className="text-md font-black tracking-widest text-[var(--text-main)] uppercase">{rapport.salle || 'N/A'}</span>
+                                    <span className="text-md font-black tracking-widest text-[var(--text)] uppercase">{rapport.salle || 'N/A'}</span>
                                 </div>
                             </div>
                             <div>
                                 <label className="block text-[10px] font-black tracking-[0.3em] text-[var(--text-muted)] uppercase mb-2">SEANCE (TIME)</label>
                                 <div className="w-full bg-transparent border-b border-[var(--border-strong)] py-4">
-                                    <span className="text-md font-black font-mono tracking-widest text-[var(--text-main)] uppercase">{rapport.heure || 'N/A'}</span>
+                                    <span className="text-md font-black font-mono tracking-widest text-[var(--text)] uppercase">{rapport.heure || 'N/A'}</span>
                                 </div>
                             </div>
                         </div>
@@ -132,10 +132,14 @@ const RapportModal = ({ isOpen, onClose, rapport }) => {
                         <div className="pt-8 mt-auto flex justify-end">
                             <div className="flex flex-col items-center">
                                 <label className="text-[8px] font-black tracking-[0.3em] text-[var(--text-muted)] uppercase mb-2">DIGITAL SIGNATURE</label>
-                                <div className="px-8 py-3 border border-dashed border-[var(--primary)] bg-[var(--primary)]/5">
-                                    <span className="font-['Brush_Script_MT',cursive] italic text-2xl text-[var(--primary)] tracking-wider">
-                                        {rapport.formateur}
-                                    </span>
+                                <div className="px-8 py-3 border border-dashed border-[var(--primary)] bg-[var(--primary)]/5 min-w-[200px] flex items-center justify-center min-h-[80px]">
+                                    {rapport.signature ? (
+                                        <img src={rapport.signature} alt="Signature" className="max-h-16 invert" />
+                                    ) : (
+                                        <span className="font-['Brush_Script_MT',cursive] italic text-2xl text-[var(--primary)] tracking-wider">
+                                            {rapport.formateur}
+                                        </span>
+                                    )}
                                 </div>
                             </div>
                         </div>

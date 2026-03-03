@@ -2,7 +2,7 @@ const pool = require('../config/db');
 
 exports.submitReport = async (req, res) => {
     try {
-        const { report_code, class_id, date, subject, salle, heure, stagiaires } = req.body;
+        const { report_code, class_id, date, subject, salle, heure, stagiaires, signature } = req.body;
         const formateur_id = req.user.id;
 
         if (!report_code || !class_id || !date || !subject) {
@@ -11,8 +11,8 @@ exports.submitReport = async (req, res) => {
 
         // 1. Create the report record
         const [reportRes] = await pool.query(
-            'INSERT INTO reports (report_code, formateur_id, class_id, date, subject, salle, heure) VALUES (?, ?, ?, ?, ?, ?, ?)',
-            [report_code, formateur_id, class_id, date, subject, salle, heure]
+            'INSERT INTO reports (report_code, formateur_id, class_id, date, subject, salle, heure, signature) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+            [report_code, formateur_id, class_id, date, subject, salle, heure, signature]
         );
 
         const reportId = reportRes.insertId;

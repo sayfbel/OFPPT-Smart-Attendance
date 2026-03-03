@@ -19,6 +19,7 @@ import {
 import axios from 'axios';
 import { useNotification } from '../../context/NotificationContext';
 import { Html5Qrcode } from 'html5-qrcode';
+import ClassDossierModal from '../../components/ClassDossierModal';
 
 const FormateurDashboard = () => {
     const { user } = useAuth();
@@ -128,7 +129,7 @@ const FormateurDashboard = () => {
         setStudents(prev => prev.map(s => s.id === studentId ? { ...s, status } : s));
     };
 
-    const handleSubmitReport = async () => {
+    const handleSubmitReport = async (signatureData) => {
         setSubmitting(true);
         try {
             const token = localStorage.getItem('token');
@@ -141,7 +142,8 @@ const FormateurDashboard = () => {
                 subject: activeSession.subject,
                 salle: activeSession.room,
                 heure: activeSession.time,
-                stagiaires: students.map(s => ({ id: s.id, status: s.status }))
+                stagiaires: students.map(s => ({ id: s.id, status: s.status })),
+                signature: signatureData
             };
 
             await axios.post('http://localhost:5000/api/formateur/submit-report', reportData, config);
@@ -213,17 +215,10 @@ const FormateurDashboard = () => {
                             </button>
                             <button
                                 className="btn-noir px-8 py-3 flex items-center justify-center"
-                                onClick={() => window.open(`/scanner?classId=${activeSession.class}&mode=face&subject=${encodeURIComponent(activeSession.subject)}&room=${encodeURIComponent(activeSession.room)}&formateurName=${encodeURIComponent(user?.name)}&time=${activeSession.time}`, '_blank')}
+                                onClick={() => window.open(`/scanner?classId=${activeSession.class}&mode=scann&subject=${encodeURIComponent(activeSession.subject)}&room=${encodeURIComponent(activeSession.room)}&formateurName=${encodeURIComponent(user?.name)}&time=${activeSession.time}`, '_blank')}
                                 title="Face Scan"
                             >
                                 <Scan className="w-5 h-5" />
-                            </button>
-                            <button
-                                className="btn-noir px-8 py-3 flex items-center justify-center"
-                                onClick={() => window.open(`/scanner?classId=${activeSession.class}&mode=card&subject=${encodeURIComponent(activeSession.subject)}&room=${encodeURIComponent(activeSession.room)}&formateurName=${encodeURIComponent(user?.name)}&time=${activeSession.time}`, '_blank')}
-                                title="Card Scan"
-                            >
-                                <Contact className="w-5 h-5" />
                             </button>
                         </div>
                     )}
@@ -353,68 +348,16 @@ const FormateurDashboard = () => {
                 </div>
             </div>
 
-            {/* Confirmation Modal */}
-            {isConfirming && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center p-8 bg-black/80 backdrop-blur-md animate-in fade-in duration-500">
-                    <div className="bg-[var(--background)] border border-[var(--border-strong)] w-full max-w-2xl p-16 space-y-12 relative overflow-hidden group">
-                        {/* Decorative Background Element */}
-                        <div className="absolute -right-24 -top-24 w-64 h-64 bg-[var(--primary)] opacity-[0.03] rounded-full blur-3xl group-hover:opacity-[0.05] transition-opacity duration-1000"></div>
-
-                        <div className="flex items-center gap-8 border-b border-[var(--border-strong)] pb-12 relative z-10">
-                            <div className="w-20 h-20 bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-500 animate-pulse">
-                                <AlertTriangle className="w-10 h-10" />
-                            </div>
-                            <div className="space-y-2">
-                                <p className="text-[var(--text-muted)] text-[10px] tracking-[0.5em] font-black uppercase">Official Confirmation Required</p>
-                                <h2 className="text-5xl font-black tracking-tighter text-[var(--text)] uppercase italic">Confirm Cluster?</h2>
-                            </div>
-                        </div>
-
-                        <div className="space-y-8 relative z-10">
-                            <p className="text-[var(--text-muted)] text-xs font-bold leading-relaxed tracking-widest uppercase italic border-l-2 border-[var(--primary)] pl-8">
-                                By proceeding, you verify that the current <span className="text-[var(--primary)] font-black">Node Manifest</span> accurately represents the attendance status (Presence/Absence) for squadron <span className="text-[var(--primary)] font-black">{activeSession?.class}</span>. This action will archive an official registry entry for the <span className="text-[var(--primary)] font-black">{activeSession?.subject}</span> deployment.
-                            </p>
-
-                            <div className="grid grid-cols-2 gap-8 text-center pt-8 border-t border-[var(--border-strong)]">
-                                <div className="space-y-2">
-                                    <p className="text-[var(--text-muted)] text-[9px] font-black tracking-widest uppercase italic">Present Nodes</p>
-                                    <p className="text-4xl font-black text-[var(--primary)]">{stats.present}</p>
-                                </div>
-                                <div className="space-y-2 border-l border-[var(--border-strong)]">
-                                    <p className="text-[var(--text-muted)] text-[9px] font-black tracking-widest uppercase italic">Void State</p>
-                                    <p className="text-4xl font-black text-red-500">{stats.absent}</p>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="flex gap-4 pt-12 relative z-10">
-                            <button
-                                onClick={() => setIsConfirming(false)}
-                                className="flex-1 py-6 border border-[var(--border-strong)] text-[11px] font-black tracking-[0.4em] uppercase text-[var(--text-muted)] hover:bg-[var(--surface)] hover:text-[var(--text)] transition-all"
-                            >
-                                ABORT_SYSTEM
-                            </button>
-                            <button
-                                onClick={handleSubmitReport}
-                                disabled={submitting}
-                                className="flex-1 py-6 bg-[var(--primary)] text-[var(--background)] text-[11px] font-black tracking-[0.4em] uppercase hover:opacity-90 transition-all flex items-center justify-center gap-4 disabled:opacity-50"
-                            >
-                                {submitting ? 'SYNCHRONIZING...' : (
-                                    <>
-                                        VERIFY_CLUSTERS
-                                        <ArrowRight className="w-4 h-4" />
-                                    </>
-                                )}
-                            </button>
-                        </div>
-
-                        {/* Background Code Decor */}
-                        <div className="absolute bottom-4 right-8 font-mono text-[8px] text-[var(--border-strong)] opacity-20 hidden md:block select-none">
-                            ARCHIVE_SEQ_00{Date.now().toString().slice(-4)} // CONFIRMED_BY_{user?.name?.toUpperCase()?.replace(' ', '_')}
-                        </div>
-                    </div>
-                </div>
-            )}
+            {/* Class Dossier Modal (Confirm Cluster Replacement) */}
+            <ClassDossierModal
+                isOpen={isConfirming}
+                onClose={() => setIsConfirming(false)}
+                activeSession={activeSession}
+                students={students}
+                stats={stats}
+                onConfirm={handleSubmitReport}
+                submitting={submitting}
+            />
         </div>
     );
 };

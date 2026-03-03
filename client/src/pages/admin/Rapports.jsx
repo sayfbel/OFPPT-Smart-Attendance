@@ -378,10 +378,14 @@ const Rapports = () => {
                                     <div className="pt-2 mt-auto flex justify-end shrink-0">
                                         <div className="flex flex-col items-center">
                                             <label className="text-[8px] font-black tracking-[0.3em] text-[var(--text-muted)] uppercase mb-2">DIGITAL SIGNATURE</label>
-                                            <div className="px-8 py-3 border border-dashed border-[var(--primary)] bg-[var(--primary)]/5">
-                                                <span className="font-['Brush_Script_MT',cursive] italic text-2xl text-[var(--primary)] tracking-wider">
-                                                    {rapport.formateur}
-                                                </span>
+                                            <div className="px-8 py-3 border border-dashed border-[var(--primary)] bg-[var(--primary)]/5 min-w-[150px] flex items-center justify-center min-h-[60px]">
+                                                {rapport.signature ? (
+                                                    <img src={rapport.signature} alt="Signature" style={{ maxHeight: '40px', filter: 'invert(1)' }} />
+                                                ) : (
+                                                    <span className="font-['Brush_Script_MT',cursive] italic text-xl text-[var(--primary)] tracking-wider">
+                                                        {rapport.formateur}
+                                                    </span>
+                                                )}
                                             </div>
                                         </div>
                                     </div>

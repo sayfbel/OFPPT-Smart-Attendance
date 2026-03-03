@@ -15,6 +15,23 @@ const saveBase64Image = (base64Data, subfolder, filename) => {
     return `/uploads/${subfolder}/${filename}`;
 };
 
+// Helper to delete old files with same prefix
+const deleteOldFiles = (subfolder, prefix) => {
+    const uploadDir = path.join(__dirname, '..', 'uploads', subfolder);
+    if (fs.existsSync(uploadDir)) {
+        const files = fs.readdirSync(uploadDir);
+        files.forEach(file => {
+            if (file.startsWith(prefix)) {
+                try {
+                    fs.unlinkSync(path.join(uploadDir, file));
+                } catch (e) {
+                    console.error(`Error deleting old file ${file}:`, e);
+                }
+            }
+        });
+    }
+};
+
 // Get STAGIAIRE profile
 exports.getProfile = async (req, res) => {
     try {
@@ -89,6 +106,9 @@ exports.updateProfile = async (req, res) => {
 
         if (!image) return res.status(400).json({ message: 'No image data provided.' });
 
+        // Delete old profile images for this user
+        deleteOldFiles('profiles', `profile_${student_id}_`);
+
         const filename = `profile_${student_id}_${Date.now()}.jpg`;
         const relativePath = saveBase64Image(image, 'profiles', filename);
 
@@ -110,6 +130,9 @@ exports.updateFaceId = async (req, res) => {
         if (!faces || !faces.front) {
             return res.status(400).json({ message: 'Invalid face telemetry data.' });
         }
+
+        // Delete old face scans for this user
+        deleteOldFiles('faceids', `face_${student_id}_`);
 
         const savedPaths = {};
         for (const [angle, base64] of Object.entries(faces)) {
@@ -135,6 +158,9 @@ exports.saveIdentityCard = async (req, res) => {
         const { cardImage } = req.body;
 
         if (!cardImage) return res.status(400).json({ message: 'No card image data.' });
+
+        // Delete previous identity cards for this user
+        deleteOldFiles('card_id', `card_${student_id}_`);
 
         const filename = `card_${student_id}_${Date.now()}.png`;
         const relativePath = saveBase64Image(cardImage, 'card_id', filename);
