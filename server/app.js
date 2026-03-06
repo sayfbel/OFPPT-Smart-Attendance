@@ -5,7 +5,7 @@ const path = require('path');
 const authRoutes = require('./routes/authRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const formateurRoutes = require('./routes/formateurRoutes');
-const stagiaireRoutes = require('./routes/stagiaireRoutes');
+
 
 dotenv.config();
 
@@ -23,7 +23,7 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/formateur', formateurRoutes);
-app.use('/api/stagiaire', stagiaireRoutes);
+
 
 // Error Handling Middleware
 const fs = require('fs');
@@ -117,7 +117,7 @@ const initScheduleData = async () => {
                 class_id VARCHAR(50) NOT NULL,
                 timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 UNIQUE KEY (student_id, class_id),
-                FOREIGN KEY (student_id) REFERENCES users(id) ON DELETE CASCADE
+                FOREIGN KEY (student_id) REFERENCES stagiaires(id) ON DELETE CASCADE
             )
         `);
         console.log('✅ Live Presence Matrix initialized.');
@@ -157,21 +157,7 @@ const initScheduleData = async () => {
             const leilaPwd = await bcrypt.hash(leilaEmail.split('@')[0], 10);
             await pool.query(`INSERT IGNORE INTO users (name, email, password, role) VALUES ('Leila Filali', ?, ?, 'formateur')`, [leilaEmail, leilaPwd]);
 
-            // 4 Stagiaires
-            const stagiaires = [
-                { name: 'Omar Student', email: 'omar@student.ma', class: 'DEV101' },
-                { name: 'Sara Student', email: 'sara@student.ma', class: 'DEV101' },
-                { name: 'Karim Student', email: 'karim@student.ma', class: 'DEV102' },
-                { name: 'Hind Student', email: 'hind@student.ma', class: 'DEV102' }
-            ];
-
-            for (const s of stagiaires) {
-                const sPwd = await bcrypt.hash(s.email.split('@')[0], 10);
-                await pool.query(
-                    `INSERT IGNORE INTO users (name, email, password, role, class_id) VALUES (?, ?, ?, 'stagiaire', ?)`,
-                    [s.name, s.email, sPwd, s.class]
-                );
-            }
+            // No Stagiaire seeding here - handled by admin
 
             // Ensure System Admin exists with admin123
             const adminHash = await bcrypt.hash('admin123', 10);
@@ -208,8 +194,11 @@ const initScheduleData = async () => {
         console.log('✅ Admin credentials synchronized.');
 
         // 6. SYNC LIVE SESSION FOR ALAMI (THURSDAY 06:00 - 11:00 for DEV101)
-        const [[drAlami]] = await pool.query('SELECT id FROM users WHERE email = "alami@ofppt.ma"');
-        const [[dev101]] = await pool.query('SELECT id FROM classes WHERE id = "DEV101"');
+        const [alamiRows] = await pool.query('SELECT id FROM users WHERE email = "alami@ofppt.ma"');
+        const [classRows] = await pool.query('SELECT id FROM classes WHERE id = "DEV101"');
+
+        const drAlami = alamiRows[0];
+        const dev101 = classRows[0];
 
         if (drAlami && dev101) {
             await pool.query('INSERT IGNORE INTO class_supervisors (class_id, formateur_id) VALUES (?, ?)', [dev101.id, drAlami.id]);
@@ -225,9 +214,9 @@ const initScheduleData = async () => {
         await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS image LONGTEXT`);
         await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS face_id LONGTEXT`);
 
-        // 7. SYNC PASSWORDS POLICY (One-time or persistent sync)
+        // 7. SYNC PASSWORDS POLICY (Staff only)
         console.log('--- Syncing Passwords to Email Prefix Protocol ---');
-        const [usersToSync] = await pool.query('SELECT id, email FROM users WHERE role IN ("formateur", "stagiaire")');
+        const [usersToSync] = await pool.query('SELECT id, email FROM users WHERE role IN ("formateur")');
         const bcryptSync = require('bcryptjs');
         for (const u of usersToSync) {
             const prefix = u.email.split('@')[0];

@@ -221,13 +221,20 @@ exports.createSchedule = async (req, res) => {
 exports.getUsersByClass = async (req, res) => {
     try {
         const { classId } = req.params;
-        // make sure column exists in users
-        try {
-            await pool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS class_id VARCHAR(50)');
-        } catch (e) { }
 
+        // Fetch Admin/Formateurs from users table assigned to this class
         const [users] = await pool.query('SELECT id, name, email, role, class_id FROM users WHERE class_id = ?', [classId]);
-        res.json({ users: users.map(u => ({ ...u, status: 'ACTIVE', lastLogin: 'Just now' })) });
+
+        // Fetch Stagiaires from the new stagiaires table
+        const [stagiaires] = await pool.query('SELECT id, name, class_id, institute, year, profession, qr_path FROM stagiaires WHERE class_id = ?', [classId]);
+
+        // Combine them for the UI
+        const combined = [
+            ...users.map(u => ({ ...u, status: 'ACTIVE', lastLogin: 'Staff' })),
+            ...stagiaires.map(s => ({ ...s, role: 'stagiaire', status: 'ACTIVE', lastLogin: 'No Login' }))
+        ];
+
+        res.json({ users: combined });
     } catch (err) {
         console.error("GET USERS ERROR:", err);
         res.status(500).json({ message: 'Server Error getting users' });
@@ -236,113 +243,153 @@ exports.getUsersByClass = async (req, res) => {
 
 exports.createUser = async (req, res) => {
     try {
-        const { name, email, role, class_id } = req.body;
-        if (!name || !email || !role) {
-            return res.status(400).json({ message: 'Name, Email, and Role are mandatory.' });
+        const { name, role, class_id } = req.body;
+        if (!name || !role) {
+            return res.status(400).json({ message: 'Name and Role are mandatory.' });
         }
 
-        // Use the first part of email as default password
-        const defaultPassword = email.split('@')[0];
-        const bcrypt = require('bcryptjs');
-        const hash = await bcrypt.hash(defaultPassword, 10);
+        const { spawn } = require('child_process');
+        const path = require('path');
 
-        // For stagiaires, class_id must be a single valid ID
-        // For formateurs, class_id might be a comma-separated string from frontend
-        let main_class_id = null;
         if (role === 'stagiaire') {
             if (!class_id) return res.status(400).json({ message: 'Squadron ID is required for Stagiaires.' });
-            main_class_id = class_id;
-        } else if (role === 'formateur' && class_id) {
-            // Take the first one for the user record if multiple provided
-            main_class_id = class_id.split(',')[0].trim();
-        }
 
-        const [result] = await pool.query(
-            'INSERT INTO users (name, email, password, role, class_id) VALUES (?, ?, ?, ?, ?)',
-            [name, email, hash, role, main_class_id]
-        );
+            // 1. Create Stagiaire in new table
+            const [result] = await pool.query(
+                'INSERT INTO stagiaires (name, class_id) VALUES (?, ?)',
+                [name, class_id]
+            );
+            const stagiaireId = result.insertId;
 
-        const userId = result.insertId;
+            // 2. Generate QR Code via Python
+            const qrData = {
+                Name: name,
+                Group: class_id,
+                Institute: "OFPPT ISTA Mirleft",
+                Year: "2025/2026",
+                Profession: "stagiaire"
+            };
 
-        // If it's a formateur, sync the supervisors junction table
-        if (role === 'formateur' && class_id) {
-            const classIds = class_id.split(',').map(id => id.trim());
-            for (const cid of classIds) {
-                if (cid) {
-                    await pool.query('INSERT IGNORE INTO class_supervisors (class_id, formateur_id) VALUES (?, ?)', [cid, userId]);
+            const pythonProcess = spawn('python', [
+                path.join(__dirname, '../generate_qr.py'),
+                JSON.stringify(qrData)
+            ]);
+
+            pythonProcess.stdout.on('data', async (data) => {
+                const qrPathStr = data.toString().trim();
+                const relativePath = '/uploads/card_id/' + path.basename(qrPathStr);
+                await pool.query('UPDATE stagiaires SET qr_path = ? WHERE id = ?', [relativePath, stagiaireId]);
+            });
+
+            const [[newStagiaire]] = await pool.query('SELECT * FROM stagiaires WHERE id = ?', [stagiaireId]);
+            return res.status(201).json({
+                message: 'Stagiaire identity created. QR generated.',
+                user: { ...newStagiaire, role: 'stagiaire', status: 'ACTIVE', lastLogin: 'No Login' }
+            });
+
+        } else {
+            // Staff creation (Admin/Formateur)
+            const email = name.trim().toLowerCase().replace(/\s+/g, '.') + '@ofppt.ma';
+            const defaultPassword = email.split('@')[0];
+            const bcrypt = require('bcryptjs');
+            const hash = await bcrypt.hash(defaultPassword, 10);
+
+            let main_class_id = null;
+            if (role === 'formateur' && class_id) {
+                main_class_id = class_id.split(',')[0].trim();
+            }
+
+            const [result] = await pool.query(
+                'INSERT INTO users (name, email, password, role, class_id) VALUES (?, ?, ?, ?, ?)',
+                [name, email, hash, role, main_class_id]
+            );
+
+            const userId = result.insertId;
+
+            if (role === 'formateur' && class_id) {
+                const classIds = class_id.split(',').map(id => id.trim());
+                for (const cid of classIds) {
+                    if (cid) {
+                        await pool.query('INSERT IGNORE INTO class_supervisors (class_id, formateur_id) VALUES (?, ?)', [cid, userId]);
+                    }
                 }
             }
+
+            const [[newUser]] = await pool.query('SELECT id, name, email, role, class_id FROM users WHERE id = ?', [userId]);
+            res.status(201).json({
+                message: 'Staff identity successfully initialized.',
+                user: { ...newUser, status: 'ACTIVE', lastLogin: 'Staff' }
+            });
         }
-
-        const [[newUser]] = await pool.query('SELECT id, name, email, role, class_id FROM users WHERE id = ?', [userId]);
-
-        res.status(201).json({
-            message: 'Identity successfully initialized in the network.',
-            user: { ...newUser, status: 'ACTIVE', lastLogin: 'Just now' }
-        });
     } catch (err) {
         console.error("CREATE USER ERROR:", err);
-        if (err.code === 'ER_DUP_ENTRY') return res.status(400).json({ message: 'Identity Token (Email) already exists in registry.' });
-        if (err.code === 'ER_NO_REFERENCED_ROW_2') return res.status(400).json({ message: 'Invalid Squadron Identifier provided.' });
-        res.status(500).json({ message: 'Neural Link Failure: Internal Server Error during identity creation.' });
+        if (err.code === 'ER_DUP_ENTRY') return res.status(400).json({ message: 'Identity Token already exists in registry.' });
+        res.status(500).json({ message: 'Internal Server Error' });
     }
 };
+
 exports.updateUser = async (req, res) => {
     try {
         const { id } = req.params;
-        const { name, email, role, class_id } = req.body;
+        const { name, role, class_id } = req.body;
 
-        if (!name || !email || !role) {
-            return res.status(400).json({ message: 'Name, Email, and Role are mandatory.' });
+        if (!name || !role) {
+            return res.status(400).json({ message: 'Name and Role are mandatory.' });
         }
 
-        let main_class_id = null;
         if (role === 'stagiaire') {
-            main_class_id = class_id;
-        } else if (role === 'formateur' && class_id) {
-            main_class_id = class_id.split(',')[0].trim();
-        }
+            await pool.query(
+                'UPDATE stagiaires SET name = ?, class_id = ? WHERE id = ?',
+                [name, class_id, id]
+            );
+            const [[updated]] = await pool.query('SELECT * FROM stagiaires WHERE id = ?', [id]);
+            res.json({ message: 'Stagiaire updated.', user: { ...updated, role: 'stagiaire' } });
+        } else {
+            const email = name.trim().toLowerCase().replace(/\s+/g, '.') + '@ofppt.ma';
+            let main_class_id = null;
+            if (role === 'formateur' && class_id) {
+                main_class_id = class_id.split(',')[0].trim();
+            }
 
-        await pool.query(
-            'UPDATE users SET name = ?, email = ?, role = ?, class_id = ? WHERE id = ?',
-            [name, email, role, main_class_id, id]
-        );
+            await pool.query(
+                'UPDATE users SET name = ?, email = ?, role = ?, class_id = ? WHERE id = ?',
+                [name, email, role, main_class_id, id]
+            );
 
-        if (role === 'formateur' && class_id) {
-            await pool.query('DELETE FROM class_supervisors WHERE formateur_id = ?', [id]);
-            const classIds = class_id.split(',').map(cid => cid.trim());
-            for (const cid of classIds) {
-                if (cid) {
-                    await pool.query('INSERT IGNORE INTO class_supervisors (class_id, formateur_id) VALUES (?, ?)', [cid, id]);
+            if (role === 'formateur' && class_id) {
+                await pool.query('DELETE FROM class_supervisors WHERE formateur_id = ?', [id]);
+                const classIds = class_id.split(',').map(cid => cid.trim());
+                for (const cid of classIds) {
+                    if (cid) {
+                        await pool.query('INSERT IGNORE INTO class_supervisors (class_id, formateur_id) VALUES (?, ?)', [cid, id]);
+                    }
                 }
             }
+            const [[updated]] = await pool.query('SELECT id, name, email, role, class_id FROM users WHERE id = ?', [id]);
+            res.json({ message: 'Staff identity updated.', user: updated });
         }
-
-        const [[updatedUser]] = await pool.query('SELECT id, name, email, role, class_id FROM users WHERE id = ?', [id]);
-        res.json({ message: 'Identity updated successfully.', user: updatedUser });
     } catch (err) {
         console.error("UPDATE USER ERROR:", err);
-        res.status(500).json({ message: 'Neural Link Failure: Internal Server Error during identity update.' });
+        res.status(500).json({ message: 'Internal Server Error' });
     }
 };
 
 exports.deleteUser = async (req, res) => {
     try {
         const { id } = req.params;
+        const { role } = req.query;
 
-        // Cleanup junction tables first
-        await pool.query('DELETE FROM class_supervisors WHERE formateur_id = ?', [id]);
-
-        const [result] = await pool.query('DELETE FROM users WHERE id = ?', [id]);
-
-        if (result.affectedRows === 0) {
-            return res.status(404).json({ message: 'Identity not found in registry.' });
+        if (role === 'stagiaire') {
+            await pool.query('DELETE FROM stagiaires WHERE id = ?', [id]);
+        } else {
+            await pool.query('DELETE FROM class_supervisors WHERE formateur_id = ?', [id]);
+            await pool.query('DELETE FROM users WHERE id = ?', [id]);
         }
 
         res.json({ message: 'Identity purged from network.' });
     } catch (err) {
         console.error("DELETE USER ERROR:", err);
-        res.status(500).json({ message: 'Neural Link Failure: Error during identity deletion.' });
+        res.status(500).json({ message: 'Internal Server Error' });
     }
 };
 
@@ -356,12 +403,12 @@ exports.getReports = async (req, res) => {
             ORDER BY r.date DESC, r.created_at DESC
         `);
 
-        // Fetch students for each report
+        // Fetch students for each report (now joining with stagiaires table)
         const reportsWithStagiaires = await Promise.all(reports.map(async (report) => {
             const [stagiaires] = await pool.query(`
-                SELECT ra.student_id as id, u.name as name, ra.status 
+                SELECT ra.student_id as id, s.name as name, ra.status 
                 FROM report_attendance ra
-                JOIN users u ON ra.student_id = u.id
+                JOIN stagiaires s ON ra.student_id = s.id
                 WHERE ra.report_id = ?
             `, [report.id]);
             return {
@@ -369,7 +416,7 @@ exports.getReports = async (req, res) => {
                 stagiaires: stagiaires.map(s => ({
                     id: s.id,
                     name: s.name,
-                    status: s.status // PRESENT or ABSENT
+                    status: s.status
                 }))
             };
         }));

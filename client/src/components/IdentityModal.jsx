@@ -102,20 +102,13 @@ const IdentityModal = ({ isOpen, onClose, newUser, setNewUser, handleAddUser, ha
                                     type="text"
                                     required
                                     value={newUser.name}
-                                    onChange={e => setNewUser({ ...newUser, name: e.target.value })}
+                                    onChange={e => {
+                                        const name = e.target.value;
+                                        // Auto-generate email: replace spaces with dots, append @ofppt.ma
+                                        const email = name.trim().toLowerCase().replace(/\s+/g, '.') + '@ofppt.ma';
+                                        setNewUser({ ...newUser, name, email });
+                                    }}
                                     placeholder="ENTER FULL NAME..."
-                                    className="w-full bg-transparent border-b border-[var(--border-strong)] py-4 text-sm font-black tracking-widest text-[var(--primary)] uppercase placeholder:text-[var(--border-strong)] focus:border-[var(--primary)] focus:outline-none transition-colors"
-                                />
-                            </div>
-
-                            <div>
-                                <label className="block text-[10px] font-black tracking-[0.3em] text-[var(--text-muted)] uppercase mb-2">EMAIL ADDRESS (COM-LINK)</label>
-                                <input
-                                    type="email"
-                                    required
-                                    value={newUser.email}
-                                    onChange={e => setNewUser({ ...newUser, email: e.target.value })}
-                                    placeholder="ENTER EMAIL..."
                                     className="w-full bg-transparent border-b border-[var(--border-strong)] py-4 text-sm font-black tracking-widest text-[var(--primary)] uppercase placeholder:text-[var(--border-strong)] focus:border-[var(--primary)] focus:outline-none transition-colors"
                                 />
                             </div>

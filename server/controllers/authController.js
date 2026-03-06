@@ -15,6 +15,12 @@ const login = async (req, res) => {
         }
 
         const user = users[0];
+
+        if (user.role === 'stagiaire') {
+            console.log(`[AUTH] Login attempt for stagiaire blocked: ${email}`);
+            return res.status(401).json({ message: 'User not found in DB.' });
+        }
+
         const isMatch = await bcrypt.compare(password, user.password);
         console.log(`[AUTH] Password match result for ${email}:`, isMatch);
 

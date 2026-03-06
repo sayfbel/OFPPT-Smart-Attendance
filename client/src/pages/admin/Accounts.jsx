@@ -157,7 +157,7 @@ const Accounts = () => {
         try {
             const token = localStorage.getItem('token');
             const config = { headers: { Authorization: `Bearer ${token}` } };
-            await axios.delete(`http://localhost:5000/api/admin/users/${userToDelete.id}`, config);
+            await axios.delete(`http://localhost:5000/api/admin/users/${userToDelete.id}?role=${userToDelete.role}`, config);
 
             if (userToDelete.role === 'formateur') {
                 setFormateurs(prev => prev.filter(f => f.id !== userToDelete.id));
@@ -377,7 +377,6 @@ const Accounts = () => {
                                             <td className="p-8">
                                                 <div className="flex flex-col">
                                                     <span className="text-xs font-bold tracking-widest text-[var(--primary)] uppercase italic transition-colors duration-500">{formateur.name}</span>
-                                                    <span className="text-[9px] font-bold tracking-widest text-[var(--text-muted)] uppercase mt-1 transition-colors duration-500">{formateur.email}</span>
                                                 </div>
                                             </td>
                                             <td className="p-8">

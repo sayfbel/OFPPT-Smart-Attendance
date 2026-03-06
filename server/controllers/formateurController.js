@@ -67,18 +67,20 @@ exports.getUsersByClass = async (req, res) => {
         const { classId } = req.params;
         const formateur_id = req.user.id;
 
-        // Verify that this formateur supervises this class
-        const [[isSupervisor]] = await pool.query(
-            'SELECT * FROM class_supervisors WHERE class_id = ? AND formateur_id = ?',
-            [classId, formateur_id]
-        );
+        // Verify access: Admin can access all, Formateurs must be supervisors
+        if (req.user.role !== 'admin') {
+            const [supervisors] = await pool.query(
+                'SELECT * FROM class_supervisors WHERE class_id = ? AND formateur_id = ?',
+                [classId, formateur_id]
+            );
 
-        if (!isSupervisor) {
-            return res.status(403).json({ message: 'Access Denied: You are not a supervisor for this squadron.' });
+            if (supervisors.length === 0) {
+                return res.status(403).json({ message: 'Access Denied: You are not a supervisor for this squadron.' });
+            }
         }
 
         const [users] = await pool.query(
-            'SELECT id, name, email, role, class_id, face_id FROM users WHERE class_id = ? AND role = "stagiaire"',
+            'SELECT id, name, class_id, face_id FROM stagiaires WHERE class_id = ?',
             [classId]
         );
 
@@ -95,7 +97,8 @@ exports.processCheckin = async (req, res) => {
         const { studentId, classId } = req.body;
 
         // 1. Verify existence
-        const [[student]] = await pool.query('SELECT id, name FROM users WHERE id = ? AND class_id = ?', [studentId, classId]);
+        const [students] = await pool.query('SELECT id, name FROM stagiaires WHERE id = ? AND class_id = ?', [studentId, classId]);
+        const student = students[0];
         if (!student) {
             return res.status(404).json({ message: 'Entity not found in this cluster.' });
         }
@@ -138,17 +141,17 @@ exports.clearCheckins = async (req, res) => {
 exports.getProfile = async (req, res) => {
     try {
         const formateur_id = req.user.id;
-        const [profile] = await pool.query(`
+        const [profiles] = await pool.query(`
             SELECT u.id, u.name, u.email, u.role, u.image 
             FROM users u
             WHERE u.id = ?
         `, [formateur_id]);
 
-        if (profile.length === 0) {
+        if (profiles.length === 0) {
             return res.status(404).json({ message: 'Neural Node not found.' });
         }
 
-        res.json({ profile: profile[0] });
+        res.json({ profile: profiles[0] });
     } catch (err) {
         console.error("GET FORMATEUR PROFILE ERROR:", err);
         res.status(500).json({ message: 'Internal Server Error: Neural disconnect.' });
@@ -174,7 +177,7 @@ exports.updateProfile = async (req, res) => {
 exports.getAllStudentsFaceIds = async (req, res) => {
     try {
         const [users] = await pool.query(
-            'SELECT id, name, class_id, face_id FROM users WHERE role = "stagiaire" AND face_id IS NOT NULL'
+            'SELECT id, name, class_id, face_id FROM stagiaires WHERE face_id IS NOT NULL'
         );
         res.json({ users });
     } catch (err) {

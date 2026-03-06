@@ -55,13 +55,6 @@ const DashboardLayout = ({ children }) => {
                     { icon: BookOpen, label: 'DIVISIONS', path: '/formateur/classes' },
                     { icon: Calendar, label: 'TIMELINES', path: '/formateur/timetable' },
                 ];
-            case 'stagiaire':
-                return [
-                    { icon: LayoutDashboard, label: 'OVERVIEW', path: '/stagiaire' },
-                    { icon: User, label: 'PROFILE', path: '/stagiaire/profile' },
-                    { icon: Calendar, label: 'TIMELINES', path: '/stagiaire/timetable' },
-                    { icon: FileText, label: 'ABSENCES', path: '/stagiaire/absences' },
-                ];
             default:
                 return [];
         }
