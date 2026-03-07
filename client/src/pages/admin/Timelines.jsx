@@ -24,8 +24,8 @@ const Timelines = () => {
                 const config = { headers: { Authorization: `Bearer ${token}` } };
 
                 const [schedRes, formRes] = await Promise.all([
-                    axios.get('http://localhost:5000/api/admin/schedule', config),
-                    axios.get('http://localhost:5000/api/admin/formateurs', config)
+                    axios.get('/api/admin/schedule', config),
+                    axios.get('/api/admin/formateurs', config)
                 ]);
 
                 setSchedule(schedRes.data.schedule || []);
@@ -42,7 +42,7 @@ const Timelines = () => {
         try {
             const token = localStorage.getItem('token');
             const config = { headers: { Authorization: `Bearer ${token}` } };
-            await axios.put(`http://localhost:5000/api/admin/schedule/${updatedData.id}`, updatedData, config);
+            await axios.put(`/api/admin/schedule/${updatedData.id}`, updatedData, config);
 
             // Update schedule locally
             setSchedule(prev => prev.map(s => s.id === updatedData.id ? {
@@ -63,7 +63,7 @@ const Timelines = () => {
         try {
             const token = localStorage.getItem('token');
             const config = { headers: { Authorization: `Bearer ${token}` } };
-            const res = await axios.post('http://localhost:5000/api/admin/schedule', newData, config);
+            const res = await axios.post('/api/admin/schedule', newData, config);
 
             // Add to schedule locally
             const newSeance = {

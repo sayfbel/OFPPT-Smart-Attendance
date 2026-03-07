@@ -270,10 +270,18 @@ exports.createUser = async (req, res) => {
                 Profession: "stagiaire"
             };
 
-            const pythonProcess = spawn('python', [
+            const pythonProcess = spawn('py', [
                 path.join(__dirname, '../generate_qr.py'),
                 JSON.stringify(qrData)
             ]);
+
+            pythonProcess.on('error', (err) => {
+                console.error("[PY_ERROR] Failed to start python process:", err.message);
+            });
+
+            pythonProcess.stderr.on('data', (data) => {
+                console.error(`[PY_STDERR]: ${data}`);
+            });
 
             pythonProcess.stdout.on('data', async (data) => {
                 const qrPathStr = data.toString().trim();

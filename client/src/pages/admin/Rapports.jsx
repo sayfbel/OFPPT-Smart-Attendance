@@ -22,7 +22,7 @@ const Rapports = () => {
                 const token = localStorage.getItem('token');
                 if (!token) return;
                 const config = { headers: { Authorization: `Bearer ${token}` } };
-                const res = await axios.get('http://localhost:5000/api/admin/schedule', config);
+                const res = await axios.get('/api/admin/schedule', config);
                 setAvailableClasses(res.data.classes || []);
             } catch (error) {
                 console.error('Error fetching classes', error);
@@ -35,7 +35,7 @@ const Rapports = () => {
                 const token = localStorage.getItem('token');
                 if (!token) return;
                 const config = { headers: { Authorization: `Bearer ${token}` } };
-                const res = await axios.get('http://localhost:5000/api/admin/reports', config);
+                const res = await axios.get('/api/admin/reports', config);
                 const mappedReports = (res.data.reports || []).map(r => ({
                     ...r,
                     id: r.report_code,

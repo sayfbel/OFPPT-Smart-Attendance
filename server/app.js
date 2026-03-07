@@ -86,11 +86,17 @@ const initScheduleData = async () => {
                 subject VARCHAR(255) NOT NULL,
                 salle VARCHAR(100),
                 heure VARCHAR(100),
+                signature LONGTEXT,
                 status ENUM('JUSTIFIED', 'UNJUSTIFIED') DEFAULT 'UNJUSTIFIED',
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (class_id) REFERENCES classes(id) ON DELETE CASCADE
             )
         `);
+
+        // Ensure signature exists in reports
+        try {
+            await pool.query('ALTER TABLE reports ADD COLUMN signature LONGTEXT');
+        } catch (err) { }
 
         // 5. Attendance Grid
         await pool.query(`
@@ -99,7 +105,24 @@ const initScheduleData = async () => {
                 report_id INT NOT NULL,
                 student_id INT NOT NULL,
                 status ENUM('PRESENT', 'ABSENT') NOT NULL,
-                FOREIGN KEY (report_id) REFERENCES reports(id) ON DELETE CASCADE
+                FOREIGN KEY (report_id) REFERENCES reports(id) ON DELETE CASCADE,
+                FOREIGN KEY (student_id) REFERENCES stagiaires(id) ON DELETE CASCADE
+            )
+        `);
+
+        // 6. Stagiaires Registry
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS stagiaires (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                name VARCHAR(255) NOT NULL,
+                class_id VARCHAR(50),
+                institute VARCHAR(255) DEFAULT 'OFPPT ISTA Mirleft',
+                year VARCHAR(50) DEFAULT '2025/2026',
+                profession VARCHAR(255) DEFAULT 'stagiaire',
+                qr_path VARCHAR(255),
+                face_id LONGTEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (class_id) REFERENCES classes(id) ON DELETE SET NULL
             )
         `);
 

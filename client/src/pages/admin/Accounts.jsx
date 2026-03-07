@@ -40,10 +40,16 @@ const Accounts = () => {
                 if (!token) return;
                 const config = { headers: { Authorization: `Bearer ${token}` } };
 
-                const res = await axios.get('http://localhost:5000/api/admin/schedule', config);
-                setAvailableClasses(res.data.classes || []);
+                const res = await axios.get('/api/admin/schedule', config);
+                const classes = res.data.classes || [];
+                setAvailableClasses(classes);
+                
+                // Auto-select the first class if none is selected
+                if (classes.length > 0 && !selectedClass) {
+                    setSelectedClass(classes[0].id);
+                }
 
-                const fRes = await axios.get('http://localhost:5000/api/admin/formateurs', config);
+                const fRes = await axios.get('/api/admin/formateurs', config);
                 setFormateurs(fRes.data.formateurs || []);
             } catch (error) {
                 console.error('Error fetching initial data', error);
@@ -58,7 +64,7 @@ const Accounts = () => {
             try {
                 const token = localStorage.getItem('token');
                 const config = { headers: { Authorization: `Bearer ${token}` } };
-                const res = await axios.get(`http://localhost:5000/api/admin/users/by-class/${selectedClass}`, config);
+                const res = await axios.get(`/api/admin/users/by-class/${selectedClass}`, config);
                 setUsers(res.data.users || []);
             } catch (error) {
                 console.error('Error fetching users', error);
@@ -91,10 +97,10 @@ const Accounts = () => {
                     : (newUser.class_id || selectedClass)
             };
 
-            const res = await axios.post('http://localhost:5000/api/admin/users', payload, config);
+            const res = await axios.post('/api/admin/users', payload, config);
 
             if (newUser.role === 'formateur') {
-                const fRes = await axios.get('http://localhost:5000/api/admin/formateurs', config);
+                const fRes = await axios.get('/api/admin/formateurs', config);
                 setFormateurs(fRes.data.formateurs || []);
             } else if (payload.class_id === selectedClass) {
                 setUsers([...users, res.data.user]);
@@ -133,11 +139,11 @@ const Accounts = () => {
                 class_id: newUser.role === 'formateur' ? newUser.class_ids.join(', ') : newUser.class_id
             };
 
-            await axios.put(`http://localhost:5000/api/admin/users/${newUser.id}`, payload, config);
+            await axios.put(`/api/admin/users/${newUser.id}`, payload, config);
 
             // Refresh data
             if (newUser.role === 'formateur') {
-                const fRes = await axios.get('http://localhost:5000/api/admin/formateurs', config);
+                const fRes = await axios.get('/api/admin/formateurs', config);
                 setFormateurs(fRes.data.formateurs || []);
             } else {
                 setUsers(prev => prev.map(u => u.id === newUser.id ? { ...u, ...newUser } : u));
@@ -157,7 +163,7 @@ const Accounts = () => {
         try {
             const token = localStorage.getItem('token');
             const config = { headers: { Authorization: `Bearer ${token}` } };
-            await axios.delete(`http://localhost:5000/api/admin/users/${userToDelete.id}?role=${userToDelete.role}`, config);
+            await axios.delete(`/api/admin/users/${userToDelete.id}?role=${userToDelete.role}`, config);
 
             if (userToDelete.role === 'formateur') {
                 setFormateurs(prev => prev.filter(f => f.id !== userToDelete.id));

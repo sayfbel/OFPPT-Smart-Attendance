@@ -16,7 +16,7 @@ CREATE TABLE IF NOT EXISTS users (
     name VARCHAR(255) NOT NULL,
     email VARCHAR(255) UNIQUE NOT NULL,
     password VARCHAR(255) NOT NULL,
-    role ENUM('admin', 'formateur', 'stagiaire') NOT NULL,
+    role ENUM('admin', 'formateur') NOT NULL,
     class_id VARCHAR(50),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (class_id) REFERENCES classes(id) ON DELETE SET NULL
@@ -29,6 +29,20 @@ CREATE TABLE IF NOT EXISTS class_supervisors (
     PRIMARY KEY (class_id, formateur_id),
     FOREIGN KEY (class_id) REFERENCES classes(id) ON DELETE CASCADE,
     FOREIGN KEY (formateur_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+-- 4. Stagiaires Registry (Students)
+CREATE TABLE IF NOT EXISTS stagiaires (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    class_id VARCHAR(50),
+    institute VARCHAR(255) DEFAULT 'OFPPT ISTA Mirleft',
+    year VARCHAR(50) DEFAULT '2025/2026',
+    profession VARCHAR(255) DEFAULT 'stagiaire',
+    qr_path VARCHAR(255),
+    face_id LONGTEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (class_id) REFERENCES classes(id) ON DELETE SET NULL
 );
 
 -- 4. Neural Node Timetable (The Matrix)
@@ -67,7 +81,7 @@ CREATE TABLE IF NOT EXISTS report_attendance (
     student_id INT NOT NULL,
     status ENUM('PRESENT', 'ABSENT') NOT NULL,
     FOREIGN KEY (report_id) REFERENCES reports(id) ON DELETE CASCADE,
-    FOREIGN KEY (student_id) REFERENCES users(id) ON DELETE CASCADE
+    FOREIGN KEY (student_id) REFERENCES stagiaires(id) ON DELETE CASCADE
 );
 
 -- --- SEEDING ---

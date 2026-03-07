@@ -6,7 +6,16 @@ const ClassDossierModal = ({ isOpen, onClose, activeSession, students, stats, on
     const canvasRef = useRef(null);
     const [isDrawing, setIsDrawing] = useState(false);
     const [hasSignature, setHasSignature] = useState(false);
+    const [startTime, setStartTime] = useState('');
+    const [endTime, setEndTime] = useState('');
 
+    useEffect(() => {
+        if (isOpen && activeSession?.time) {
+            const [start, end] = activeSession.time.split(' - ');
+            setStartTime(start || '');
+            setEndTime(end || '');
+        }
+    }, [isOpen, activeSession]);
     useEffect(() => {
         if (isOpen && canvasRef.current) {
             const canvas = canvasRef.current;
@@ -78,7 +87,7 @@ const ClassDossierModal = ({ isOpen, onClose, activeSession, students, stats, on
             return;
         }
         const signatureData = canvasRef.current.toDataURL();
-        onConfirm(signatureData);
+        onConfirm(signatureData, { startTime, endTime });
     };
 
     if (!isOpen) return null;
@@ -108,10 +117,10 @@ const ClassDossierModal = ({ isOpen, onClose, activeSession, students, stats, on
                             <ShieldCheck className="w-10 h-10" />
                         </div>
                         <div className="space-y-2">
-                            <p className="text-[var(--primary)] text-[10px] tracking-[0.5em] font-black uppercase flex items-center gap-3">
+                            <div className="text-[var(--primary)] text-[10px] tracking-[0.5em] font-black uppercase flex items-center gap-3">
                                 <div className="w-2 h-2 bg-[var(--primary)] animate-pulse"></div>
                                 OFFICIAL_CLASSIFIED_DOSSIER
-                            </p>
+                            </div>
                             <h2 className="text-6xl font-black tracking-tighter text-[var(--text)] uppercase italic leading-none">Class Dossier Modal</h2>
                         </div>
                     </div>
@@ -201,16 +210,25 @@ const ClassDossierModal = ({ isOpen, onClose, activeSession, students, stats, on
                             </div>
                         </div>
 
-                        <div className="p-8 bg-[var(--primary)]/5 border border-[var(--primary)]/10 space-y-4">
-                            <div className="flex items-start gap-6 text-[var(--primary)]">
-                                <AlertTriangle className="w-5 h-5 flex-shrink-0 animate-pulse" />
-                                <div className="space-y-2">
-                                    <p className="text-[10px] font-black tracking-[0.2em] uppercase italic leading-relaxed">
-                                        FINAL_ARCHIVE_AUTHORIZATION
-                                    </p>
-                                    <p className="text-[9px] font-bold text-[var(--text-muted)] tracking-widest uppercase leading-loose italic">
-                                        By providing your digital signature, you verify that this session cluster is correctly synced and all attendance data is authenticated.
-                                    </p>
+                        <div className="p-8 bg-[var(--surface)] border border-[var(--border-strong)] space-y-6">
+                            <div className="flex items-center justify-between gap-4">
+                                <div className="flex-1 space-y-3">
+                                    <label className="text-[9px] font-black tracking-[0.3em] text-[var(--text-muted)] uppercase">HEURE_DEBUT</label>
+                                    <input
+                                        type="time"
+                                        value={startTime}
+                                        onChange={(e) => setStartTime(e.target.value)}
+                                        className="w-full bg-[var(--background)] border border-[var(--border-strong)] p-4 text-xs font-black tracking-widest text-[var(--primary)] focus:border-[var(--primary)] transition-all outline-none"
+                                    />
+                                </div>
+                                <div className="flex-1 space-y-3">
+                                    <label className="text-[9px] font-black tracking-[0.3em] text-[var(--text-muted)] uppercase">HEURE_FIN</label>
+                                    <input
+                                        type="time"
+                                        value={endTime}
+                                        onChange={(e) => setEndTime(e.target.value)}
+                                        className="w-full bg-[var(--background)] border border-[var(--border-strong)] p-4 text-xs font-black tracking-widest text-[var(--primary)] focus:border-[var(--primary)] transition-all outline-none"
+                                    />
                                 </div>
                             </div>
                         </div>

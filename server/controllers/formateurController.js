@@ -1,4 +1,86 @@
 const pool = require('../config/db');
+const { spawn } = require('child_process');
+const path = require('path');
+
+// Neural Scanner Matrix: Active External Processes
+const activeScanners = new Map();
+
+exports.startExternalScanner = async (req, res) => {
+    try {
+        const { classId } = req.body;
+        if (!classId) return res.status(400).json({ message: 'Target cluster id is required.' });
+
+        if (activeScanners.has(classId)) {
+            return res.json({ message: `Scanner for Cluster ${classId} is already active.` });
+        }
+
+        const scriptPath = path.join(__dirname, '../scaning_qr.py');
+        const camIdx = process.env.QR_CAMERA_INDEX || '1';
+        // Spawn Python process with both cluster id and camera index
+        const scannerProc = spawn('py', [scriptPath, classId, camIdx]);
+
+        activeScanners.set(classId, scannerProc);
+
+        scannerProc.stdout.on('data', async (data) => {
+            const rawOutput = data.toString();
+            console.log(`[PYTHON_SCANNER_${classId}]: ${rawOutput}`);
+
+            // Neural Link: Parse scan notification marker
+            // Match format: NAME: {name} : present
+            const match = rawOutput.match(/NAME:\s+(.*?)\s+:\s+present/);
+            if (match) {
+                const studentName = match[1].trim();
+                console.log(`[BRIDGE_LOCK]: Synchronizing ${studentName} for Cluster ${classId}...`);
+
+                try {
+                    // Look up student by name in the specified class
+                    const [students] = await pool.query('SELECT id FROM stagiaires WHERE name = ? AND class_id = ?', [studentName, classId]);
+                    if (students.length > 0) {
+                        const studentId = students[0].id;
+                        await pool.query('INSERT IGNORE INTO active_checkins (student_id, class_id) VALUES (?, ?)', [studentId, classId]);
+                        console.log(`[SYNC_COMPLETE]: ${studentName} registered.`);
+                    }
+                } catch (dbErr) {
+                    console.error("[SCAN_SYNC_FAILURE]:", dbErr);
+                }
+            }
+        });
+
+        scannerProc.stderr.on('data', (data) => {
+            console.error(`[PYTHON_SCANNER_ERROR_${classId}]: ${data}`);
+        });
+
+        scannerProc.on('close', (code) => {
+            console.log(`[SCANNER_DISCONNECTED]: Process for ${classId} exited with code ${code}.`);
+            activeScanners.delete(classId);
+        });
+
+        res.json({ message: `Neural Bridge established for Cluster ${classId}. Scanner initialized.` });
+
+    } catch (err) {
+        console.error("EXTERNAL_SCANNER_START_ERROR:", err);
+        res.status(500).json({ message: 'Internal Server Error: Bridge initialization failed.' });
+    }
+};
+
+exports.stopExternalScanner = async (req, res) => {
+    try {
+        const { classId } = req.body;
+        const proc = activeScanners.get(classId);
+
+        if (proc) {
+            // Signal process to shutdown (it will trigger 'close' event)
+            proc.kill();
+            activeScanners.delete(classId);
+            return res.json({ message: `Neural Bridge for Cluster ${classId} disconnected.` });
+        }
+
+        res.status(404).json({ message: `No active bridge found for Cluster ${classId}.` });
+    } catch (err) {
+        console.error("EXTERNAL_SCANNER_STOP_ERROR:", err);
+        res.status(500).json({ message: 'Internal Server Error: Bridge disconnect failed.' });
+    }
+};
 
 exports.submitReport = async (req, res) => {
     try {
@@ -113,6 +195,47 @@ exports.processCheckin = async (req, res) => {
     }
 };
 
+// Neural Portal: Process Check-in by QR Content
+exports.processCheckinByQR = async (req, res) => {
+    try {
+        const { qrContent, classId } = req.body;
+
+        if (!qrContent) return res.status(400).json({ message: 'No QR signal received.' });
+
+        // Parse format: NAME:xxx|GROUP:yyy|...
+        const parts = qrContent.split('|');
+        const namePart = parts.find(p => p.startsWith('NAME:'));
+        const groupPart = parts.find(p => p.startsWith('GROUP:'));
+
+        if (!namePart || !groupPart) {
+            return res.status(400).json({ message: 'Invalid signal format. Cluster mismatch.' });
+        }
+
+        const name = namePart.split(':')[1];
+        const group = groupPart.split(':')[1];
+
+        if (group !== classId) {
+            return res.status(403).json({ message: `Access Denied: Node ${name} belongs to Cluster ${group}.` });
+        }
+
+        // Look up student id from name and group
+        const [students] = await pool.query('SELECT id FROM stagiaires WHERE name = ? AND class_id = ?', [name, group]);
+        if (students.length === 0) {
+            return res.status(404).json({ message: 'Entity not found in the manifest.' });
+        }
+
+        const studentId = students[0].id;
+
+        // Register in active_checkins
+        await pool.query('INSERT IGNORE INTO active_checkins (student_id, class_id) VALUES (?, ?)', [studentId, classId]);
+
+        res.json({ message: 'Signal Captured: Syncing node...', name });
+    } catch (err) {
+        console.error("QR CHECKIN ERROR:", err);
+        res.status(500).json({ message: 'Neural link interrupted.' });
+    }
+};
+
 // Neural Portal: Get Active Check-ins for a class
 exports.getActiveCheckins = async (req, res) => {
     try {
@@ -134,6 +257,24 @@ exports.clearCheckins = async (req, res) => {
     } catch (err) {
         console.error("CLEAR CHECKINS ERROR:", err);
         res.status(500).json({ message: 'Reset protocol failed.' });
+    }
+};
+
+// Neural Portal: Manual Status Override
+exports.updateCheckinStatus = async (req, res) => {
+    try {
+        const { studentId, classId, status } = req.body;
+
+        if (status === 'PRESENT') {
+            await pool.query('INSERT IGNORE INTO active_checkins (student_id, class_id) VALUES (?, ?)', [studentId, classId]);
+        } else if (status === 'ABSENT') {
+            await pool.query('DELETE FROM active_checkins WHERE student_id = ? AND class_id = ?', [studentId, classId]);
+        }
+
+        res.json({ message: `Status synchronized for entity ${studentId}.` });
+    } catch (err) {
+        console.error("UPDATE CHECKIN ERROR:", err);
+        res.status(500).json({ message: 'Neural link interrupted during sync override.' });
     }
 };
 

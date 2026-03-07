@@ -19,7 +19,7 @@ const Timelines = () => {
                 if (!token) return;
                 const config = { headers: { Authorization: `Bearer ${token}` } };
 
-                const res = await axios.get('http://localhost:5000/api/formateur/schedule', config);
+                const res = await axios.get('/api/formateur/schedule', config);
 
                 setSchedule(res.data.schedule || []);
                 setAvailableClasses(res.data.classes || []);

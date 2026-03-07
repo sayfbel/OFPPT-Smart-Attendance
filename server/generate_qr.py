@@ -9,7 +9,8 @@ def generate_student_qr(user_data):
     Expects user_data to have: Name, Group, Institute, Year, Profession
     """
     # The folder where the QR code will be saved
-    output_folder = os.path.join("server", "uploads", "card_id")
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    output_folder = os.path.join(script_dir, "uploads", "card_id")
     if not os.path.exists(output_folder):
         os.makedirs(output_folder)
 

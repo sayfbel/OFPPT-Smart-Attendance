@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import {
     CheckCircle2,
@@ -23,6 +24,7 @@ import ClassDossierModal from '../../components/ClassDossierModal';
 
 const FormateurDashboard = () => {
     const { user } = useAuth();
+    const navigate = useNavigate();
     const { addNotification } = useNotification();
     const [currentTime, setCurrentTime] = useState(new Date());
     const [schedule, setSchedule] = useState([]);
@@ -46,7 +48,7 @@ const FormateurDashboard = () => {
                 const token = localStorage.getItem('token');
                 if (!token) return;
                 const config = { headers: { Authorization: `Bearer ${token}` } };
-                const res = await axios.get('http://localhost:5000/api/formateur/schedule', config);
+                const res = await axios.get('/api/formateur/schedule', config);
                 setSchedule(res.data.schedule || []);
             } catch (error) {
                 console.error('Error fetching schedule', error);
@@ -91,7 +93,7 @@ const FormateurDashboard = () => {
         try {
             const token = localStorage.getItem('token');
             const config = { headers: { Authorization: `Bearer ${token}` } };
-            const res = await axios.get(`http://localhost:5000/api/formateur/users/by-class/${classId}`, config);
+            const res = await axios.get(`/api/formateur/users/by-class/${classId}`, config);
             const fetchedUsers = res.data.users || [];
             // Initialize all as ABSENT by default
             setStudents(fetchedUsers.map(u => ({ ...u, status: 'ABSENT' })));
@@ -109,7 +111,7 @@ const FormateurDashboard = () => {
             try {
                 const token = localStorage.getItem('token');
                 const config = { headers: { Authorization: `Bearer ${token}` } };
-                const res = await axios.get(`http://localhost:5000/api/formateur/active-checkins/${activeSession.class}`, config);
+                const res = await axios.get(`/api/formateur/active-checkins/${activeSession.class}`, config);
                 const checkedInIds = res.data.checkins || [];
 
                 setStudents(prev => prev.map(s =>
@@ -125,11 +127,27 @@ const FormateurDashboard = () => {
         return () => clearInterval(interval);
     }, [activeSession]);
 
-    const handleStatusChange = (studentId, status) => {
+    const handleStatusChange = async (studentId, status) => {
+        // Optimistic UI update
         setStudents(prev => prev.map(s => s.id === studentId ? { ...s, status } : s));
+
+        try {
+            const token = localStorage.getItem('token');
+            const config = { headers: { Authorization: `Bearer ${token}` } };
+            await axios.post('/api/formateur/update-checkin-status', {
+                studentId,
+                classId: activeSession.class,
+                status
+            }, config);
+        } catch (error) {
+            console.error('Manual Override Failed', error);
+            // Optionally revert UI on error? But teacher might be frustrated. 
+            // Better to show error.
+            addNotification('Manual Sync Failed: Link Interrupted.', 'error');
+        }
     };
 
-    const handleSubmitReport = async (signatureData) => {
+    const handleSubmitReport = async (signatureData, meta = {}) => {
         setSubmitting(true);
         try {
             const token = localStorage.getItem('token');
@@ -141,16 +159,16 @@ const FormateurDashboard = () => {
                 date: new Date().toISOString().split('T')[0],
                 subject: activeSession.subject,
                 salle: activeSession.room,
-                heure: activeSession.time,
+                heure: meta.startTime && meta.endTime ? `${meta.startTime} - ${meta.endTime}` : activeSession.time,
                 stagiaires: students.map(s => ({ id: s.id, status: s.status })),
                 signature: signatureData
             };
 
-            await axios.post('http://localhost:5000/api/formateur/submit-report', reportData, config);
+            await axios.post('/api/formateur/submit-report', reportData, config);
 
             // Clear active checkins after success
             try {
-                await axios.post('http://localhost:5000/api/formateur/clear-checkins', { classId: activeSession.class }, config);
+                await axios.post('/api/formateur/clear-checkins', { classId: activeSession.class }, config);
             } catch (err) { console.error("Clear Checkins Error:", err); }
 
             addNotification(`Cluster ${activeSession.class} confirmed and archived.`, 'success');
@@ -215,7 +233,7 @@ const FormateurDashboard = () => {
                             </button>
                             <button
                                 className="btn-noir px-8 py-3 flex items-center justify-center"
-                                onClick={() => window.open(`/scanner?classId=${activeSession.class}&mode=scann&subject=${encodeURIComponent(activeSession.subject)}&room=${encodeURIComponent(activeSession.room)}&formateurName=${encodeURIComponent(user?.name)}&time=${activeSession.time}`, '_blank')}
+                                onClick={() => navigate(`/scanner?classId=${activeSession.class}&mode=scann&subject=${encodeURIComponent(activeSession.subject)}&room=${encodeURIComponent(activeSession.room)}&formateurName=${encodeURIComponent(user?.name)}&time=${activeSession.time}`)}
                                 title="Face Scan"
                             >
                                 <Scan className="w-5 h-5" />

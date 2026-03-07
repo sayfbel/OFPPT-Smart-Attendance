@@ -37,7 +37,7 @@ const rebuild = async () => {
                 name VARCHAR(255) NOT NULL,
                 email VARCHAR(255) UNIQUE NOT NULL,
                 password VARCHAR(255) NOT NULL,
-                role ENUM('admin', 'formateur', 'stagiaire') NOT NULL,
+                role ENUM('admin', 'formateur') NOT NULL,
                 class_id VARCHAR(50),
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (class_id) REFERENCES classes(id) ON DELETE SET NULL
@@ -55,7 +55,23 @@ const rebuild = async () => {
             );
         `);
 
-        // 4. Timetable (The Matrix)
+        // 4. Stagiaires (Students)
+        await connection.query(`
+            CREATE TABLE stagiaires (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                name VARCHAR(255) NOT NULL,
+                class_id VARCHAR(50),
+                institute VARCHAR(255) DEFAULT 'OFPPT ISTA Mirleft',
+                year VARCHAR(50) DEFAULT '2025/2026',
+                profession VARCHAR(255) DEFAULT 'stagiaire',
+                qr_path VARCHAR(255),
+                face_id LONGTEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (class_id) REFERENCES classes(id) ON DELETE SET NULL
+            );
+        `);
+
+        // 5. Timetable (The Matrix)
         await connection.query(`
             CREATE TABLE timetable (
                 id INT AUTO_INCREMENT PRIMARY KEY,
@@ -96,7 +112,7 @@ const rebuild = async () => {
                 student_id INT NOT NULL,
                 status ENUM('PRESENT', 'ABSENT') NOT NULL,
                 FOREIGN KEY (report_id) REFERENCES reports(id) ON DELETE CASCADE,
-                FOREIGN KEY (student_id) REFERENCES users(id) ON DELETE CASCADE
+                FOREIGN KEY (student_id) REFERENCES stagiaires(id) ON DELETE CASCADE
             );
         `);
 
@@ -130,12 +146,12 @@ const rebuild = async () => {
         `);
         const firstFormateurId = formateurResult.insertId;
 
-        // Seed Students
+        // Seed Students in stagiaires table
         await connection.query(`
-            INSERT INTO users (name, email, password, role, class_id) VALUES 
-            ('Omar Lazrak', 'omar@student.ma', '${studentPassword}', 'stagiaire', 'DEV101'),
-            ('Sara Bennani', 'sara@student.ma', '${studentPassword}', 'stagiaire', 'DEV101'),
-            ('Karim Tazi', 'karim@student.ma', '${studentPassword}', 'stagiaire', 'DEV102');
+            INSERT INTO stagiaires (name, class_id) VALUES 
+            ('Omar Lazrak', 'DEV101'),
+            ('Sara Bennani', 'DEV101'),
+            ('Karim Tazi', 'DEV102');
         `);
 
         // Link Supervisors

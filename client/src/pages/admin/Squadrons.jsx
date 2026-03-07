@@ -27,10 +27,10 @@ const Squadrons = () => {
                 const token = localStorage.getItem('token');
                 if (!token) return;
                 const config = { headers: { Authorization: `Bearer ${token}` } };
-                const res = await axios.get('http://localhost:5000/api/admin/schedule', config);
+                const res = await axios.get('/api/admin/schedule', config);
                 setClasses(res.data.classes || []);
 
-                const formateurRes = await axios.get('http://localhost:5000/api/admin/formateurs', config);
+                const formateurRes = await axios.get('/api/admin/formateurs', config);
                 setFormateurs(formateurRes.data.formateurs || []);
             } catch (error) {
                 console.error('Error fetching classes or formateurs', error);
@@ -50,7 +50,7 @@ const Squadrons = () => {
                 lead: Array.isArray(newClass.lead) ? newClass.lead.join(', ') : newClass.lead
             };
 
-            const res = await axios.post('http://localhost:5000/api/admin/classes', payload, config);
+            const res = await axios.post('/api/admin/classes', payload, config);
 
             setClasses([...classes, res.data.class]);
             setIsClassModalOpen(false);
@@ -72,7 +72,7 @@ const Squadrons = () => {
                 lead: Array.isArray(editData.lead) ? editData.lead.join(', ') : editData.lead
             };
 
-            const res = await axios.put(`http://localhost:5000/api/admin/classes/${id}`, payload, config);
+            const res = await axios.put(`/api/admin/classes/${id}`, payload, config);
 
             setClasses(classes.map(c => c.id === id ? res.data.class : c));
             setFlippedCardId(null);
@@ -88,7 +88,7 @@ const Squadrons = () => {
         try {
             const token = localStorage.getItem('token');
             const config = { headers: { Authorization: `Bearer ${token}` } };
-            await axios.delete(`http://localhost:5000/api/admin/classes/${id}`, config);
+            await axios.delete(`/api/admin/classes/${id}`, config);
             setClasses(prev => prev.filter(c => c.id !== id));
             addNotification('Squadron purged from network.', 'success');
             setPurgeInfo({ isOpen: false, classId: '' });

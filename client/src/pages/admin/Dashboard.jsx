@@ -43,7 +43,7 @@ const AdminDashboard = () => {
             try {
                 const token = localStorage.getItem('token');
                 const config = { headers: { Authorization: `Bearer ${token}` } };
-                const res = await axios.get('http://localhost:5000/api/admin/summary', config);
+                const res = await axios.get('/api/admin/summary', config);
                 setStats(res.data.summary);
                 setLoading(false);
             } catch (error) {

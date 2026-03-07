@@ -17,7 +17,7 @@ const Divisions = () => {
                 const token = localStorage.getItem('token');
                 if (!token) return;
                 const config = { headers: { Authorization: `Bearer ${token}` } };
-                const res = await axios.get('http://localhost:5000/api/formateur/schedule', config);
+                const res = await axios.get('/api/formateur/schedule', config);
                 setAvailableClasses(res.data.classes || []);
                 if (res.data.classes?.length > 0) {
                     setSelectedClass(res.data.classes[0].id);
@@ -38,7 +38,7 @@ const Divisions = () => {
             try {
                 const token = localStorage.getItem('token');
                 const config = { headers: { Authorization: `Bearer ${token}` } };
-                const res = await axios.get(`http://localhost:5000/api/formateur/users/by-class/${selectedClass}`, config);
+                const res = await axios.get(`/api/formateur/users/by-class/${selectedClass}`, config);
                 setUsers(res.data.users || []);
             } catch (error) {
                 console.error('Error fetching users', error);
