@@ -193,8 +193,15 @@ const Scanner = () => {
 
             await axios.post('/api/formateur/submit-report', reportData, config);
 
+            // SHUTDOWN_BRIDGE: Ensure Python scanner process and camera windows are closed
+            try {
+                await axios.post('/api/formateur/stop-external-scanner', { classId }, config);
+            } catch (stopErr) {
+                console.warn("[BRIDGE_STOP_SILENT]:", stopErr.message);
+            }
+
             addNotification('SYSC_SCAN_COMPLETE: SQUADRON MANIFEST SYNCHRONIZED AND ARCHIVED.', 'success');
-            navigate('/formateur');
+            navigate(`/formateur?selectedClass=${classId}`);
         } catch (err) {
             console.error("Submission error:", err);
             addNotification("UPLOAD FAILURE: Neural Link Desynced.", "error");
