@@ -3,9 +3,11 @@ import { Shield, Camera, Cpu, Zap, X, Check, Search, AlertCircle, CheckCircle } 
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Html5Qrcode } from 'html5-qrcode';
 import axios from 'axios';
+import { useNotification } from '../context/NotificationContext';
 
 const Scanner = () => {
     const navigate = useNavigate();
+    const { addNotification } = useNotification();
     const [searchParams] = useSearchParams();
     const classId = searchParams.get('classId');
     const subject = searchParams.get('subject');
@@ -29,7 +31,7 @@ const Scanner = () => {
             try {
                 const token = localStorage.getItem('token');
                 const config = { headers: { Authorization: `Bearer ${token}` } };
-                
+
                 // Fetch latest checkins from database
                 const checkinRes = await axios.get(`/api/formateur/active-checkins/${classId}`, config);
                 const currentIds = checkinRes.data.checkins || [];
@@ -38,19 +40,19 @@ const Scanner = () => {
                 if (currentIds.length > prevCheckinsRef.current.length) {
                     const newId = currentIds.find(id => !prevCheckinsRef.current.includes(id));
                     const student = activeStudents.find(s => s.id === newId);
-                    
+
                     if (student) {
                         console.log(`[UI_FEED]: Node ${student.name} synchronized.`);
-                        setLastScan({ 
-                            name: student.name, 
+                        setLastScan({
+                            name: student.name,
                             alreadyScanned: false,
                             time: new Date().toLocaleTimeString(),
-                            success: true 
+                            success: true
                         });
                         setTimeout(() => setLastScan(null), 3500);
                     }
                 }
-                
+
                 setCheckedInIds(currentIds);
                 prevCheckinsRef.current = currentIds;
             } catch (err) {
@@ -67,7 +69,7 @@ const Scanner = () => {
     useEffect(() => {
         let isInstanceMounted = true;
         const startBridge = async () => {
-             try {
+            try {
                 const token = localStorage.getItem('token');
                 const config = { headers: { Authorization: `Bearer ${token}` } };
                 // Call backend to spawn scaning_qr.py
@@ -124,11 +126,11 @@ const Scanner = () => {
 
             const student = activeStudents.find(s => s.name === name);
             if (student && checkedInIds.includes(student.id)) {
-                setLastScan({ 
+                setLastScan({
                     name: name,
                     alreadyScanned: true,
-                    success: true, 
-                    time: new Date().toLocaleTimeString() 
+                    success: true,
+                    time: new Date().toLocaleTimeString()
                 });
                 setTimeout(() => setLastScan(null), 3000);
                 return;
@@ -140,24 +142,24 @@ const Scanner = () => {
                 qrContent,
                 classId
             }, config);
-            
+
             if (student) {
                 setCheckedInIds(prev => [...new Set([...prev, student.id])]);
             }
 
-            setLastScan({ 
-                name: res.data.name, 
+            setLastScan({
+                name: res.data.name,
                 alreadyScanned: false,
                 time: new Date().toLocaleTimeString(),
-                success: true 
+                success: true
             });
-            
+
             setTimeout(() => setLastScan(null), 3500);
         } catch (err) {
-            setLastScan({ 
-                name: err.response?.data?.message || "Invalid Token", 
+            setLastScan({
+                name: err.response?.data?.message || "Invalid Token",
                 time: new Date().toLocaleTimeString(),
-                success: false 
+                success: false
             });
             setTimeout(() => setLastScan(null), 3000);
         }
@@ -169,6 +171,7 @@ const Scanner = () => {
 
     const handleConfirm = async () => {
         if (submitting) return;
+        setLastScan(null);
         setSubmitting(true);
         try {
             const token = localStorage.getItem('token');
@@ -189,15 +192,12 @@ const Scanner = () => {
             };
 
             await axios.post('/api/formateur/submit-report', reportData, config);
-            
-            // Clear checkins
-            await axios.post('/api/formateur/clear-checkins', { classId }, config);
 
-            alert('SYSTEM_STABLE: SQUADRON MANIFEST SYNCHRONIZED AND ARCHIVED.');
+            addNotification('SYSC_SCAN_COMPLETE: SQUADRON MANIFEST SYNCHRONIZED AND ARCHIVED.', 'success');
             navigate('/formateur');
         } catch (err) {
             console.error("Submission error:", err);
-            alert("UPLOAD FAILURE: Neural Link Desynced.");
+            addNotification("UPLOAD FAILURE: Neural Link Desynced.", "error");
         } finally {
             setSubmitting(false);
         }
@@ -215,7 +215,7 @@ const Scanner = () => {
                 <div className="absolute -inset-[1px] bg-[var(--border-strong)] opacity-20 rounded-2xl"></div>
 
                 <div className="relative bg-[var(--surface)] border border-[var(--border)] rounded-2xl overflow-hidden shadow-2xl backdrop-blur-3xl">
-                    
+
                     {/* Noir Header Bar */}
                     <div className="bg-[var(--surface-hover)] px-8 py-6 flex items-center justify-between border-b border-[var(--border)]">
                         <div className="flex items-center gap-4">
@@ -232,15 +232,15 @@ const Scanner = () => {
                                 <span className={`w-1.5 h-1.5 rounded-full animate-pulse shadow-[0_0_8px_rgba(255,255,255,0.5)] ${error ? 'bg-red-500' : 'bg-[var(--primary)]'}`}></span>
                                 <span className="text-[9px] font-bold text-[var(--text-muted)] tracking-widest uppercase">Encryption_Active</span>
                             </div>
-                            <button 
-                                onClick={handleExit} 
+                            <button
+                                onClick={handleExit}
                                 className="p-2 hover:bg-red-500 hover:text-white transition-all border border-[var(--border)] text-[var(--text-muted)]"
                                 title="Close Session"
                             >
                                 <X className="w-4 h-4" />
                             </button>
-                            <button 
-                                onClick={handleConfirm} 
+                            <button
+                                onClick={handleConfirm}
                                 disabled={submitting}
                                 className="flex items-center gap-2 px-6 py-2 bg-[var(--primary)] text-[var(--primary-text)] font-black text-[10px] tracking-widest uppercase hover:opacity-90 transition-all border border-[var(--border-strong)] disabled:opacity-50"
                                 title="Confirm Session"
@@ -286,7 +286,7 @@ const Scanner = () => {
                                         <Camera className="w-24 h-24 text-[var(--primary)] animate-pulse" strokeWidth={0.5} />
                                         <div className="absolute inset-0 border border-[var(--primary)] scale-150 opacity-20 animate-spin-slow"></div>
                                     </div>
-                                    
+
                                     <div className="flex flex-col items-center gap-2">
                                         <span className="text-[10px] font-black text-[var(--primary)] tracking-[1em] uppercase animate-pulse">EXTERNAL_SCANNER_ACTIVE</span>
                                         <span className="text-[8px] font-medium text-[var(--text-muted)] tracking-[0.4em] uppercase">CHECK_CV2_WINDOW_ON_HOST</span>
@@ -304,10 +304,9 @@ const Scanner = () => {
 
                                 {/* Scan Result Feedback */}
                                 {lastScan && (
-                                    <div className={`absolute bottom-20 left-1/2 -translate-x-1/2 px-10 py-5 shadow-2xl border flex items-center gap-6 animate-in slide-in-from-bottom-5 duration-500 rounded-xl ${
-                                        !lastScan.success ? 'bg-red-50 border-red-200' : 
+                                    <div className={`absolute bottom-20 left-1/2 -translate-x-1/2 px-10 py-5 shadow-2xl border flex items-center gap-6 animate-in slide-in-from-bottom-5 duration-500 rounded-xl ${!lastScan.success ? 'bg-red-50 border-red-200' :
                                         lastScan.alreadyScanned ? 'bg-orange-50 border-orange-200' : 'bg-white border-green-200'
-                                    }`}>
+                                        }`}>
                                         {!lastScan.success ? (
                                             <AlertCircle className="w-8 h-8 text-red-500" />
                                         ) : lastScan.alreadyScanned ? (
@@ -315,12 +314,11 @@ const Scanner = () => {
                                         ) : (
                                             <CheckCircle className="w-8 h-8 text-green-500" />
                                         )}
-                                        
+
                                         <div className="flex flex-col">
-                                            <span className={`text-lg font-black tracking-widest uppercase italic ${
-                                                !lastScan.success ? 'text-red-600' : 
+                                            <span className={`text-lg font-black tracking-widest uppercase italic ${!lastScan.success ? 'text-red-600' :
                                                 lastScan.alreadyScanned ? 'text-orange-600' : 'text-green-600'
-                                            }`}>
+                                                }`}>
                                                 {!lastScan.success ? 'ERROR' : lastScan.alreadyScanned ? 'ALREADY SCANNED' : 'PRESENT'}
                                             </span>
                                             <span className="text-[11px] font-bold text-gray-500 uppercase tracking-widest leading-none mt-1">
@@ -337,7 +335,7 @@ const Scanner = () => {
 
                                 <div className="absolute bottom-10 right-10 flex flex-col items-end gap-3 translate-x-2 text-[var(--text-muted)] pointer-events-none">
                                     <div className="flex gap-2">
-                                        {[1,2,3,4,5].map(i => (
+                                        {[1, 2, 3, 4, 5].map(i => (
                                             <div key={i} className="w-0.5 h-4 bg-[var(--primary)] opacity-40 animate-pulse" style={{ animationDelay: `${i * 150}ms` }}></div>
                                         ))}
                                     </div>

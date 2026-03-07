@@ -19,14 +19,14 @@ const DashboardLayout = ({ children }) => {
     const { user, logout } = useAuth();
     const navigate = useNavigate();
     const location = useLocation();
-    const [isDark, setIsDark] = useState(true);
+    const [isDark, setIsDark] = useState(false);
 
     useEffect(() => {
         // Option to persist in localStorage could be added here
-        if (!isDark) {
-            document.documentElement.classList.add('light-mode');
+        if (isDark) {
+            document.documentElement.classList.add('dark-mode');
         } else {
-            document.documentElement.classList.remove('light-mode');
+            document.documentElement.classList.remove('dark-mode');
         }
     }, [isDark]);
 

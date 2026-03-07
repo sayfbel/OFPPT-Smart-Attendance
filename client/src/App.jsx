@@ -21,7 +21,7 @@ import Divisions from './pages/formateur/Divisions';
 const ProtectedRoute = ({ children, roles }) => {
     const { user, loading } = useAuth();
 
-    if (loading) return <div className="flex items-center justify-center h-screen bg-black">Loading...</div>;
+    if (loading) return <div className="flex items-center justify-center h-screen bg-[var(--background)] text-[var(--text)]">Loading...</div>;
 
     if (!user) return <Navigate to="/login" />;
 

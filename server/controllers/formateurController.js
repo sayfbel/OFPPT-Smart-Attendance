@@ -66,16 +66,31 @@ exports.startExternalScanner = async (req, res) => {
 exports.stopExternalScanner = async (req, res) => {
     try {
         const { classId } = req.body;
+        console.log(`[BRIDGE_CONTROL]: Shutdown request for Cluster ${classId}`);
+
         const proc = activeScanners.get(classId);
 
         if (proc) {
-            // Signal process to shutdown (it will trigger 'close' event)
-            proc.kill();
+            console.log(`[BRIDGE_CONTROL]: Terminating process tree for Cluster ${classId}...`);
+
+            if (process.platform === 'win32') {
+                // Forcefully kill the process tree on Windows to ensure CV2 window closes
+                const { exec } = require('child_process');
+                exec(`taskkill /pid ${proc.pid} /f /t`, (err) => {
+                    if (err) console.error(`[BRIDGE_CONTROL]: Taskkill failed for ${proc.pid}:`, err);
+                });
+            } else {
+                proc.kill('SIGTERM');
+            }
+
             activeScanners.delete(classId);
+            console.log(`[BRIDGE_CONTROL]: Synchronized shutdown complete for Cluster ${classId}`);
             return res.json({ message: `Neural Bridge for Cluster ${classId} disconnected.` });
         }
 
-        res.status(404).json({ message: `No active bridge found for Cluster ${classId}.` });
+        // Return 200 even if not found to avoid noisy AxiosErrors in frontend cleanup
+        console.log(`[BRIDGE_CONTROL]: No active process found for ${classId}. Status: Idle.`);
+        res.json({ message: `Neural Bridge for Cluster ${classId} is already inactive.` });
     } catch (err) {
         console.error("EXTERNAL_SCANNER_STOP_ERROR:", err);
         res.status(500).json({ message: 'Internal Server Error: Bridge disconnect failed.' });

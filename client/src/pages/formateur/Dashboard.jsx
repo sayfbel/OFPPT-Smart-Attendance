@@ -123,7 +123,7 @@ const FormateurDashboard = () => {
             }
         };
 
-        const interval = setInterval(pollCheckins, 3000);
+        const interval = setInterval(pollCheckins, 1000);
         return () => clearInterval(interval);
     }, [activeSession]);
 
@@ -194,7 +194,7 @@ const FormateurDashboard = () => {
 
 
     if (loading) {
-        return <div className="flex items-center justify-center h-screen bg-black text-white italic tracking-widest font-black uppercase text-xl">Synchronizing Neural Links...</div>;
+        return <div className="flex items-center justify-center h-screen bg-[var(--background)] text-[var(--text)] italic tracking-widest font-black uppercase text-xl">Synchronizing Neural Links...</div>;
     }
 
     return (

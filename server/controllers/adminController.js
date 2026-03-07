@@ -1,4 +1,7 @@
 const pool = require('../config/db');
+const fs = require('fs');
+const path = require('path');
+const { spawn } = require('child_process');
 
 exports.getFormateurs = async (req, res) => {
     try {
@@ -248,9 +251,6 @@ exports.createUser = async (req, res) => {
             return res.status(400).json({ message: 'Name and Role are mandatory.' });
         }
 
-        const { spawn } = require('child_process');
-        const path = require('path');
-
         if (role === 'stagiaire') {
             if (!class_id) return res.status(400).json({ message: 'Squadron ID is required for Stagiaires.' });
 
@@ -275,19 +275,23 @@ exports.createUser = async (req, res) => {
                 JSON.stringify(qrData)
             ]);
 
-            pythonProcess.on('error', (err) => {
-                console.error("[PY_ERROR] Failed to start python process:", err.message);
+            let newQrPath = '';
+            pythonProcess.stdout.on('data', (data) => {
+                const qrPathStr = data.toString().trim();
+                newQrPath = '/uploads/card_id/' + path.basename(qrPathStr);
             });
 
             pythonProcess.stderr.on('data', (data) => {
                 console.error(`[PY_STDERR]: ${data}`);
             });
 
-            pythonProcess.stdout.on('data', async (data) => {
-                const qrPathStr = data.toString().trim();
-                const relativePath = '/uploads/card_id/' + path.basename(qrPathStr);
-                await pool.query('UPDATE stagiaires SET qr_path = ? WHERE id = ?', [relativePath, stagiaireId]);
+            await new Promise((resolve) => {
+                pythonProcess.on('close', resolve);
             });
+
+            if (newQrPath) {
+                await pool.query('UPDATE stagiaires SET qr_path = ? WHERE id = ?', [newQrPath, stagiaireId]);
+            }
 
             const [[newStagiaire]] = await pool.query('SELECT * FROM stagiaires WHERE id = ?', [stagiaireId]);
             return res.status(201).json({
@@ -346,12 +350,56 @@ exports.updateUser = async (req, res) => {
         }
 
         if (role === 'stagiaire') {
+            // 1. Get old QR path to delete it
+            const [[oldRecord]] = await pool.query('SELECT qr_path, institute, year, profession FROM stagiaires WHERE id = ?', [id]);
+
+            if (oldRecord && oldRecord.qr_path) {
+                const absoluteOldPath = path.join(__dirname, '..', oldRecord.qr_path);
+                if (fs.existsSync(absoluteOldPath)) {
+                    fs.unlinkSync(absoluteOldPath);
+                }
+            }
+
+            // 2. Update basic info
             await pool.query(
                 'UPDATE stagiaires SET name = ?, class_id = ? WHERE id = ?',
                 [name, class_id, id]
             );
+
+            // 3. Generate New QR Code
+            const qrData = {
+                Name: name,
+                Group: class_id,
+                Institute: oldRecord ? oldRecord.institute : "OFPPT ISTA Mirleft",
+                Year: oldRecord ? oldRecord.year : "2025/2026",
+                Profession: oldRecord ? oldRecord.profession : "stagiaire"
+            };
+
+            const pythonProcess = spawn('py', [
+                path.join(__dirname, '../generate_qr.py'),
+                JSON.stringify(qrData)
+            ]);
+
+            let newQrPath = '';
+            pythonProcess.stdout.on('data', (data) => {
+                const qrPathStr = data.toString().trim();
+                newQrPath = '/uploads/card_id/' + path.basename(qrPathStr);
+            });
+
+            pythonProcess.stderr.on('data', (data) => {
+                console.error(`[PY_STDERR]: ${data}`);
+            });
+
+            await new Promise((resolve) => {
+                pythonProcess.on('close', resolve);
+            });
+
+            if (newQrPath) {
+                await pool.query('UPDATE stagiaires SET qr_path = ? WHERE id = ?', [newQrPath, id]);
+            }
+
             const [[updated]] = await pool.query('SELECT * FROM stagiaires WHERE id = ?', [id]);
-            res.json({ message: 'Stagiaire updated.', user: { ...updated, role: 'stagiaire' } });
+            res.json({ message: 'Stagiaire updated. New QR generated.', user: { ...updated, role: 'stagiaire' } });
         } else {
             const email = name.trim().toLowerCase().replace(/\s+/g, '.') + '@ofppt.ma';
             let main_class_id = null;
@@ -388,6 +436,13 @@ exports.deleteUser = async (req, res) => {
         const { role } = req.query;
 
         if (role === 'stagiaire') {
+            const [[user]] = await pool.query('SELECT qr_path FROM stagiaires WHERE id = ?', [id]);
+            if (user && user.qr_path) {
+                const absolutePath = path.join(__dirname, '..', user.qr_path);
+                if (fs.existsSync(absolutePath)) {
+                    fs.unlinkSync(absolutePath);
+                }
+            }
             await pool.query('DELETE FROM stagiaires WHERE id = ?', [id]);
         } else {
             await pool.query('DELETE FROM class_supervisors WHERE formateur_id = ?', [id]);

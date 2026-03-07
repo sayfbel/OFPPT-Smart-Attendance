@@ -3,23 +3,6 @@
 @tailwind utilities;
 
 :root {
-  --background: #000000;
-  --surface: #0a0a0a;
-  --surface-hover: #111111;
-  --primary: #ffffff;
-  --primary-text: #000000;
-  --text: #ffffff;
-  --text-muted: #888888;
-  --border: rgba(255, 255, 255, 0.1);
-  --border-strong: rgba(255, 255, 255, 0.3);
-
-  /* Smoothness */
-  --ease-out-expo: cubic-bezier(0.19, 1, 0.22, 1);
-  --transition-slow: 0.6s var(--ease-out-expo);
-  --transition-base: 0.3s var(--ease-out-expo);
-}
-
-.light-mode {
   --background: #f5f5f5;
   --surface: #ffffff;
   --surface-hover: #f0f0f0;
@@ -29,6 +12,23 @@
   --text-muted: #666666;
   --border: rgba(0, 0, 0, 0.1);
   --border-strong: rgba(0, 0, 0, 0.3);
+
+  /* Smoothness */
+  --ease-out-expo: cubic-bezier(0.19, 1, 0.22, 1);
+  --transition-slow: 0.6s var(--ease-out-expo);
+  --transition-base: 0.3s var(--ease-out-expo);
+}
+
+.dark-mode {
+  --background: #000000;
+  --surface: #0a0a0a;
+  --surface-hover: #111111;
+  --primary: #ffffff;
+  --primary-text: #000000;
+  --text: #ffffff;
+  --text-muted: #888888;
+  --border: rgba(255, 255, 255, 0.1);
+  --border-strong: rgba(255, 255, 255, 0.3);
 }
 
 * {

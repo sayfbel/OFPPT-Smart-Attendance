@@ -26,42 +26,40 @@ const Login = () => {
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center p-6 bg-black">
+        <div className="min-h-screen flex items-center justify-center p-6 bg-[var(--background)]">
             <div className="w-full max-w-sm space-y-12 fade-up">
                 <div className="text-center space-y-4">
-                    <h1 className="text-6xl font-black tracking-tighter text-white">OFPPT</h1>
-                    <p className="text-xs uppercase tracking-[0.4em] text-zinc-500">Attendance Intelligence</p>
+                    <h1 className="text-6xl font-black tracking-tighter text-[var(--text)]">OFPPT</h1>
+                    <p className="text-xs uppercase tracking-[0.4em] text-[var(--text-muted)]">Attendance Intelligence</p>
                 </div>
 
                 <form onSubmit={handleSubmit} className="space-y-8">
                     <div className="space-y-2">
-                        <label className="text-[10px] uppercase tracking-widest text-zinc-500">Email Address</label>
+                        <label className="text-[10px] uppercase tracking-widest text-[var(--text-muted)]">Email Address</label>
                         <input
                             type="email"
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
-                            style={{ color: '#fff' }}
-                            className="w-full text-lg"
+                            className="w-full text-lg border-b border-[var(--border)] bg-transparent text-[var(--text)]"
                             placeholder="admin@ofppt.ma"
                             required
                         />
                     </div>
 
                     <div className="space-y-2">
-                        <label className="text-[10px] uppercase tracking-widest text-zinc-500">Security Key</label>
+                        <label className="text-[10px] uppercase tracking-widest text-[var(--text-muted)]">Security Key</label>
                         <input
                             type="password"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
-                            style={{ color: '#fff' }}
-                            className="w-full text-lg"
+                            className="w-full text-lg border-b border-[var(--border)] bg-transparent text-[var(--text)]"
                             placeholder="••••••••"
                             required
                         />
                     </div>
 
                     {error && (
-                        <p className="text-xs text-center text-white bg-zinc-900 py-2 tracking-wide uppercase italic">
+                        <p className="text-xs text-center text-red-500 bg-[var(--surface-hover)] py-2 tracking-wide uppercase italic border border-red-500/20">
                             {error}
                         </p>
                     )}
@@ -82,8 +80,8 @@ const Login = () => {
                     </button>
                 </form>
 
-                <div className="pt-12 border-t border-zinc-900 text-center">
-                    <p className="text-[9px] uppercase tracking-widest text-zinc-700">© 2025 Digital Architecture Division</p>
+                <div className="pt-12 border-t border-[var(--border)] text-center">
+                    <p className="text-[9px] uppercase tracking-widest text-[var(--text-muted)]">© 2025 Digital Architecture Division</p>
                 </div>
             </div>
         </div>
