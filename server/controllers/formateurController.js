@@ -123,6 +123,21 @@ exports.submitReport = async (req, res) => {
             );
         }
 
+        // 3. Create notification for Admin(s)
+        const [admins] = await pool.query('SELECT id FROM users WHERE role = "admin"');
+        for (const admin of admins) {
+            await pool.query(
+                'INSERT INTO notifications (user_id, type, category, title, message) VALUES (?, ?, ?, ?, ?)',
+                [
+                    admin.id,
+                    'message',
+                    'RAPPORT',
+                    `Nouveau rapport : ${class_id}`,
+                    `Le formateur ${req.user.name} a soumis le rapport de présence pour le module ${subject}.`
+                ]
+            );
+        }
+
         res.status(201).json({ message: 'Report submitted successfully', reportId });
     } catch (err) {
         console.error("SUBMIT REPORT ERROR:", err);
@@ -151,6 +166,35 @@ exports.getSchedule = async (req, res) => {
             LEFT JOIN users u ON t.formateur_id = u.id
             WHERE t.formateur_id = ?
         `, [formateur_id]);
+
+        // Today's Reminder Logic
+        const days = ['SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY'];
+        const todayName = days[new Date().getDay()];
+        const todaySessions = schedule.filter(s => s.day.toUpperCase() === todayName);
+
+        if (todaySessions.length > 0) {
+            const todayStr = new Date().toISOString().split('T')[0];
+            for (const session of todaySessions) {
+                // Check if we already notified for this session today
+                const [existingNotif] = await pool.query(
+                    'SELECT id FROM notifications WHERE user_id = ? AND category = "RAPPEL" AND title LIKE ? AND DATE(created_at) = ?',
+                    [formateur_id, `%${session.class}%`, todayStr]
+                );
+
+                if (existingNotif.length === 0) {
+                    await pool.query(
+                        'INSERT INTO notifications (user_id, type, category, title, message) VALUES (?, ?, ?, ?, ?)',
+                        [
+                            formateur_id,
+                            'request',
+                            'RAPPEL',
+                            `Séance aujourd'hui : ${session.class}`,
+                            `Rappel : Vous avez une séance de ${session.subject} avec le groupe ${session.class} à ${session.time} (Salle ${session.room}).`
+                        ]
+                    );
+                }
+            }
+        }
 
         res.json({ classes, schedule });
     } catch (err) {

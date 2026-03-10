@@ -84,6 +84,19 @@ CREATE TABLE IF NOT EXISTS report_attendance (
     FOREIGN KEY (student_id) REFERENCES stagiaires(id) ON DELETE CASCADE
 );
 
+-- 7. Neural Notifications (Memory Node)
+CREATE TABLE IF NOT EXISTS notifications (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT,
+    type ENUM('request', 'message', 'alert', 'success') DEFAULT 'message',
+    category VARCHAR(50),
+    title VARCHAR(255) NOT NULL,
+    message TEXT,
+    is_read BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
 -- --- SEEDING ---
 
 -- Seed Admin (admin@ofppt.ma / admin123)

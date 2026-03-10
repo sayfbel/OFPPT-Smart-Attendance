@@ -1,7 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { Shield, Camera, Cpu, Zap, X, Check, Search, AlertCircle, CheckCircle } from 'lucide-react';
+import { Shield, Camera, Cpu, Zap, X, Check, Search, AlertCircle, CheckCircle, Smartphone } from 'lucide-react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { Html5Qrcode } from 'html5-qrcode';
 import axios from 'axios';
 import { useNotification } from '../context/NotificationContext';
 
@@ -23,7 +22,7 @@ const Scanner = () => {
 
     const prevCheckinsRef = useRef([]);
 
-    // 1. Database Feed Polling (Signal Synchronization)
+    // 1. Sync Checkins
     useEffect(() => {
         if (!classId) return;
 
@@ -31,18 +30,14 @@ const Scanner = () => {
             try {
                 const token = localStorage.getItem('token');
                 const config = { headers: { Authorization: `Bearer ${token}` } };
-
-                // Fetch latest checkins from database
                 const checkinRes = await axios.get(`/api/formateur/active-checkins/${classId}`, config);
                 const currentIds = checkinRes.data.checkins || [];
 
-                // Detect New Checkins (Trigger Popups)
                 if (currentIds.length > prevCheckinsRef.current.length) {
                     const newId = currentIds.find(id => !prevCheckinsRef.current.includes(id));
                     const student = activeStudents.find(s => s.id === newId);
 
                     if (student) {
-                        console.log(`[UI_FEED]: Node ${student.name} synchronized.`);
                         setLastScan({
                             name: student.name,
                             alreadyScanned: false,
@@ -60,23 +55,20 @@ const Scanner = () => {
             }
         };
 
-        // Faster polling for real-time feel with external scanner
         const interval = setInterval(syncCheckins, 1500);
         return () => clearInterval(interval);
     }, [classId, activeStudents]);
 
-    // 2. Start External Python Bridge
+    // 2. Start Bridge
     useEffect(() => {
         let isInstanceMounted = true;
         const startBridge = async () => {
             try {
                 const token = localStorage.getItem('token');
                 const config = { headers: { Authorization: `Bearer ${token}` } };
-                // Call backend to spawn scaning_qr.py
                 await axios.post('/api/formateur/start-external-scanner', { classId }, config);
-                console.log("[BRIDGE]: Neural scanner activated.");
             } catch (err) {
-                if (isInstanceMounted) setError("EXTERNAL_BRIDGE_OFFLINE");
+                if (isInstanceMounted) setError("SCANNER_OFFLINE");
             }
         };
 
@@ -84,7 +76,6 @@ const Scanner = () => {
 
         return () => {
             isInstanceMounted = false;
-            // Send shutdown signal to python bridge
             const token = localStorage.getItem('token');
             const config = { headers: { Authorization: `Bearer ${token}` } };
             axios.post('/api/formateur/stop-external-scanner', { classId }, config)
@@ -92,7 +83,7 @@ const Scanner = () => {
         };
     }, [classId]);
 
-    // 1. Initial Data Fetch
+    // 3. Initial Data
     useEffect(() => {
         const fetchMainData = async () => {
             try {
@@ -106,64 +97,6 @@ const Scanner = () => {
         };
         if (classId) fetchMainData();
     }, [classId]);
-
-    const handleQRScan = async (qrContent) => {
-        if (lastScan) return; // Wait for current feedback to clear
-
-        try {
-            // locally parse name to check if already scanned
-            const parts = qrContent.split('|');
-            const namePart = parts.find(p => p.startsWith('NAME:'));
-            const groupPart = parts.find(p => p.startsWith('GROUP:'));
-            const name = namePart ? namePart.split(':')[1] : "Unknown";
-            const group = groupPart ? groupPart.split(':')[1] : "";
-
-            if (group !== classId) {
-                setLastScan({ name: `WRONG CLASS: ${group}`, success: false, time: new Date().toLocaleTimeString() });
-                setTimeout(() => setLastScan(null), 3000);
-                return;
-            }
-
-            const student = activeStudents.find(s => s.name === name);
-            if (student && checkedInIds.includes(student.id)) {
-                setLastScan({
-                    name: name,
-                    alreadyScanned: true,
-                    success: true,
-                    time: new Date().toLocaleTimeString()
-                });
-                setTimeout(() => setLastScan(null), 3000);
-                return;
-            }
-
-            const token = localStorage.getItem('token');
-            const config = { headers: { Authorization: `Bearer ${token}` } };
-            const res = await axios.post('/api/formateur/process-checkin-qr', {
-                qrContent,
-                classId
-            }, config);
-
-            if (student) {
-                setCheckedInIds(prev => [...new Set([...prev, student.id])]);
-            }
-
-            setLastScan({
-                name: res.data.name,
-                alreadyScanned: false,
-                time: new Date().toLocaleTimeString(),
-                success: true
-            });
-
-            setTimeout(() => setLastScan(null), 3500);
-        } catch (err) {
-            setLastScan({
-                name: err.response?.data?.message || "Invalid Token",
-                time: new Date().toLocaleTimeString(),
-                success: false
-            });
-            setTimeout(() => setLastScan(null), 3000);
-        }
-    };
 
     const handleExit = () => {
         navigate('/formateur');
@@ -181,203 +114,171 @@ const Scanner = () => {
                 report_code: `REP-${classId}-${new Date().toISOString().split('T')[0]}-${Date.now().toString().slice(-4)}`,
                 class_id: classId,
                 date: new Date().toISOString().split('T')[0],
-                subject: decodeURIComponent(subject || 'UNSPECIFIED'),
-                salle: decodeURIComponent(room || 'DYNAMIC'),
+                subject: decodeURIComponent(subject || 'COURS'),
+                salle: decodeURIComponent(room || 'SALLE'),
                 heure: sessionTime || new Date().toLocaleTimeString(),
                 stagiaires: activeStudents.map(s => ({
                     id: s.id,
                     status: checkedInIds.includes(s.id) ? 'PRESENT' : 'ABSENT'
                 })),
-                signature: "DIGITAL_AUTH_SCANNER" // Auto-signed by scanner portal
+                signature: "SCANNER_AUTO_ISTA"
             };
 
             await axios.post('/api/formateur/submit-report', reportData, config);
 
-            // SHUTDOWN_BRIDGE: Ensure Python scanner process and camera windows are closed
             try {
                 await axios.post('/api/formateur/stop-external-scanner', { classId }, config);
             } catch (stopErr) {
                 console.warn("[BRIDGE_STOP_SILENT]:", stopErr.message);
             }
 
-            addNotification('SYSC_SCAN_COMPLETE: SQUADRON MANIFEST SYNCHRONIZED AND ARCHIVED.', 'success');
+            addNotification('Scannage terminé avec succès. Les présences ont été archivées.', 'success');
             navigate(`/formateur?selectedClass=${classId}`);
         } catch (err) {
             console.error("Submission error:", err);
-            addNotification("UPLOAD FAILURE: Neural Link Desynced.", "error");
+            addNotification("Échec de l'enregistrement. Veuillez réessayer.", "error");
         } finally {
             setSubmitting(false);
         }
     };
 
     return (
-        <div className="min-h-screen bg-[var(--background)] flex items-center justify-center p-6 lg:p-12 font-sans overflow-hidden transition-colors duration-700">
-            {/* Project Style Noise & Texture */}
-            <div className="fixed inset-0 overflow-hidden pointer-events-none opacity-20 brightness-50 contrast-150">
-                <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')]"></div>
-            </div>
-
+        <div className="min-h-screen bg-[var(--background)] flex items-center justify-center p-6 lg:p-12 font-sans overflow-hidden transition-all duration-500">
             <div className="w-full max-w-5xl relative fade-up">
-                {/* Minimalist Border Accent */}
-                <div className="absolute -inset-[1px] bg-[var(--border-strong)] opacity-20 rounded-2xl"></div>
+                <div className="relative bg-white border border-[var(--border)] rounded-3xl overflow-hidden shadow-2xl">
 
-                <div className="relative bg-[var(--surface)] border border-[var(--border)] rounded-2xl overflow-hidden shadow-2xl backdrop-blur-3xl">
-
-                    {/* Noir Header Bar */}
-                    <div className="bg-[var(--surface-hover)] px-8 py-6 flex items-center justify-between border-b border-[var(--border)]">
-                        <div className="flex items-center gap-4">
-                            <div className="p-2 border border-[var(--border-strong)] bg-[var(--background)]">
-                                <Shield className="w-4 h-4 text-[var(--primary)]" />
+                    {/* Header Bar */}
+                    <div className="bg-gradient-to-r from-[var(--secondary)] to-[#003d6b] px-10 py-8 flex items-center justify-between text-white">
+                        <div className="flex items-center gap-6">
+                            <div className="w-12 h-12 bg-white/10 rounded-xl flex items-center justify-center backdrop-blur-md border border-white/20">
+                                <Shield className="w-6 h-6" />
                             </div>
                             <div className="flex flex-col">
-                                <h2 className="text-[10px] font-black tracking-[0.6em] text-[var(--text-muted)] uppercase leading-none">Official Digital Archive</h2>
-                                <h1 className="text-xl font-black text-[var(--text)] tracking-tighter uppercase mt-1 italic">OFFICIAL_CLASSIFIED_DOSSIER</h1>
+                                <h2 className="text-[10px] font-black tracking-widest text-white/60 uppercase leading-none mb-1">Système de Pointage Digital</h2>
+                                <h1 className="text-2xl font-black tracking-tight uppercase italic leading-none">Scanner de Présence</h1>
                             </div>
                         </div>
-                        <div className="flex items-center gap-6">
-                            <div className="hidden md:flex items-center gap-3">
-                                <span className={`w-1.5 h-1.5 rounded-full animate-pulse shadow-[0_0_8px_rgba(255,255,255,0.5)] ${error ? 'bg-red-500' : 'bg-[var(--primary)]'}`}></span>
-                                <span className="text-[9px] font-bold text-[var(--text-muted)] tracking-widest uppercase">Encryption_Active</span>
-                            </div>
+                        <div className="flex items-center gap-4">
                             <button
                                 onClick={handleExit}
-                                className="p-2 hover:bg-red-500 hover:text-white transition-all border border-[var(--border)] text-[var(--text-muted)]"
-                                title="Close Session"
+                                className="p-3 bg-white/10 hover:bg-white/20 rounded-xl transition-all border border-white/10"
+                                title="Fermer"
                             >
-                                <X className="w-4 h-4" />
+                                <X className="w-5 h-5" />
                             </button>
                             <button
                                 onClick={handleConfirm}
                                 disabled={submitting}
-                                className="flex items-center gap-2 px-6 py-2 bg-[var(--primary)] text-[var(--primary-text)] font-black text-[10px] tracking-widest uppercase hover:opacity-90 transition-all border border-[var(--border-strong)] disabled:opacity-50"
-                                title="Confirm Session"
+                                className="flex items-center gap-3 px-8 py-3 bg-[var(--primary)] text-white font-black text-xs tracking-widest uppercase hover:bg-green-700 transition-all rounded-xl shadow-lg disabled:opacity-50"
                             >
-                                <Check className="w-3 h-3" />
-                                <span>{submitting ? 'SYNCING...' : 'YES'}</span>
+                                <Check className="w-4 h-4" />
+                                <span>{submitting ? 'VALIDATION...' : 'TERMINER'}</span>
                             </button>
                         </div>
                     </div>
 
-                    {/* Meta Info Grid */}
-                    <div className="grid grid-cols-2 md:grid-cols-4 border-b border-[var(--border)] bg-[var(--background)]">
-                        <div className="p-6 border-r border-[var(--border)] flex flex-col gap-1 hover:bg-[var(--surface-hover)] transition-colors">
-                            <span className="text-[8px] font-black text-[var(--text-muted)] uppercase tracking-[0.3em]">Protocol</span>
-                            <span className="text-xs font-black text-[var(--text)] uppercase tracking-tighter italic">NEURAL_OPTIC_V2</span>
+                    {/* Info Bar */}
+                    <div className="grid grid-cols-2 md:grid-cols-4 bg-slate-50 border-b border-[var(--border)]">
+                        <div className="p-6 border-r border-[var(--border)] flex flex-col gap-1">
+                            <span className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest">GROUPE</span>
+                            <span className="text-sm font-black text-[var(--secondary)] uppercase italic">{classId || '---'}</span>
                         </div>
-                        <div className="p-6 border-r border-[var(--border)] flex flex-col gap-1 hover:bg-[var(--surface-hover)] transition-colors">
-                            <span className="text-[8px] font-black text-[var(--text-muted)] uppercase tracking-[0.3em]">Cluster_ID</span>
-                            <span className="text-xs font-black text-[var(--primary)] uppercase tracking-tighter italic">{classId || 'NULL_PTR'}</span>
+                        <div className="p-6 border-r border-[var(--border)] flex flex-col gap-1">
+                            <span className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest">SÉANCE</span>
+                            <span className="text-sm font-black text-[var(--primary)] uppercase italic truncate">{decodeURIComponent(subject || 'COURS')}</span>
                         </div>
-                        <div className="p-6 border-r border-[var(--border)] flex flex-col gap-1 hover:bg-[var(--surface-hover)] transition-colors">
-                            <span className="text-[8px] font-black text-[var(--text-muted)] uppercase tracking-[0.3em]">Signal_Count</span>
-                            <span className="text-xs font-black text-[var(--text)] uppercase tracking-tighter italic">{checkedInIds.length} / {activeStudents.length}</span>
+                        <div className="p-6 border-r border-[var(--border)] flex flex-col gap-1">
+                            <span className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest">PRÉSENCES</span>
+                            <span className="text-sm font-black text-[var(--secondary)] italic">{checkedInIds.length} / {activeStudents.length}</span>
                         </div>
-                        <div className="p-6 flex flex-col gap-1 hover:bg-[var(--surface-hover)] transition-colors">
-                            <span className="text-[8px] font-black text-[var(--text-muted)] uppercase tracking-[0.3em]">Latency</span>
-                            <span className="text-xs font-black text-[var(--text)] uppercase tracking-tighter italic">0.42ms</span>
+                        <div className="p-6 flex flex-col gap-1">
+                            <span className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest">STATUT</span>
+                            <div className="flex items-center gap-2">
+                                <div className="w-2 h-2 bg-[var(--primary)] rounded-full animate-pulse"></div>
+                                <span className="text-sm font-black text-[var(--primary)] uppercase italic">ACTIF</span>
+                            </div>
                         </div>
                     </div>
 
-                    {/* Python External Stream Indicator Area */}
-                    <div className="aspect-video relative bg-[var(--background)] overflow-hidden flex items-center justify-center border-y border-[var(--border)]">
+                    {/* Viewport Area */}
+                    <div className="aspect-video relative bg-slate-900 overflow-hidden flex items-center justify-center">
                         {error ? (
-                            <div className="flex flex-col items-center gap-4 text-red-500 opacity-60">
-                                <AlertCircle className="w-12 h-12 animate-pulse" />
-                                <span className="text-[10px] font-black tracking-[0.6em] uppercase italic">BRIDGE_OFFLINE</span>
+                            <div className="flex flex-col items-center gap-4 text-red-400">
+                                <AlertCircle className="w-16 h-16 animate-pulse" />
+                                <span className="text-xs font-black tracking-widest uppercase italic border border-red-400/30 px-6 py-2 rounded-lg">Scanner Hors Ligne</span>
                             </div>
                         ) : (
                             <>
-                                {/* Retro Placeholder for the CV2 window */}
-                                <div className="flex flex-col items-center gap-8 opacity-40">
+                                <div className="flex flex-col items-center gap-8 text-white/20">
                                     <div className="relative">
-                                        <Camera className="w-24 h-24 text-[var(--primary)] animate-pulse" strokeWidth={0.5} />
-                                        <div className="absolute inset-0 border border-[var(--primary)] scale-150 opacity-20 animate-spin-slow"></div>
+                                        <Camera className="w-32 h-32" strokeWidth={0.5} />
+                                        <div className="absolute inset-0 border-2 border-dashed border-white/10 rounded-full scale-125 animate-spin-slow"></div>
                                     </div>
-
-                                    <div className="flex flex-col items-center gap-2">
-                                        <span className="text-[10px] font-black text-[var(--primary)] tracking-[1em] uppercase animate-pulse">EXTERNAL_SCANNER_ACTIVE</span>
-                                        <span className="text-[8px] font-medium text-[var(--text-muted)] tracking-[0.4em] uppercase">CHECK_CV2_WINDOW_ON_HOST</span>
+                                    <div className="flex flex-col items-center gap-2 text-center px-10">
+                                        <span className="text-xs font-black tracking-[0.5em] uppercase animate-pulse">SCANNER OPTIQUE ACTIF</span>
+                                        <p className="text-[10px] text-white/40 uppercase tracking-widest mt-2 max-w-xs leading-relaxed">
+                                            SYSTÈME DE RECONNAISSANCE QR-CODE & BIOMÉTRIQUE EN COURS SUR LE SERVEUR
+                                        </p>
                                     </div>
                                 </div>
 
-                                {/* HUD Viewport Brackets */}
-                                <div className="absolute top-10 left-10 w-16 h-16 border-t border-l border-[var(--border-strong)] pointer-events-none opacity-40"></div>
-                                <div className="absolute top-10 right-10 w-16 h-16 border-t border-r border-[var(--border-strong)] pointer-events-none opacity-40"></div>
-                                <div className="absolute bottom-10 left-10 w-16 h-16 border-b border-l border-[var(--border-strong)] pointer-events-none opacity-40"></div>
-                                <div className="absolute bottom-10 right-10 w-16 h-16 border-b border-r border-[var(--border-strong)] pointer-events-none opacity-40"></div>
-
                                 {/* Scanning Line */}
-                                <div className="absolute inset-x-20 top-0 h-[1px] bg-[var(--primary)] opacity-30 shadow-[0_0_15px_rgba(255,255,255,0.3)] animate-scan z-20 pointer-events-none"></div>
+                                <div className="absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-transparent via-[var(--primary)] to-transparent opacity-50 shadow-[0_0_20px_var(--primary)] animate-scan"></div>
 
-                                {/* Scan Result Feedback */}
+                                {/* Result Overlay */}
                                 {lastScan && (
-                                    <div className={`absolute bottom-20 left-1/2 -translate-x-1/2 px-10 py-5 shadow-2xl border flex items-center gap-6 animate-in slide-in-from-bottom-5 duration-500 rounded-xl ${!lastScan.success ? 'bg-red-50 border-red-200' :
-                                        lastScan.alreadyScanned ? 'bg-orange-50 border-orange-200' : 'bg-white border-green-200'
+                                    <div className={`absolute bottom-20 left-1/2 -translate-x-1/2 px-12 py-6 shadow-2xl border-2 flex items-center gap-6 animate-in slide-in-from-bottom-10 duration-500 rounded-3xl backdrop-blur-xl ${!lastScan.success ? 'bg-red-500/90 border-red-400' :
+                                            lastScan.alreadyScanned ? 'bg-amber-500/90 border-amber-400' : 'bg-green-500/90 border-green-400'
                                         }`}>
-                                        {!lastScan.success ? (
-                                            <AlertCircle className="w-8 h-8 text-red-500" />
-                                        ) : lastScan.alreadyScanned ? (
-                                            <AlertCircle className="w-8 h-8 text-orange-500" />
-                                        ) : (
-                                            <CheckCircle className="w-8 h-8 text-green-500" />
-                                        )}
+                                        <div className="bg-white rounded-full p-2">
+                                            {!lastScan.success ? (
+                                                <AlertCircle className="w-8 h-8 text-red-500" />
+                                            ) : lastScan.alreadyScanned ? (
+                                                <AlertCircle className="w-8 h-8 text-amber-500" />
+                                            ) : (
+                                                <CheckCircle className="w-8 h-8 text-green-500" />
+                                            )}
+                                        </div>
 
                                         <div className="flex flex-col">
-                                            <span className={`text-lg font-black tracking-widest uppercase italic ${!lastScan.success ? 'text-red-600' :
-                                                lastScan.alreadyScanned ? 'text-orange-600' : 'text-green-600'
-                                                }`}>
-                                                {!lastScan.success ? 'ERROR' : lastScan.alreadyScanned ? 'ALREADY SCANNED' : 'PRESENT'}
+                                            <span className="text-2xl font-black tracking-tighter text-white uppercase italic leading-none">
+                                                {!lastScan.success ? 'ERREUR' : lastScan.alreadyScanned ? 'DÉJÀ POINTÉ' : 'PRÉSENT'}
                                             </span>
-                                            <span className="text-[11px] font-bold text-gray-500 uppercase tracking-widest leading-none mt-1">
+                                            <span className="text-[12px] font-bold text-white/80 uppercase tracking-widest mt-1">
                                                 {lastScan.name}
                                             </span>
                                         </div>
                                     </div>
                                 )}
 
-                                {/* Interface Elements */}
-                                <div className="absolute top-10 left-1/2 -translate-x-1/2 pointer-events-none">
-                                    <span className="px-6 py-2 bg-[var(--background)]/40 backdrop-blur-xl border border-[var(--border)] text-[9px] font-black text-[var(--text)] tracking-[0.5em] uppercase italic">Visual_Stream_Active</span>
-                                </div>
-
-                                <div className="absolute bottom-10 right-10 flex flex-col items-end gap-3 translate-x-2 text-[var(--text-muted)] pointer-events-none">
-                                    <div className="flex gap-2">
-                                        {[1, 2, 3, 4, 5].map(i => (
-                                            <div key={i} className="w-0.5 h-4 bg-[var(--primary)] opacity-40 animate-pulse" style={{ animationDelay: `${i * 150}ms` }}></div>
-                                        ))}
-                                    </div>
-                                    <span className="text-[8px] font-black tracking-[0.3em] uppercase">Buffer_0x4F_TX</span>
+                                <div className="absolute top-10 right-10 flex gap-1 items-center">
+                                    <Zap className="w-3 h-3 text-[var(--accent)]" />
+                                    <span className="text-[9px] font-black text-white/40 tracking-widest">LIVE_FEED_SYS</span>
                                 </div>
                             </>
                         )}
                     </div>
 
-                    {/* Footer System Status */}
-                    <div className="px-8 py-5 bg-[var(--surface-hover)] border-t border-[var(--border)] flex items-center justify-between">
+                    {/* Status Bar */}
+                    <div className="px-8 py-5 bg-slate-50 border-t border-[var(--border)] flex items-center justify-between">
                         <div className="flex items-center gap-8">
                             <div className="flex items-center gap-3">
-                                <Zap className="w-3 h-3 text-[var(--primary)]" />
-                                <span className="text-[9px] font-black text-[var(--text-muted)] tracking-widest uppercase italic">Core_Integrity_Stable</span>
+                                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                                <span className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest">Serveur ISTA Connecté</span>
                             </div>
-                            <div className="hidden md:flex items-center gap-3 border-l border-[var(--border)] pl-8">
-                                <Cpu className="w-3 h-3 text-[var(--text-muted)]" />
-                                <span className="text-[9px] font-black text-[var(--text-muted)] tracking-widest uppercase italic">A-100_Processing</span>
+                            <div className="hidden md:flex items-center gap-3 pl-8 border-l border-[var(--border)]">
+                                <Smartphone className="w-4 h-4 text-[var(--text-muted)]" />
+                                <span className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest">Interface Responsive</span>
                             </div>
                         </div>
-                        <div className="flex items-center gap-1.5 overflow-hidden">
-                            {[...Array(15)].map((_, i) => (
-                                <div key={i} className={`h-1 w-1 rounded-full bg-[var(--primary)] ${i > 10 ? 'opacity-10' : 'opacity-40 animate-pulse'}`} style={{ animationDelay: `${i * 50}ms` }}></div>
-                            ))}
-                        </div>
+                        <div className="text-[10px] font-black text-[var(--primary)] uppercase tracking-widest italic">ISTA MIRLEFT CAMPUS</div>
                     </div>
                 </div>
 
-                <div className="mt-10 flex items-center justify-between px-4">
-                    <div className="flex items-center gap-4">
-                        <div className="w-12 h-[1px] bg-[var(--border-strong)]"></div>
-                        <span className="text-[10px] font-black text-[var(--text-muted)] tracking-[0.6em] uppercase italic">Secure_Cryptographic_Bridge</span>
-                    </div>
-                    <span className="text-[10px] font-black text-[var(--text-muted)] tracking-widest italic uppercase opacity-40">© 2026 ISTA MIRLEFT</span>
+                <div className="mt-10 flex items-center justify-center opacity-40">
+                    <p className="text-[10px] font-black text-[var(--secondary)] tracking-[0.4em] uppercase">
+                        ISTA DIGITAL SYSTEM — SESSION AUTOMATISÉE
+                    </p>
                 </div>
             </div>
 
@@ -389,19 +290,15 @@ const Scanner = () => {
                     100% { top: 90%; opacity: 0; }
                 }
                 .animate-scan {
-                    animation: scan 4s cubic-bezier(0.19, 1, 0.22, 1) infinite;
+                    animation: scan 3s cubic-bezier(0.4, 0, 0.2, 1) infinite;
                 }
                 .fade-up {
                     opacity: 0;
                     transform: translateY(30px);
-                    animation: fadeUp 0.6s cubic-bezier(0.19, 1, 0.22, 1) forwards;
-                    animation-delay: 0.2s;
+                    animation: fadeUp 0.8s cubic-bezier(0.19, 1, 0.22, 1) forwards;
                 }
-                #reader > div {
-                    border: none !important;
-                }
-                #reader video {
-                    object-fit: cover !important;
+                @keyframes fadeUp {
+                    to { opacity: 1; transform: translateY(0); }
                 }
             `}</style>
         </div>

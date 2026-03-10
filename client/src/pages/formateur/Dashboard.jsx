@@ -6,17 +6,13 @@ import {
     XCircle,
     ClipboardCheck,
     Search,
-    ArrowRight,
     Clock,
-    Activity,
     Users,
-    AlertTriangle,
-    Check,
-    Camera,
-    Zap,
+    Activity,
     Scan,
-    Contact,
-    ChevronDown
+    ChevronDown,
+    CalendarCheck,
+    AlertCircle
 } from 'lucide-react';
 import axios from 'axios';
 import { useNotification } from '../../context/NotificationContext';
@@ -76,8 +72,8 @@ const FormateurDashboard = () => {
                     // We need to pass the schedule directly because state update is async
                     const session = fetchedSchedule.find(s => s.class === selectedClassId) || {
                         class: selectedClassId,
-                        subject: 'NEURAL_SESSION',
-                        room: 'LAB_DYNAMIC',
+                        subject: 'SÉANCE_EN_COURS',
+                        room: 'SALLE_TP',
                         time: `${new Date().getHours()}:00 - ${new Date().getHours() + 2}:00`
                     };
                     setActiveSession({ ...session, class: selectedClassId });
@@ -106,8 +102,8 @@ const FormateurDashboard = () => {
         // Try to find a scheduled session for this class to get more details
         const session = schedule.find(s => s.class === classId) || {
             class: classId,
-            subject: 'NEURAL_SESSION',
-            room: 'LAB_DYNAMIC',
+            subject: 'SÉANCE_EN_COURS',
+            room: 'SALLE_TP',
             time: `${new Date().getHours()}:00 - ${new Date().getHours() + 2}:00`
         };
 
@@ -172,7 +168,7 @@ const FormateurDashboard = () => {
             console.error('Manual Override Failed', error);
             // Optionally revert UI on error? But teacher might be frustrated. 
             // Better to show error.
-            addNotification('Manual Sync Failed: Link Interrupted.', 'error');
+            addNotification('Échec de la mise à jour manuelle.', 'error');
         }
     };
 
@@ -200,11 +196,11 @@ const FormateurDashboard = () => {
                 await axios.post('/api/formateur/clear-checkins', { classId: activeSession.class }, config);
             } catch (err) { console.error("Clear Checkins Error:", err); }
 
-            addNotification(`Cluster ${activeSession.class} confirmed and archived.`, 'success');
+            addNotification(`Le rapport du groupe ${activeSession.class} a été archivé.`, 'success');
             setIsConfirming(false);
         } catch (error) {
             console.error('Submission failed', error);
-            addNotification(error.response?.data?.message || 'Neural Link Timeout: Submission failed.', 'error');
+            addNotification(error.response?.data?.message || 'Erreur lors de la soumission.', 'error');
         } finally {
             setSubmitting(false);
         }
@@ -223,70 +219,59 @@ const FormateurDashboard = () => {
 
 
     if (loading) {
-        return <div className="flex items-center justify-center h-screen bg-[var(--background)] text-[var(--text)] italic tracking-widest font-black uppercase text-xl">Synchronizing Neural Links...</div>;
+        return <div className="flex items-center justify-center h-screen bg-[var(--background)] text-[var(--secondary)] font-bold italic tracking-widest uppercase animate-pulse">Initialisation du portail...</div>;
     }
 
     return (
         <div className="relative">
-            <div className={`space-y-16 fade-up ${isConfirming ? 'blur-sm scale-[0.99] pointer-events-none' : ''} transition-all duration-700`}>
+            <div className={`space-y-10 fade-up ${isConfirming ? 'blur-sm scale-[0.99] pointer-events-none' : ''} transition-all duration-500`}>
                 {/* Header Section */}
-                <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 border-b border-[var(--border-strong)] pb-12">
+                <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-8 border-b border-[var(--border)] pb-10">
                     <div className="space-y-4">
-                        <div className="flex items-center gap-4">
-                            <p className="text-[var(--text-muted)] text-[10px] tracking-[0.5em] font-black uppercase">
-                                {currentTime.toLocaleDateString('en-US', { weekday: 'long' })}
-                            </p>
-                            <div className="px-3 py-1 bg-[var(--surface)] border border-[var(--border-strong)] flex items-center gap-2">
+                        <div className="flex items-center gap-3">
+                            <span className="bg-[var(--primary)] text-white text-[9px] font-black px-3 py-1 rounded-full uppercase tracking-wider">
+                                {currentTime.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}
+                            </span>
+                            <div className="flex items-center gap-2 text-[var(--text-muted)] font-bold text-[10px] tracking-widest bg-[var(--surface-hover)] px-3 py-1 rounded-full">
                                 <Clock className="w-3 h-3 text-[var(--primary)]" />
-                                <span className="text-[10px] font-bold text-[var(--primary)] tracking-widest">
-                                    {currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                </span>
+                                <span>{currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                             </div>
                         </div>
                         <div className="flex flex-col">
-                            <h1 className="text-7xl font-black tracking-tighter text-[var(--primary)] uppercase italic leading-none">
-                                {activeSession ? `Session :: ${activeSession.class}` : `FORMATEUR : ${user?.name || 'NODE'}`}
+                            <h1 className="text-6xl font-black tracking-tight text-[var(--secondary)] uppercase italic leading-[1.1]">
+                                {activeSession ? `Séance : ${activeSession.class}` : `Bienvenue, Mr. ${user?.name}`}
                             </h1>
-                            <p className="text-[var(--text-muted)] text-xs font-bold tracking-[0.3em] uppercase mt-4">
-                                {activeSession ? `${activeSession.subject} @ ${activeSession.room}` : 'Awaiting tactical deployment. Manual selection required.'}
-                            </p>
+                            <div className="flex items-center gap-3 mt-4">
+                                <p className="text-[var(--text-muted)] text-[11px] font-bold tracking-widest uppercase bg-white px-3 py-1.5 rounded-lg border border-[var(--border)] shadow-sm">
+                                    {activeSession ? `${activeSession.subject} ᛫ Salle ${activeSession.room}` : 'Veuillez sélectionner un groupe pour commencer la séance.'}
+                                </p>
+                            </div>
                         </div>
                     </div>
 
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-3">
                         <div className="relative" ref={selectRef}>
                             <button
                                 onClick={() => setIsSelectOpen(!isSelectOpen)}
-                                className={`bg-[var(--surface)] border ${isSelectOpen ? 'border-[var(--primary)] shadow-[0_0_20px_rgba(var(--primary-rgb),0.1)]' : 'border-[var(--border-strong)]'} text-[var(--primary)] px-6 py-4 text-[10px] font-black tracking-widest uppercase outline-none focus:border-[var(--primary)] transition-all cursor-pointer min-w-[260px] flex items-center justify-between group`}
+                                className={`bg-white border rounded-xl ${isSelectOpen ? 'border-[var(--primary)] ring-4 ring-green-500/10' : 'border-[var(--border)]'} text-[var(--secondary)] px-6 py-4 text-[10px] font-black tracking-widest uppercase transition-all shadow-sm min-w-[280px] flex items-center justify-between group`}
                             >
-                                <div className="flex items-center gap-3 truncate">
-                                    <div className={`w-1 h-3 ${activeSession ? 'bg-[var(--primary)]' : 'bg-[var(--border-strong)]'} transition-colors`}></div>
-                                    <span className="truncate">
-                                        {activeSession ? `${activeSession.class} - SQUADRON` : 'SELECT_CLUSTER'}
-                                    </span>
+                                <div className="flex items-center gap-3">
+                                    <CalendarCheck className={`w-4 h-4 ${activeSession ? 'text-[var(--primary)]' : 'text-[var(--text-muted)]'}`} />
+                                    <span>{activeSession ? `${activeSession.class}` : 'CHOISIR UN GROUPE'}</span>
                                 </div>
-                                <ChevronDown className={`w-3 h-3 text-[var(--text-muted)] group-hover:text-[var(--primary)] transition-transform duration-500 ${isSelectOpen ? 'rotate-180' : ''}`} />
+                                <ChevronDown className={`w-4 h-4 text-[var(--text-muted)] transition-transform duration-300 ${isSelectOpen ? 'rotate-180' : ''}`} />
                             </button>
 
                             {isSelectOpen && (
-                                <div className="absolute top-[calc(100%+8px)] right-0 w-full bg-[var(--surface)] border border-[var(--border-strong)] z-50 shadow-2xl py-2 animate-in fade-in zoom-in-95 duration-200">
-                                    <div
-                                        onClick={() => { selectClass(''); setIsSelectOpen(false); }}
-                                        className="px-6 py-4 text-[9px] font-black tracking-widest uppercase text-[var(--text-muted)] hover:bg-[var(--surface-hover)] hover:text-red-500 cursor-pointer transition-all border-b border-[var(--border)] italic"
-                                    >
-                                        // RESET_TELEMETRY
-                                    </div>
-                                    <div className="max-h-[300px] overflow-y-auto custom-scrollbar">
+                                <div className="absolute top-[calc(100%+8px)] right-0 w-full bg-white border border-[var(--border)] z-50 shadow-xl rounded-xl py-2 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                                    <div className="max-h-[250px] overflow-y-auto">
                                         {classes.map(c => (
                                             <div
                                                 key={c.id}
                                                 onClick={() => { selectClass(c.id); setIsSelectOpen(false); }}
-                                                className={`px-6 py-4 text-[10px] font-black tracking-widest uppercase cursor-pointer transition-all border-l-2 hover:bg-[var(--surface-hover)] hover:text-[var(--primary)] ${activeSession?.class === c.id ? 'border-[var(--primary)] text-[var(--primary)] bg-[var(--surface-hover)]' : 'border-transparent text-[var(--text-muted)] hover:border-[var(--primary)]'}`}
+                                                className={`px-6 py-4 text-[10px] font-black tracking-widest uppercase cursor-pointer transition-all hover:bg-[var(--surface-hover)] hover:text-[var(--primary)] ${activeSession?.class === c.id ? 'text-[var(--primary)] bg-green-50' : 'text-[var(--text-muted)]'}`}
                                             >
-                                                <div className="flex flex-col">
-                                                    <span>{c.id} - {c.title}</span>
-                                                    <span className="text-[8px] opacity-40 mt-1 tracking-[0.2em]">{c.stream}</span>
-                                                </div>
+                                                <span>{c.id} - {c.title}</span>
                                             </div>
                                         ))}
                                     </div>
@@ -295,18 +280,18 @@ const FormateurDashboard = () => {
                         </div>
 
                         {activeSession && (
-                            <div className="flex gap-4">
+                            <div className="flex gap-3">
                                 <button
                                     onClick={() => setIsConfirming(true)}
-                                    className="btn-noir btn-outline px-8 py-3 group hover:border-[var(--primary)]"
+                                    className="btn-ista btn-ista-outline px-6 py-4 flex items-center gap-2"
                                 >
-                                    <ClipboardCheck className="w-3 h-3 mr-2 group-hover:text-[var(--primary-text)] transition-colors" />
-                                    <span className="group-hover:text-[var(--primary-text)] transition-colors text-[10px]">Confirm Cluster</span>
+                                    <ClipboardCheck className="w-4 h-4" />
+                                    <span className="text-[10px]">Valider la présence</span>
                                 </button>
                                 <button
-                                    className="btn-noir px-8 py-3 flex items-center justify-center"
+                                    className="btn-ista px-6 py-4"
                                     onClick={() => navigate(`/scanner?classId=${activeSession.class}&mode=scann&subject=${encodeURIComponent(activeSession.subject)}&room=${encodeURIComponent(activeSession.room)}&formateurName=${encodeURIComponent(user?.name)}&time=${activeSession.time}`)}
-                                    title="Face Scan"
+                                    title="Lancer le Scanner"
                                 >
                                     <Scan className="w-5 h-5" />
                                 </button>
@@ -315,111 +300,108 @@ const FormateurDashboard = () => {
                     </div>
                 </div>
 
-                {/* Live Stats Bar */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-px bg-[var(--border-strong)] border border-[var(--border-strong)]">
-                    <div className="bg-[var(--background)] p-12 text-center group hover:bg-[var(--surface-hover)] transition-colors">
-                        <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest mb-4 flex items-center justify-center gap-2">
-                            <Users className="w-3 h-3" /> Network Nodes
-                        </p>
-                        <h2 className="text-6xl font-black text-[var(--text)] group-hover:text-[var(--primary)] transition-colors">{stats.total.toString().padStart(2, '0')}</h2>
+                {/* Stats Bar */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div className="ista-card p-8 bg-white text-center shadow-sm">
+                        <Users className="w-6 h-6 text-[var(--secondary)] mx-auto mb-3" />
+                        <h2 className="text-4xl font-black text-[var(--secondary)]">{stats.total.toString().padStart(2, '0')}</h2>
+                        <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest mt-1">Stagiaires inscrits</p>
                     </div>
-                    <div className="bg-[var(--background)] p-12 text-center group hover:bg-[var(--surface-hover)] transition-colors">
-                        <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest mb-4 flex items-center justify-center gap-2">
-                            <Activity className="w-3 h-3" /> Active Signal
-                        </p>
-                        <h2 className="text-6xl font-black text-[var(--text)] group-hover:text-[var(--primary)] transition-colors">{stats.present.toString().padStart(2, '0')}</h2>
+                    <div className="ista-card p-8 bg-white text-center shadow-sm border-b-4 border-b-[var(--primary)]">
+                        <Activity className="w-6 h-6 text-[var(--primary)] mx-auto mb-3" />
+                        <h2 className="text-4xl font-black text-[var(--primary)]">{stats.present.toString().padStart(2, '0')}</h2>
+                        <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest mt-1">Présents</p>
                     </div>
-                    <div className="bg-[var(--background)] p-12 text-center group hover:bg-[var(--surface-hover)] transition-colors">
-                        <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest mb-4 flex items-center justify-center gap-2">
-                            <XCircle className="w-3 h-3" /> Void State
-                        </p>
-                        <h2 className="text-6xl font-black text-[var(--text)] group-hover:text-[var(--primary)] transition-colors">{stats.absent.toString().padStart(2, '0')}</h2>
+                    <div className="ista-card p-8 bg-white text-center shadow-sm border-b-4 border-b-red-500">
+                        <AlertCircle className="w-6 h-6 text-red-500 mx-auto mb-3" />
+                        <h2 className="text-4xl font-black text-red-500">{stats.absent.toString().padStart(2, '0')}</h2>
+                        <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest mt-1">Absents</p>
                     </div>
                 </div>
 
                 {/* List Section */}
-                <div className="space-y-8">
+                <div className="space-y-6">
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-                        <h3 className="text-xs font-black tracking-[0.5em] uppercase text-[var(--text-muted)]">Live Node Manifest</h3>
-                        <div className="flex items-center border-b border-[var(--border-strong)] w-full md:w-80 group focus-within:border-[var(--primary)] transition-colors">
+                        <h3 className="text-xs font-black tracking-widest uppercase text-[var(--secondary)] flex items-center gap-3">
+                            <div className="w-1.5 h-6 bg-[var(--primary)] rounded-full"></div>
+                            Liste des Stagiaires
+                        </h3>
+                        <div className="flex items-center bg-white border border-[var(--border)] rounded-xl w-full md:w-80 px-4 group focus-within:border-[var(--primary)] focus-within:ring-4 focus-within:ring-green-500/5 transition-all shadow-sm">
                             <Search className="w-4 h-4 text-[var(--text-muted)]" />
                             <input
                                 type="text"
-                                placeholder="FIND ENTITY..."
+                                placeholder="Rechercher par nom..."
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
-                                className="bg-transparent border-none text-[11px] py-4 px-6 w-full tracking-[0.2em] font-bold focus:ring-0 uppercase text-[var(--text)]"
+                                className="bg-transparent border-none text-[11px] py-4 px-4 w-full tracking-wider font-bold focus:ring-0 uppercase"
                             />
                         </div>
                     </div>
 
-                    <div className="border border-[var(--border-strong)] bg-[var(--background)] overflow-hidden">
+                    <div className="ista-panel overflow-hidden bg-white">
                         <table className="w-full text-left border-collapse">
                             <thead>
-                                <tr className="bg-[var(--surface)] text-[var(--text-muted)] text-[10px] font-black uppercase tracking-widest border-b border-[var(--border-strong)]">
-                                    <th className="p-8">Entity Name</th>
-                                    <th className="p-8">Communication</th>
-                                    <th className="p-8">Sync Status</th>
-                                    <th className="p-8 text-right">Overrides</th>
+                                <tr className="bg-[var(--surface-hover)] text-[var(--secondary)] text-[10px] font-black uppercase tracking-widest">
+                                    <th className="p-6">Stagiaire</th>
+                                    <th className="p-6">Email / Identifiant</th>
+                                    <th className="p-6">Statut</th>
+                                    <th className="p-6 text-right">Actions Manuelles</th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-[var(--border-strong)]">
+                            <tbody className="divide-y divide-[var(--border)]">
                                 {activeSession ? (
                                     filteredStudents.length > 0 ? filteredStudents.map((student) => (
-                                        <tr key={student.id} className="hover:bg-[var(--surface)] transition-colors group">
-                                            <td className="p-8">
-                                                <div className="flex items-center gap-6">
-                                                    <div className={`w-12 h-12 bg-[var(--surface-hover)] border border-[var(--border-strong)] flex items-center justify-center text-[11px] font-black group-hover:bg-[var(--primary)] group-hover:text-[var(--primary-text)] group-hover:border-[var(--primary)] transition-all ${student.status === 'ABSENT' ? 'opacity-30' : ''}`}>
+                                        <tr key={student.id} className="hover:bg-slate-50 transition-colors group">
+                                            <td className="p-6">
+                                                <div className="flex items-center gap-4">
+                                                    <div className={`w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-[10px] font-black text-[var(--secondary)] group-hover:bg-[var(--primary)] group-hover:text-white transition-all shadow-sm ${student.status === 'ABSENT' ? 'opacity-50' : ''}`}>
                                                         {student.name.split(' ').map(n => n[0]).join('')}
                                                     </div>
                                                     <div className="flex flex-col">
-                                                        <span className={`text-xs font-bold tracking-widest text-[var(--text)] uppercase italic group-hover:text-[var(--primary)] transition-colors ${student.status === 'ABSENT' ? 'opacity-30' : ''}`}>{student.name}</span>
-                                                        <span className="text-[9px] text-[var(--text-muted)] mt-1 tracking-widest uppercase font-black">ID_REF: {student.id}</span>
+                                                        <span className={`text-xs font-bold tracking-tight text-[var(--secondary)] uppercase ${student.status === 'ABSENT' ? 'opacity-40' : ''}`}>{student.name}</span>
+                                                        <span className="text-[9px] text-[var(--text-muted)] font-mono">#{student.id}</span>
                                                     </div>
                                                 </div>
                                             </td>
-                                            <td className="p-8 text-[var(--text-muted)] font-mono text-[10px] tracking-widest uppercase group-hover:text-[var(--text)] transition-colors">
+                                            <td className="p-6 text-[var(--text-muted)] font-bold text-[10px] tracking-wider uppercase truncate max-w-[200px]">
                                                 {student.email}
                                             </td>
-                                            <td className="p-8">
-                                                <span className={`text-[9px] font-black tracking-[0.2em] px-4 py-1.5 border transition-all duration-500 ${student.status === 'PRESENT'
-                                                    ? 'border-[var(--primary)] text-[var(--primary)] shadow-[0_0_10px_rgba(var(--primary-rgb),0.2)]'
-                                                    : 'border-red-900 text-red-500 bg-red-950/20 grayscale-0 opacity-100'
-                                                    }`}>
-                                                    {student.status || 'OFFLINE'}
+                                            <td className="p-6">
+                                                <span className={`badge ${student.status === 'PRESENT' ? 'badge-present' : 'badge-absent'}`}>
+                                                    {student.status === 'PRESENT' ? 'PRÉSENT' : 'ABSENT'}
                                                 </span>
                                             </td>
-                                            <td className="p-8 text-right">
-                                                <div className="flex justify-end gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <td className="p-6 text-right">
+                                                <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                                                     <button
                                                         onClick={() => handleStatusChange(student.id, 'PRESENT')}
-                                                        className={`p-2.5 border transition-colors ${student.status === 'PRESENT' ? 'border-[var(--primary)] text-[var(--primary)]' : 'border-[var(--border-strong)] text-[var(--text-muted)] hover:border-[var(--primary)]'}`}
+                                                        className={`p-2 rounded-lg border transition-all ${student.status === 'PRESENT' ? 'bg-[var(--primary)] border-[var(--primary)] text-white' : 'border-[var(--border)] text-[var(--text-muted)] hover:border-[var(--primary)] hover:text-[var(--primary)]'}`}
                                                     >
-                                                        <CheckCircle2 className="w-3.5 h-3.5" />
+                                                        <CheckCircle2 className="w-4 h-4" />
                                                     </button>
                                                     <button
                                                         onClick={() => handleStatusChange(student.id, 'ABSENT')}
-                                                        className={`p-2.5 border transition-colors ${student.status === 'ABSENT' ? 'border-red-500 text-red-500' : 'border-[var(--border-strong)] text-[var(--text-muted)] hover:border-red-500'}`}
+                                                        className={`p-2 rounded-lg border transition-all ${student.status === 'ABSENT' ? 'bg-red-500 border-red-500 text-white' : 'border-[var(--border)] text-[var(--text-muted)] hover:border-red-500 hover:text-red-500'}`}
                                                     >
-                                                        <XCircle className="w-3.5 h-3.5" />
+                                                        <XCircle className="w-4 h-4" />
                                                     </button>
                                                 </div>
                                             </td>
                                         </tr>
                                     )) : (
                                         <tr>
-                                            <td colSpan="4" className="p-20 text-center opacity-30 italic text-xs tracking-widest grayscale font-black uppercase">
-                                                No active student telemetry detected for this cluster.
+                                            <td colSpan="4" className="p-20 text-center opacity-30 italic text-xs tracking-widest font-black uppercase text-[var(--text-muted)]">
+                                                Aucun stagiaire trouvé dans ce groupe.
                                             </td>
                                         </tr>
                                     )
                                 ) : (
                                     <tr>
-                                        <td colSpan="4" className="p-32 text-center group">
-                                            <div className="flex flex-col items-center gap-6">
-                                                <Activity className="w-12 h-12 text-[var(--border-strong)] animate-pulse" />
-                                                <p className="text-[10px] font-black tracking-[0.5em] text-[var(--text-muted)] uppercase">
-                                                    NETWORK_IDLE :: Standing by for scheduled seance
+                                        <td colSpan="4" className="p-32 text-center">
+                                            <div className="flex flex-col items-center gap-4">
+                                                <Activity className="w-12 h-12 text-[var(--border)] animate-bounce" />
+                                                <p className="text-[11px] font-black tracking-widest text-[var(--text-muted)] uppercase">
+                                                    En attente de démarrage de séance
                                                 </p>
                                             </div>
                                         </td>
@@ -428,18 +410,10 @@ const FormateurDashboard = () => {
                             </tbody>
                         </table>
                     </div>
-
-                    {activeSession && (
-                        <div className="text-center pt-8 border-t border-[var(--border-strong)] border-dashed mt-12">
-                            <p className="text-[10px] font-black tracking-[0.5em] text-[var(--text-muted)] hover:text-[var(--primary)] cursor-pointer transition-colors uppercase">
-                                Access Full Manifest :: 001-FF Registry
-                            </p>
-                        </div>
-                    )}
                 </div>
             </div>
 
-            {/* Class Dossier Modal (Confirm Cluster Replacement) */}
+            {/* Class Dossier Modal */}
             <ClassDossierModal
                 isOpen={isConfirming}
                 onClose={() => setIsConfirming(false)}

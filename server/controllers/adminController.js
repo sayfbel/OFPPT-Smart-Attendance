@@ -93,6 +93,10 @@ exports.createClass = async (req, res) => {
             const [[user]] = await pool.query('SELECT id FROM users WHERE name = ? AND role = "formateur"', [leadName]);
             if (user) {
                 await pool.query('INSERT IGNORE INTO class_supervisors (class_id, formateur_id) VALUES (?, ?)', [id, user.id]);
+                await pool.query(
+                    'INSERT INTO notifications (user_id, type, category, title, message) VALUES (?, ?, ?, ?, ?)',
+                    [user.id, 'message', 'PLANNING', 'Nouveau Groupe Assigné', `Vous avez été assigné comme superviseur pour le groupe ${id}.`]
+                );
             }
         }
 
@@ -294,6 +298,22 @@ exports.createUser = async (req, res) => {
             }
 
             const [[newStagiaire]] = await pool.query('SELECT * FROM stagiaires WHERE id = ?', [stagiaireId]);
+
+            // Notify Formateurs of the class
+            const [supervisors] = await pool.query('SELECT formateur_id FROM class_supervisors WHERE class_id = ?', [class_id]);
+            for (const supervisor of supervisors) {
+                await pool.query(
+                    'INSERT INTO notifications (user_id, type, category, title, message) VALUES (?, ?, ?, ?, ?)',
+                    [
+                        supervisor.formateur_id,
+                        'message',
+                        'STAGIAIRE',
+                        'Nouveau Stagiaire',
+                        `Le stagiaire ${name} a été ajouté au groupe ${class_id}.`
+                    ]
+                );
+            }
+
             return res.status(201).json({
                 message: 'Stagiaire identity created. QR generated.',
                 user: { ...newStagiaire, role: 'stagiaire', status: 'ACTIVE', lastLogin: 'No Login' }

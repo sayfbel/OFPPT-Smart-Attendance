@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar as CalIcon, Clock, Filter, ChevronRight, X, ChevronDown } from 'lucide-react';
+import { Calendar as CalIcon, Clock, Filter, ChevronRight, X, ChevronDown, BookOpen, MapPin, Activity } from 'lucide-react';
 import axios from 'axios';
 import { useNotification } from '../../context/NotificationContext';
 import { useAuth } from '../../context/AuthContext';
@@ -22,14 +22,15 @@ const Timelines = () => {
                 const res = await axios.get('/api/formateur/schedule', config);
 
                 setSchedule(res.data.schedule || []);
-                setAvailableClasses(res.data.classes || []);
+                const classes = res.data.classes || [];
+                setAvailableClasses(classes);
 
-                if (res.data.classes && res.data.classes.length > 0) {
-                    setSelectedClass(res.data.classes[0].id);
+                if (classes.length > 0) {
+                    setSelectedClass(classes[0].id);
                 }
             } catch (error) {
                 console.error('Error fetching formateur schedule', error);
-                addNotification('Failed to retrieve personal schedule matrix.', 'error');
+                addNotification('Échec de la récupération du planning personnel.', 'error');
             } finally {
                 setLoading(false);
             }
@@ -37,7 +38,7 @@ const Timelines = () => {
         fetchData();
     }, [addNotification]);
 
-    const days = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY'];
+    const days = ['LUNDI', 'MARDI', 'MERCREDI', 'JEUDI', 'VENDREDI', 'SAMEDI'];
     const timeSlots = [
         '08:30 - 09:30', '09:30 - 10:30', '10:30 - 11:30', '11:30 - 12:30', '12:30 - 13:30',
         '13:30 - 14:30', '14:30 - 15:30', '15:30 - 16:30', '16:30 - 17:30', '17:30 - 18:30'
@@ -70,103 +71,114 @@ const Timelines = () => {
     const filteredSchedule = schedule.filter(slot => slot.class === selectedClass);
 
     if (loading) {
-        return <div className="flex items-center justify-center h-screen bg-black text-white">INITIALIZING TEMPORAL MATRIX...</div>;
+        return (
+            <div className="flex flex-col items-center justify-center h-[60vh]">
+                <div className="w-12 h-12 border-4 border-slate-100 border-t-[var(--primary)] rounded-full animate-spin mb-6"></div>
+                <span className="text-[10px] font-black tracking-[0.4em] uppercase text-slate-400">Chargement du Planning...</span>
+            </div>
+        );
     }
 
     return (
-        <div className="space-y-12 fade-up">
-            <div className="flex items-end justify-between border-b border-[var(--border-strong)] pb-12">
+        <div className="space-y-12 fade-up transition-all duration-500">
+            <div className="flex flex-col md:flex-row items-start md:items-end justify-between border-b border-slate-100 pb-12 gap-8">
                 <div className="space-y-4">
-                    <p className="text-[var(--text-muted)] text-[10px] tracking-[0.5em] font-black uppercase">Personal Deployment Schedule</p>
-                    <h1 className="text-7xl font-black tracking-tighter text-[var(--primary)] uppercase italic">Timelines</h1>
+                    <h1 className="text-6xl md:text-7xl font-black tracking-tighter text-[var(--secondary)] uppercase italic leading-none">Emploi du Temps</h1>
+                    <p className="text-[var(--text-muted)] text-xs tracking-[0.4em] uppercase font-black">Mon planning de déploiement personnel</p>
                 </div>
             </div>
 
             {availableClasses.length === 0 ? (
-                <div className="border border-[var(--border-strong)] border-dashed py-32 flex flex-col items-center justify-center text-center opacity-50">
-                    <span className="text-xs font-black tracking-[0.5em] uppercase text-[var(--primary)] mb-4">NO ACTIVE ASSIGNMENTS</span>
-                    <p className="text-[10px] font-bold tracking-widest text-[var(--text-muted)] uppercase">You are currently not assigned to any operational squadrons.</p>
+                <div className="py-32 flex flex-col items-center justify-center text-center bg-white rounded-[40px] border border-dashed border-slate-200 shadow-inner">
+                    <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mb-6">
+                        <Activity className="w-8 h-8 text-slate-200" />
+                    </div>
+                    <span className="text-[10px] font-black tracking-[0.4em] uppercase text-slate-400 mb-2">AUCUNE AFFECTATION ACTIVE</span>
+                    <p className="text-[9px] font-bold tracking-widest text-slate-300 uppercase italic">Vous n'êtes actuellement assigné à aucun groupe opérationnel.</p>
                 </div>
             ) : (
                 <>
-                    <div className="flex gap-6 border-b border-[var(--border-strong)] pb-8 overflow-x-auto no-scrollbar">
+                    <div className="flex gap-6 border-b border-slate-50 pb-8 overflow-x-auto no-scrollbar pt-4">
                         {availableClasses.map((cls, index) => (
                             <div
                                 key={index}
                                 onClick={() => setSelectedClass(cls.id)}
-                                className={`min-w-[300px] flex-shrink-0 p-8 border transition-all duration-500 group cursor-pointer ${selectedClass === cls.id
-                                    ? 'border-[var(--primary)] bg-[var(--surface-hover)]'
-                                    : 'border-[var(--border-strong)] bg-[var(--surface)] hover:border-[var(--primary)]'
+                                className={`min-w-[280px] flex-shrink-0 p-8 rounded-3xl border transition-all duration-500 group cursor-pointer ${selectedClass === cls.id
+                                    ? 'border-[var(--primary)] bg-green-50/30 ring-4 ring-green-500/5 shadow-xl shadow-green-500/5'
+                                    : 'border-slate-100 bg-white hover:border-[var(--primary)]/30 hover:shadow-lg'
                                     }`}
                             >
                                 <div className="flex items-center justify-between mb-4">
-                                    <span className="text-[10px] font-black tracking-[0.3em] text-[var(--primary)] uppercase">{cls.id}</span>
-                                    <span className={`px-3 py-1 border text-[9px] font-bold tracking-widest uppercase transition-colors duration-500 ${selectedClass === cls.id ? 'bg-[var(--primary)] text-[var(--background)] border-[var(--primary)]' : 'bg-[var(--background)] text-[var(--primary)] border-[var(--border)] group-hover:border-[var(--primary)]'
-                                        }`}>
-                                        {selectedClass === cls.id ? 'ACTIVE' : 'STANDBY'}
-                                    </span>
+                                    <span className="text-[10px] font-black tracking-widest text-[var(--primary)] uppercase">{cls.id}</span>
+                                    <div className={`w-2 h-2 rounded-full ${selectedClass === cls.id ? 'bg-[var(--primary)] animate-pulse' : 'bg-slate-200'}`}></div>
                                 </div>
-                                <h3 className="text-2xl font-black italic text-[var(--primary)] tracking-tighter mb-2 truncate">{cls.title}</h3>
-                                <div className="flex flex-col gap-2 text-xs font-bold uppercase tracking-widest mt-6 pt-6 border-t border-[var(--border-strong)]">
-                                    <span className="text-[var(--text-muted)] group-hover:text-[var(--primary)] transition-colors">STREAM: <span className="text-[var(--primary)]">{cls.stream}</span></span>
-                                </div>
+                                <h3 className="text-xl font-black italic text-[var(--secondary)] tracking-tight mb-2 truncate group-hover:text-[var(--primary)] transition-colors">{cls.title}</h3>
+                                <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mt-2 truncate italic">{cls.stream}</p>
                             </div>
                         ))}
                     </div>
 
-                    <div className="pt-8 overflow-x-auto no-scrollbar w-full relative">
-                        <div className="w-full min-w-[1200px] pb-12 relative">
-                            {/* Central Vertical Line */}
-                            <div className="absolute left-[calc(120px+(100%-120px)/2)] top-0 bottom-0 w-px bg-[var(--border-strong)] z-0"></div>
-
-                            {/* Headers */}
-                            <div className="grid grid-cols-[120px_repeat(10,minmax(0,1fr))] gap-0 pb-8 border-b border-[var(--border-strong)] relative z-10">
-                                <div></div>
+                    <div className="pt-8 overflow-x-auto ista-scrollbar w-full relative">
+                        <div className="w-full min-w-[1400px] pb-12 relative fade-up">
+                            {/* Time Headers */}
+                            <div className="grid grid-cols-[150px_repeat(10,minmax(0,1fr))] gap-0 pb-8 border-b border-slate-100 mb-8 sticky top-0 bg-white z-40">
+                                <div className="flex items-center px-8">
+                                    <CalIcon className="w-5 h-5 text-[var(--primary)]" />
+                                    <span className="ml-3 text-[10px] font-black tracking-widest text-[var(--secondary)] uppercase">JOURS</span>
+                                </div>
                                 {timeSlots.map((time, idx) => (
-                                    <div key={idx} className="flex justify-center items-center text-center bg-[var(--background)]">
-                                        <span className="text-[10px] font-black tracking-[0.3em] text-[var(--text-muted)] whitespace-nowrap">
+                                    <div key={idx} className="flex justify-center items-center py-4 border-l border-slate-50">
+                                        <span className="text-[10px] font-black tracking-widest text-slate-400 whitespace-nowrap">
                                             {time}
                                         </span>
                                     </div>
                                 ))}
                             </div>
 
-                            {/* Grid */}
-                            <div className="pt-8">
+                            {/* Timeline Grid */}
+                            <div className="space-y-4">
                                 {days.map((day) => {
-                                    const daySchedule = filteredSchedule.filter(slot => slot.day === day);
+                                    const daySchedule = filteredSchedule.filter(slot => slot.day === (day === 'LUNDI' ? 'MONDAY' : day === 'MARDI' ? 'TUESDAY' : day === 'MERCREDI' ? 'WEDNESDAY' : day === 'JEUDI' ? 'THURSDAY' : day === 'VENDREDI' ? 'FRIDAY' : day === 'SAMEDI' ? 'SATURDAY' : day));
 
                                     return (
-                                        <div key={day} className="relative py-16 grid grid-cols-[120px_repeat(10,minmax(0,1fr))] gap-0 items-center group">
-                                            <div className="absolute left-[120px] right-0 top-1/2 -translate-y-1/2 h-px bg-[var(--border-strong)] z-0"></div>
+                                        <div key={day} className="relative py-8 grid grid-cols-[150px_repeat(10,minmax(0,1fr))] gap-0 items-center group transition-colors hover:bg-slate-50/50 rounded-3xl">
+                                            {/* Base Line */}
+                                            <div className="absolute left-[150px] right-20 top-1/2 -translate-y-1/2 h-0.5 bg-slate-100 z-0"></div>
 
-                                            <div className="absolute left-[calc(120px+(100%-120px)/2)] top-1/2 -translate-x-1/2 -translate-y-1/2 w-10 h-10 flex items-center justify-center bg-[var(--background)] border border-[var(--border-strong)] z-10 text-[var(--text-muted)] group-hover:border-[var(--primary)] group-hover:text-[var(--background)] group-hover:bg-[var(--primary)] transition-all">
-                                                <Clock className="w-4 h-4" />
+                                            {/* Day Name */}
+                                            <div className="px-8 z-10 relative">
+                                                <span className="text-sm font-black italic tracking-tight text-[var(--secondary)] uppercase">{day}</span>
                                             </div>
 
-                                            <div className="flex items-center z-10 bg-[var(--background)] w-max pr-8 py-2">
-                                                <span className="text-[11px] font-black tracking-[0.4em] text-[var(--text-muted)] uppercase">{day}</span>
-                                            </div>
-
+                                            {/* Event Cards */}
                                             {daySchedule.map((slot, index) => {
                                                 const gridClasses = getGridSpan(slot.time);
-                                                const startHour = parseInt(slot.time.split(/\s*-\s*/)[0].split(':')[0], 10);
-                                                const paddingClass = startHour >= 13 ? 'pl-8 pr-0' : 'pl-0 pr-8';
-
                                                 return (
-                                                    <div key={index} className={`${gridClasses} relative z-20 hover:-translate-y-1 transition-transform ${paddingClass}`}>
-                                                        <div className="p-8 border border-[var(--border-strong)] bg-[var(--background)] hover:border-[var(--primary)] transition-colors duration-500 w-full group/card">
-                                                            <div className="flex items-center justify-between mb-6">
-                                                                <span className="text-[10px] font-black tracking-[0.3em] text-[var(--text-muted)] uppercase">{slot.time}</span>
-                                                                <span className="px-3 py-1.5 bg-[var(--surface)] border border-[var(--border)] text-[9px] font-black tracking-widest text-[var(--primary)] uppercase group-hover/card:border-[var(--primary)] transition-colors">{slot.room}</span>
+                                                    <div key={index} className={`${gridClasses} relative z-20 px-4 group/card-wrapper`}>
+                                                        <div className="p-6 rounded-2xl bg-white border border-slate-100 shadow-sm hover:border-[var(--primary)] hover:shadow-xl hover:shadow-green-500/5 transition-all duration-300 group/card relative overflow-hidden">
+                                                            <div className="absolute top-0 right-0 w-16 h-16 bg-green-50 rounded-bl-[40px] transform translate-x-8 -translate-y-8 group-hover/card:scale-110 transition-transform"></div>
+
+                                                            <div className="flex items-center justify-between mb-4 relative">
+                                                                <div className="flex items-center gap-2">
+                                                                    <Clock className="w-3 h-3 text-[var(--primary)]" />
+                                                                    <span className="text-[9px] font-black tracking-widest text-[var(--primary)] uppercase">{slot.time}</span>
+                                                                </div>
+                                                                <div className="flex items-center gap-1.5 px-2 py-1 bg-slate-50 rounded-lg border border-slate-100">
+                                                                    <MapPin className="w-2.5 h-2.5 text-slate-400" />
+                                                                    <span className="text-[9px] font-black tracking-widest text-slate-500 uppercase">{slot.room}</span>
+                                                                </div>
                                                             </div>
-                                                            <h3 className="text-4xl font-black italic text-[var(--primary)] uppercase tracking-tighter mb-4 truncate">
+
+                                                            <h3 className="text-xl font-black italic text-[var(--secondary)] uppercase tracking-tight mb-6 truncate leading-tight group-hover/card:text-[var(--primary)] transition-colors">
                                                                 {slot.subject}
                                                             </h3>
-                                                            <div className="flex items-center gap-3 text-[10px] font-bold uppercase tracking-widest mt-8 pt-6 border-t border-[var(--border-strong)] truncate">
-                                                                <span className="text-[var(--text-muted)] shrink-0">SQUADRON: <span className="text-[var(--primary)]">{slot.class}</span></span>
-                                                                <span className="text-[var(--border-strong)] shrink-0">|</span>
-                                                                <span className="text-[var(--text-muted)] truncate shrink-0">STATUS: <span className="text-[var(--primary)]">ACTIVE</span></span>
+
+                                                            <div className="flex items-center justify-between pt-4 border-t border-slate-50">
+                                                                <div className="flex items-center gap-2">
+                                                                    <div className="w-2 h-2 rounded-full bg-[var(--primary)] animate-pulse"></div>
+                                                                    <span className="text-[9px] font-black text-slate-300 uppercase tracking-widest">SÉANCE ACTIVE</span>
+                                                                </div>
+                                                                <span className="text-[9px] font-black text-[var(--primary)] uppercase">{slot.class}</span>
                                                             </div>
                                                         </div>
                                                     </div>
@@ -180,6 +192,11 @@ const Timelines = () => {
                     </div>
                 </>
             )}
+            <style>{`
+                .ista-scrollbar::-webkit-scrollbar { width: 4px; height: 4px; }
+                .ista-scrollbar::-webkit-scrollbar-track { background: transparent; }
+                .ista-scrollbar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
+            `}</style>
         </div>
     );
 };

@@ -1,6 +1,6 @@
 import React, { useRef, useState, useEffect } from 'react';
 import ReactDOM from 'react-dom';
-import { X, CheckCircle2, AlertTriangle, ArrowRight, PenTool, Hash, Users, Activity, XCircle, ShieldCheck } from 'lucide-react';
+import { X, CheckCircle2, AlertTriangle, ArrowRight, PenTool, Hash, Users, Activity, XCircle, ShieldCheck, ClipboardCheck, Clock } from 'lucide-react';
 
 const ClassDossierModal = ({ isOpen, onClose, activeSession, students, stats, onConfirm, submitting }) => {
     const canvasRef = useRef(null);
@@ -16,16 +16,14 @@ const ClassDossierModal = ({ isOpen, onClose, activeSession, students, stats, on
             setEndTime(end || '');
         }
     }, [isOpen, activeSession]);
+
     useEffect(() => {
         if (isOpen && canvasRef.current) {
             const canvas = canvasRef.current;
             const ctx = canvas.getContext('2d');
-
-            // Set internal resolution to match display size for 1:1 mapping
             canvas.width = canvas.offsetWidth;
             canvas.height = canvas.offsetHeight;
-
-            ctx.strokeStyle = '#3b82f6';
+            ctx.strokeStyle = '#005596';
             ctx.lineWidth = 3;
             ctx.lineCap = 'round';
             ctx.lineJoin = 'round';
@@ -35,15 +33,11 @@ const ClassDossierModal = ({ isOpen, onClose, activeSession, students, stats, on
     const getCoordinates = (e) => {
         const canvas = canvasRef.current;
         if (!canvas) return { x: 0, y: 0 };
-
         const rect = canvas.getBoundingClientRect();
         const clientX = (e.clientX || (e.touches && e.touches[0].clientX));
         const clientY = (e.clientY || (e.touches && e.touches[0].clientY));
-
-        // Calculate scaling if CSS dimensions differ from internal resolution
         const scaleX = canvas.width / rect.width;
         const scaleY = canvas.height / rect.height;
-
         return {
             x: (clientX - rect.left) * scaleX,
             y: (clientY - rect.top) * scaleY
@@ -69,8 +63,6 @@ const ClassDossierModal = ({ isOpen, onClose, activeSession, students, stats, on
         const ctx = canvasRef.current.getContext('2d');
         ctx.lineTo(x, y);
         ctx.stroke();
-
-        // Prevent scrolling while drawing on touch devices
         if (e.touches) e.preventDefault();
     };
 
@@ -83,7 +75,7 @@ const ClassDossierModal = ({ isOpen, onClose, activeSession, students, stats, on
 
     const handleVerify = () => {
         if (!hasSignature) {
-            alert("Digital signature required to verify cluster.");
+            alert("La signature du formateur est requise pour valider le rapport.");
             return;
         }
         const signatureData = canvasRef.current.toDataURL();
@@ -93,141 +85,139 @@ const ClassDossierModal = ({ isOpen, onClose, activeSession, students, stats, on
     if (!isOpen) return null;
 
     return ReactDOM.createPortal(
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 sm:p-8 bg-black/90 backdrop-blur-xl animate-in fade-in duration-500 overflow-y-auto">
-            <div className="bg-[var(--surface)] border border-[var(--border-strong)] w-full max-w-5xl p-8 sm:p-12 space-y-10 relative overflow-hidden group shadow-2xl my-auto min-h-[700px]">
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 sm:p-8 bg-black/60 backdrop-blur-md animate-in fade-in duration-300">
+            <div className="bg-white rounded-[40px] w-full max-w-6xl shadow-2xl relative overflow-hidden flex flex-col h-[90vh] max-h-[850px]">
 
-                {/* Tactical Brace Accents */}
-                <div className="absolute top-0 left-0 w-12 h-12 border-t border-l border-[var(--primary)] -translate-x-2 -translate-y-2 pointer-events-none"></div>
-                <div className="absolute top-0 right-0 w-12 h-12 border-t border-r border-[var(--primary)] translate-x-2 -translate-y-2 pointer-events-none"></div>
-                <div className="absolute bottom-0 left-0 w-12 h-12 border-b border-l border-[var(--primary)] -translate-x-2 translate-y-2 pointer-events-none"></div>
-                <div className="absolute bottom-0 right-0 w-12 h-12 border-b border-r border-[var(--primary)] translate-x-2 translate-y-2 pointer-events-none"></div>
-
-                {/* Close Button */}
-                <button
-                    onClick={onClose}
-                    className="absolute top-8 right-8 z-50 p-3 bg-[var(--surface)] border border-[var(--border-strong)] hover:border-[var(--primary)] transition-all text-[var(--text-muted)] hover:text-[var(--primary)] group"
-                >
-                    <X className="w-5 h-5 group-hover:rotate-90 transition-transform duration-300" />
-                </button>
-
-                {/* Header Information */}
-                <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-8 border-b border-[var(--border-strong)] pb-10 relative z-10">
-                    <div className="flex items-center gap-8">
-                        <div className="w-20 h-20 bg-[var(--primary)]/10 border border-[var(--primary)]/20 flex items-center justify-center text-[var(--primary)] shadow-[0_0_30px_rgba(var(--primary-rgb),0.1)]">
-                            <ShieldCheck className="w-10 h-10" />
+                {/* Fixed Header Section */}
+                <div className="p-12 pb-8 border-b border-slate-50 flex justify-between items-start bg-white sticky top-0 z-30">
+                    <div>
+                        <div className="flex items-center gap-3 mb-2">
+                            <div className="w-1.5 h-6 bg-[var(--primary)] rounded-full"></div>
+                            <h3 className="text-3xl font-black italic tracking-tight text-[var(--secondary)] uppercase leading-none">Rapport de Présence</h3>
                         </div>
-                        <div className="space-y-2">
-                            <div className="text-[var(--primary)] text-[10px] tracking-[0.5em] font-black uppercase flex items-center gap-3">
-                                <div className="w-2 h-2 bg-[var(--primary)] animate-pulse"></div>
-                                OFFICIAL_CLASSIFIED_DOSSIER
-                            </div>
-                            <h2 className="text-6xl font-black tracking-tighter text-[var(--text)] uppercase italic leading-none">Class Dossier Modal</h2>
-                        </div>
+                        <p className="text-[10px] font-bold text-slate-400 tracking-widest uppercase">Définissez les détails du cours pour l'emploi du temps.</p>
                     </div>
-                    <div className="flex flex-col text-right">
-                        <span className="text-[9px] font-black tracking-[0.3em] text-[var(--text-muted)] uppercase mb-2">NETWORK_SQUADRON_LINK</span>
-                        <div className="px-6 py-4 bg-[var(--surface)] border border-[var(--border-strong)]">
-                            <span className="text-xl font-black text-[var(--primary)] italic tracking-tighter uppercase whitespace-nowrap">
-                                NODE :: {activeSession?.class} // {activeSession?.subject}
+
+                    <div className="flex items-center gap-6">
+                        <div className="hidden md:flex flex-col items-end">
+                            <span className="text-[9px] font-black text-slate-300 uppercase tracking-[0.2em] mb-1">UNITÉ OPÉRATIONNELLE</span>
+                            <span className="text-xs font-black italic text-[var(--primary)] uppercase">
+                                {activeSession?.class} — {activeSession?.subject}
                             </span>
                         </div>
+                        <button
+                            onClick={onClose}
+                            className="p-3 hover:bg-slate-50 rounded-2xl transition-all text-slate-300 hover:text-[var(--secondary)] border border-transparent hover:border-slate-100"
+                        >
+                            <X className="w-6 h-6" />
+                        </button>
                     </div>
                 </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 relative z-10">
-
-                    {/* Left Column: Student List Manifest */}
-                    <div className="space-y-8">
-                        <div className="flex items-center justify-between">
-                            <h3 className="text-[10px] font-black tracking-[0.4em] text-[var(--text)] uppercase flex items-center gap-3">
-                                <Users className="w-4 h-4 text-[var(--primary)]" /> Squadron Node Manifest
-                            </h3>
-                            <span className="text-[9px] font-black text-[var(--text-muted)] tracking-widest uppercase px-3 py-1 bg-[var(--surface)] border border-[var(--border-strong)]">
-                                {students.length} NODES_ONLINE
-                            </span>
-                        </div>
-
-                        <div className="max-h-[380px] overflow-y-auto pr-4 custom-scrollbar space-y-3 bg-[var(--surface)]/10 border border-[var(--border-strong)] p-4">
-                            {students.length > 0 ? students.map((student) => (
-                                <div key={student.id} className="flex justify-between items-center p-4 bg-[var(--background)] border border-[var(--border-strong)] hover:border-[var(--primary)]/40 transition-all group/item">
-                                    <div className="flex items-center gap-5">
-                                        <div className="w-10 h-10 bg-[var(--surface)] border border-[var(--border-strong)] flex items-center justify-center text-[10px] font-black group-hover/item:bg-[var(--primary)] group-hover/item:text-[var(--primary-text)] transition-colors">
-                                            {student.name.split(' ').map(n => n[0]).join('')}
-                                        </div>
-                                        <div className="flex flex-col">
-                                            <span className="text-[11px] font-black tracking-widest text-[var(--text)] uppercase italic">{student.name}</span>
-                                            <span className="text-[9px] text-[var(--text-muted)] uppercase tracking-widest font-bold flex items-center gap-2">
-                                                <Hash className="w-2 h-2" /> ID_{student.id.toString().padStart(3, '0')}
-                                            </span>
-                                        </div>
-                                    </div>
-                                    <div className={`px-4 py-1.5 text-[9px] font-black tracking-[0.2em] border transition-all ${student.status === 'PRESENT' ? 'border-[var(--primary)] text-[var(--primary)] bg-[var(--primary)]/5' : 'border-red-900 text-red-500 bg-red-950/10'}`}>
-                                        {student.status.toUpperCase()}
-                                    </div>
+                {/* Scrollable Content Section */}
+                <div className="flex-1 overflow-y-auto ista-scrollbar p-12 pt-8">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+                        {/* Left: Students List */}
+                        <div className="space-y-8">
+                            <div className="flex items-center justify-between">
+                                <h3 className="text-xs font-black tracking-widest text-[var(--secondary)] uppercase flex items-center gap-3">
+                                    <Users className="w-4 h-4 text-[var(--primary)]" /> Liste des Stagiaires
+                                </h3>
+                                <div className="flex items-center gap-2 px-3 py-1.5 bg-green-50 rounded-lg border border-green-100">
+                                    <Activity className="w-3 h-3 text-[var(--primary)]" />
+                                    <span className="text-[9px] font-bold text-[var(--primary)] tracking-widest uppercase">
+                                        {students.length} ENROLÉS
+                                    </span>
                                 </div>
-                            )) : (
-                                <div className="py-20 text-center opacity-30 text-[10px] font-black tracking-[0.4em] uppercase">No Telemetry Detected</div>
-                            )}
-                        </div>
-                    </div>
+                            </div>
 
-                    {/* Right Column: Digital Signature */}
-                    <div className="space-y-8 flex flex-col justify-between">
-                        <div>
-                            <h3 className="text-[10px] font-black tracking-[0.4em] text-[var(--text)] uppercase flex items-center gap-3 mb-8">
-                                <Activity className="w-4 h-4 text-[var(--primary)]" /> Formateur Biometric Signature
-                            </h3>
-
-                            <div className="relative bg-[var(--background)] border-2 border-dashed border-[var(--border-strong)] group/sig overflow-hidden h-[300px]">
-                                {/* Grid Pattern BG for Canvas */}
-                                <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle, var(--primary) 1px, transparent 1px)', backgroundSize: '20px 20px' }}></div>
-
-                                <canvas
-                                    ref={canvasRef}
-                                    className="relative z-10 w-full h-full cursor-crosshair touch-none"
-                                    onMouseDown={startDrawing}
-                                    onMouseMove={draw}
-                                    onMouseUp={stopDrawing}
-                                    onMouseOut={stopDrawing}
-                                    onTouchStart={startDrawing}
-                                    onTouchMove={draw}
-                                    onTouchEnd={stopDrawing}
-                                />
-
-                                {!hasSignature && (
-                                    <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none opacity-20 group-hover/sig:opacity-40 transition-opacity">
-                                        <PenTool className="w-12 h-12 mb-4" />
-                                        <p className="text-[10px] font-black tracking-[0.8em] uppercase">INPUT_SIGNATURE_HERE</p>
+                            <div className="space-y-3 bg-slate-50/50 border border-slate-100 rounded-3xl p-6 max-h-[500px] overflow-y-auto ista-scrollbar">
+                                {students.length > 0 ? students.map((student) => (
+                                    <div key={student.id} className="flex justify-between items-center p-5 bg-white rounded-2xl border border-slate-100 shadow-sm hover:border-[var(--primary)]/40 hover:shadow-md transition-all group">
+                                        <div className="flex items-center gap-4">
+                                            <div className="w-12 h-12 bg-slate-50 rounded-xl flex items-center justify-center text-[12px] font-black text-[var(--secondary)] group-hover:bg-[var(--primary)] group-hover:text-white transition-all">
+                                                {student.name.split(' ').map(n => n[0]).join('')}
+                                            </div>
+                                            <div className="flex flex-col">
+                                                <span className="text-sm font-bold tracking-tight text-[var(--secondary)] uppercase group-hover:text-[var(--primary)] transition-colors">{student.name}</span>
+                                                <span className="text-[9px] text-slate-400 uppercase font-black tracking-widest">MATRICULE: {student.id}</span>
+                                            </div>
+                                        </div>
+                                        <div className={`px-4 py-2 rounded-xl text-[9px] font-black tracking-widest uppercase border ${student.status === 'PRESENT'
+                                            ? 'bg-green-50 text-[var(--primary)] border-green-100'
+                                            : 'bg-red-50 text-red-500 border-red-100'
+                                            }`}>
+                                            {student.status}
+                                        </div>
+                                    </div>
+                                )) : (
+                                    <div className="py-24 text-center">
+                                        <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4 border-2 border-dashed border-slate-200">
+                                            <Users className="w-6 h-6 text-slate-300" />
+                                        </div>
+                                        <p className="text-[10px] font-black tracking-widest uppercase text-slate-300">Aucun stagiaire trouvé</p>
                                     </div>
                                 )}
-
-                                <button
-                                    onClick={clearSignature}
-                                    className="absolute bottom-6 right-6 z-20 text-[9px] font-black tracking-widest text-[var(--text-muted)] hover:text-white transition-all uppercase border border-[var(--border-strong)] px-5 py-2.5 bg-black/80 hover:bg-black"
-                                >
-                                    Reset Matrix
-                                </button>
                             </div>
                         </div>
 
-                        <div className="p-8 bg-[var(--surface)] border border-[var(--border-strong)] space-y-6">
-                            <div className="flex items-center justify-between gap-4">
-                                <div className="flex-1 space-y-3">
-                                    <label className="text-[9px] font-black tracking-[0.3em] text-[var(--text-muted)] uppercase">HEURE_DEBUT</label>
+                        {/* Right: Signature & Time */}
+                        <div className="space-y-10">
+                            <div>
+                                <h3 className="text-xs font-black tracking-widest text-[var(--secondary)] uppercase flex items-center gap-3 mb-6">
+                                    <PenTool className="w-4 h-4 text-[var(--primary)]" /> Signature du Formateur
+                                </h3>
+
+                                <div className="relative bg-slate-50 border-2 border-dashed border-slate-200 rounded-[32px] overflow-hidden h-[300px] group hover:border-[var(--primary)]/40 transition-all">
+                                    <canvas
+                                        ref={canvasRef}
+                                        className="relative z-10 w-full h-full cursor-crosshair touch-none"
+                                        onMouseDown={startDrawing}
+                                        onMouseMove={draw}
+                                        onMouseUp={stopDrawing}
+                                        onMouseOut={stopDrawing}
+                                        onTouchStart={startDrawing}
+                                        onTouchMove={draw}
+                                        onTouchEnd={stopDrawing}
+                                    />
+
+                                    {!hasSignature && (
+                                        <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none opacity-20 group-hover:opacity-40 transition-opacity">
+                                            <PenTool className="w-10 h-10 mb-4 text-[var(--secondary)]" />
+                                            <p className="text-[10px] font-black tracking-[0.4em] uppercase text-[var(--secondary)]">Émargez ici</p>
+                                        </div>
+                                    )}
+
+                                    <button
+                                        onClick={clearSignature}
+                                        className="absolute bottom-6 right-6 z-20 text-[9px] font-black tracking-widest text-white uppercase px-6 py-3 bg-[var(--secondary)] rounded-xl shadow-lg hover:bg-black transition-all"
+                                    >
+                                        Effacer
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div className="p-8 bg-slate-50 rounded-[32px] border border-slate-100 grid grid-cols-2 gap-8">
+                                <div className="space-y-4">
+                                    <label className="text-[10px] font-black tracking-widest text-slate-400 uppercase flex items-center gap-2">
+                                        <Clock className="w-3 h-3" /> Heure Début
+                                    </label>
                                     <input
                                         type="time"
                                         value={startTime}
                                         onChange={(e) => setStartTime(e.target.value)}
-                                        className="w-full bg-[var(--background)] border border-[var(--border-strong)] p-4 text-xs font-black tracking-widest text-[var(--primary)] focus:border-[var(--primary)] transition-all outline-none"
+                                        className="w-full bg-white border border-slate-100 rounded-2xl p-5 text-sm font-black text-[var(--primary)] focus:ring-4 focus:ring-green-500/5 focus:border-[var(--primary)] outline-none transition-all"
                                     />
                                 </div>
-                                <div className="flex-1 space-y-3">
-                                    <label className="text-[9px] font-black tracking-[0.3em] text-[var(--text-muted)] uppercase">HEURE_FIN</label>
+                                <div className="space-y-4">
+                                    <label className="text-[10px] font-black tracking-widest text-slate-400 uppercase flex items-center gap-2">
+                                        <Clock className="w-3 h-3" /> Heure Fin
+                                    </label>
                                     <input
                                         type="time"
                                         value={endTime}
                                         onChange={(e) => setEndTime(e.target.value)}
-                                        className="w-full bg-[var(--background)] border border-[var(--border-strong)] p-4 text-xs font-black tracking-widest text-[var(--primary)] focus:border-[var(--primary)] transition-all outline-none"
+                                        className="w-full bg-white border border-slate-100 rounded-2xl p-5 text-sm font-black text-[var(--primary)] focus:ring-4 focus:ring-green-500/5 focus:border-[var(--primary)] outline-none transition-all"
                                     />
                                 </div>
                             </div>
@@ -235,38 +225,37 @@ const ClassDossierModal = ({ isOpen, onClose, activeSession, students, stats, on
                     </div>
                 </div>
 
-                {/* Footer Action Core */}
-                <div className="flex flex-col sm:flex-row gap-6 pt-8 border-t border-[var(--border-strong)] relative z-10 font-black">
+                {/* Footer Section Section */}
+                <div className="p-12 border-t border-slate-50 bg-white">
                     <button
                         onClick={handleVerify}
                         disabled={submitting || !hasSignature}
-                        className={`flex-1 py-7 text-[11px] tracking-[0.5em] uppercase transition-all flex items-center justify-center gap-6 shadow-xl ${!hasSignature ? 'bg-[var(--surface-hover)] text-[var(--text-muted)] cursor-not-allowed' : 'bg-[var(--primary)] text-[var(--primary-text)] hover:scale-[1.02] active:scale-[0.98]'}`}
+                        className={`w-full py-6 rounded-2xl text-[11px] font-black tracking-[0.2em] uppercase transition-all flex items-center justify-center gap-4 shadow-2xl ${!hasSignature
+                            ? 'bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200'
+                            : 'btn-ista hover:scale-[1.01] active:scale-[0.99] shadow-green-500/20'
+                            }`}
                     >
                         {submitting ? (
-                            <div className="flex items-center gap-4 animate-pulse">
-                                <Users className="w-5 h-5 animate-spin" />
-                                ARCHIVING_NODES...
-                            </div>
+                            <>
+                                <Activity className="w-5 h-5 animate-spin" />
+                                VALIDATION OPÉRATIONNELLE...
+                            </>
                         ) : (
                             <>
-                                VERIFY_CLUSTER_AND_SUBMIT
+                                FINALISER ET TRANSMETTRE LE RAPPORT
                                 <ArrowRight className="w-5 h-5" />
                             </>
                         )}
                     </button>
-                </div>
-
-                {/* Tactical Footer Tag */}
-                <div className="absolute bottom-4 right-10 font-mono text-[9px] text-[var(--border-strong)] opacity-[0.15] hidden md:block select-none font-black uppercase tracking-[0.4em]">
-                    DOSSIER_V01 // NODE_SEQ_{Date.now().toString().slice(-6)}
+                    <p className="text-center mt-6 text-[8px] font-black text-slate-300 tracking-[0.5em] uppercase">SYSTEME DEPointage DIGITAL - OFPPT ISTA</p>
                 </div>
             </div>
 
             <style>{`
-                .custom-scrollbar::-webkit-scrollbar { width: 4px; }
-                .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-                .custom-scrollbar::-webkit-scrollbar-thumb { background: #222; border-radius: 10px; }
-                .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: var(--primary); }
+                .ista-scrollbar::-webkit-scrollbar { width: 4px; }
+                .ista-scrollbar::-webkit-scrollbar-track { background: transparent; }
+                .ista-scrollbar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
+                .ista-scrollbar::-webkit-scrollbar-thumb:hover { background: var(--primary); }
             `}</style>
         </div>,
         document.body

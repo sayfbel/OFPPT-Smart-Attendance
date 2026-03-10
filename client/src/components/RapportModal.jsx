@@ -1,124 +1,129 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
-import { X, ChevronDown } from 'lucide-react';
+import { X, ChevronDown, FileText, Calendar, User, MapPin, Clock, Search } from 'lucide-react';
 
 const RapportModal = ({ isOpen, onClose, rapport }) => {
     if (!isOpen || !rapport) return null;
 
     return ReactDOM.createPortal(
-        <div className="fixed inset-0 z-[9999] bg-[var(--background)] flex items-center justify-center p-4 sm:p-8 overflow-y-auto w-full h-full">
-            <div className="bg-[var(--background)] w-full max-w-7xl h-[90vh] min-h-[700px] flex flex-col md:flex-row relative fade-up">
+        <div className="fixed inset-0 z-[9999] bg-black/60 backdrop-blur-md flex items-center justify-center p-4 sm:p-8 animate-in fade-in duration-300">
+            <div className="bg-white rounded-[40px] w-full max-w-6xl h-[90vh] max-h-[850px] flex flex-col md:flex-row shadow-2xl relative overflow-hidden">
                 <button
                     type="button"
                     onClick={onClose}
-                    className="absolute top-6 right-6 p-2 bg-[var(--surface)] border border-[var(--border-strong)] hover:border-[var(--primary)] transition-colors text-[var(--text-muted)] hover:text-[var(--primary)] z-10"
+                    className="absolute top-8 right-8 p-3 hover:bg-slate-50 rounded-2xl transition-all text-slate-300 hover:text-[var(--secondary)] z-10"
                 >
-                    <X className="w-4 h-4" />
+                    <X className="w-6 h-6" />
                 </button>
 
-                {/* Corner accents (white) */}
-                <div className="absolute top-0 left-0 w-8 h-8 border-t border-l border-[var(--primary)] -translate-x-4 -translate-y-4"></div>
-                <div className="absolute top-0 right-0 w-8 h-8 border-t border-r border-[var(--primary)] translate-x-4 -translate-y-4"></div>
-                <div className="absolute bottom-0 left-0 w-8 h-8 border-b border-l border-[var(--primary)] -translate-x-4 translate-y-4"></div>
-                <div className="absolute bottom-0 right-0 w-8 h-8 border-b border-r border-[var(--primary)] translate-x-4 translate-y-4"></div>
-
-                {/* Left Column (Info Panel) */}
-                <div className="w-full md:w-[380px] border-r border-[var(--border-strong)] p-12 flex flex-col relative">
-                    <div className="mb-12">
-                        <span className="flex items-center gap-2 text-[10px] font-black tracking-[0.3em] text-[var(--primary)] uppercase mb-4">
-                            <div className="w-2 h-2 bg-[var(--primary)]"></div>
-                            RAPPORT MANIFEST
-                        </span>
-                        <h2 className="text-5xl font-black italic tracking-tighter text-[var(--primary)] leading-[0.9]">
-                            ABSENCE<br />REPORT
+                {/* Left Side (Branding & Status) */}
+                <div className="w-full md:w-[35%] bg-gradient-to-br from-[var(--secondary)] to-[#003d6b] text-white p-12 flex flex-col">
+                    <div className="mb-auto">
+                        <div className="w-16 h-16 bg-white/10 rounded-2xl flex items-center justify-center border border-white/20 mb-8">
+                            <FileText className="w-8 h-8 text-white" />
+                        </div>
+                        <h2 className="text-5xl font-black italic tracking-tighter leading-[0.9] mb-4">
+                            RAPPORT <br /> <span className="text-[var(--primary)]">ARCHIVÉ</span>
                         </h2>
+                        <p className="text-[10px] font-bold text-white/50 tracking-[0.3em] uppercase">Document Officiel ISTA</p>
                     </div>
 
-                    <div className="space-y-8 mt-auto">
-                        <div>
-                            <label className="block text-[8px] font-black tracking-[0.3em] text-[var(--text-muted)] uppercase mb-3 text-left">DOCUMENT ID</label>
-                            <div className="px-5 py-4 bg-[var(--background)] border border-[var(--border-strong)] flex items-center">
-                                <span className="text-xl font-black italic text-[var(--primary)] tracking-tighter">
-                                    {rapport.id}
-                                </span>
+                    <div className="space-y-8 mt-12 bg-black/10 p-8 rounded-3xl border border-white/5">
+                        <div className="space-y-1">
+                            <p className="text-[9px] font-black text-white/40 tracking-widest uppercase">CODE DOCUMENT</p>
+                            <p className="text-xl font-black italic uppercase tracking-tight text-[var(--primary)]">{rapport.id}</p>
+                        </div>
+                        <div className="space-y-1">
+                            <p className="text-[9px] font-black text-white/40 tracking-widest uppercase">STATUT DU RAPPORT</p>
+                            <div className="flex items-center gap-2">
+                                <div className={`w-2 h-2 rounded-full animate-pulse ${rapport.status === 'VALIDATED' ? 'bg-[var(--primary)]' : 'bg-gold-500'}`}></div>
+                                <p className="text-[10px] font-black uppercase tracking-widest">
+                                    {rapport.status === 'VALIDATED' ? 'VALIDÉ & SÉCURISÉ' : 'EN ATTENTE'}
+                                </p>
                             </div>
                         </div>
-                        <div>
-                            <label className="block text-[8px] font-black tracking-[0.3em] text-[var(--text-muted)] uppercase mb-3 text-left">STATUS</label>
-                            <div className={`px-5 py-4 bg-[var(--background)] border flex items-center gap-3 ${rapport.status === 'JUSTIFIED' ? 'border-[var(--primary)]' : 'border-red-500'}`}>
-                                <div className={`w-3 h-3 flex items-center justify-center ${rapport.status === 'JUSTIFIED' ? 'bg-[var(--primary)]' : 'bg-red-500'}`}>
-                                    <ChevronDown className="w-3 h-3 text-[var(--background)] -rotate-90" />
-                                </div>
-                                <span className={`text-xs font-black tracking-widest uppercase ${rapport.status === 'JUSTIFIED' ? 'text-[var(--primary)]' : 'text-red-500'}`}>
-                                    {rapport.status.replace('_', ' ')}
-                                </span>
-                            </div>
+                        <div className="space-y-1">
+                            <p className="text-[9px] font-black text-white/40 tracking-widest uppercase">GROUPE</p>
+                            <p className="text-sm font-bold uppercase tracking-tight text-white/70">{rapport.class_id}</p>
                         </div>
+                    </div>
+
+                    <div className="mt-auto hidden md:block">
+                        <p className="text-[8px] font-bold text-white/30 tracking-[0.4em] uppercase">ISTA_OFPPT_D.A.D_ARCHIVE_v3</p>
                     </div>
                 </div>
 
-                {/* Right Column (Details) */}
-                <div className="flex-1 p-12 flex flex-col relative h-[100%] overflow-hidden">
-                    <div className="mb-10 max-w-2xl shrink-0">
-                        <h3 className="text-2xl font-black italic tracking-tighter text-[var(--primary)] uppercase mb-2">INCIDENT DETAILS</h3>
-                        <p className="text-[10px] font-bold tracking-widest text-[var(--text-muted)] uppercase">Complete telemetry log for the recorded absence.</p>
+                {/* Right Side (Content) */}
+                <div className="flex-1 bg-white p-12 flex flex-col relative overflow-y-auto ista-scrollbar">
+                    <div className="mb-12">
+                        <h3 className="text-2xl font-black italic tracking-tight text-[var(--secondary)] uppercase mb-2">Détails de la Séance</h3>
+                        <p className="text-[10px] font-bold text-slate-400 tracking-widest uppercase">Consultation des données d'assiduité enregistrées.</p>
                     </div>
 
-                    <div className="space-y-8 flex-1 overflow-y-auto custom-scrollbar">
-                        <div>
-                            <label className="block text-[10px] font-black tracking-[0.3em] text-[var(--text-muted)] uppercase mb-2">MODULE SESSION</label>
-                            <div className="w-full bg-transparent border-b border-[var(--border-strong)] py-4">
-                                <span className="text-md font-black tracking-widest text-[var(--text)] uppercase">{rapport.subject}</span>
+                    <div className="space-y-10">
+                        {/* Header Info Grid */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                            <div className="space-y-1 border-l-4 border-[var(--primary)] pl-6">
+                                <p className="text-[9px] font-black text-slate-400 tracking-widest uppercase">MODULE / SÉANCE</p>
+                                <p className="text-lg font-black italic text-[var(--secondary)] uppercase">{rapport.subject}</p>
                             </div>
-                        </div>
-                        <div className="grid grid-cols-2 gap-8">
-                            <div>
-                                <label className="block text-[10px] font-black tracking-[0.3em] text-[var(--text-muted)] uppercase mb-2">FORMATEUR</label>
-                                <div className="w-full bg-transparent border-b border-[var(--border-strong)] py-4">
-                                    <span className="text-md font-black tracking-widest text-[var(--text)] uppercase">{rapport.formateur}</span>
+                            <div className="space-y-1 border-l-4 border-slate-100 pl-6">
+                                <p className="text-[9px] font-black text-slate-400 tracking-widest uppercase">FORMATEUR</p>
+                                <p className="text-lg font-black italic text-[var(--secondary)] uppercase">{rapport.formateur}</p>
+                            </div>
+                            <div className="space-y-1 border-l-4 border-slate-100 pl-6">
+                                <p className="text-[9px] font-black text-slate-400 tracking-widest uppercase">DATE DE RÉALISATION</p>
+                                <div className="flex items-center gap-2">
+                                    <Calendar className="w-3 h-3 text-[var(--primary)]" />
+                                    <p className="text-sm font-bold text-[var(--secondary)] uppercase font-mono">{rapport.date}</p>
                                 </div>
                             </div>
-                            <div>
-                                <label className="block text-[10px] font-black tracking-[0.3em] text-[var(--text-muted)] uppercase mb-2">DATE UTC</label>
-                                <div className="w-full bg-transparent border-b border-[var(--border-strong)] py-4">
-                                    <span className="text-md font-black font-mono tracking-widest text-[var(--text)] uppercase">{rapport.date}</span>
-                                </div>
-                            </div>
-                            <div>
-                                <label className="block text-[10px] font-black tracking-[0.3em] text-[var(--text-muted)] uppercase mb-2">SALLE (ROOM)</label>
-                                <div className="w-full bg-transparent border-b border-[var(--border-strong)] py-4">
-                                    <span className="text-md font-black tracking-widest text-[var(--text)] uppercase">{rapport.salle || 'N/A'}</span>
-                                </div>
-                            </div>
-                            <div>
-                                <label className="block text-[10px] font-black tracking-[0.3em] text-[var(--text-muted)] uppercase mb-2">SEANCE (TIME)</label>
-                                <div className="w-full bg-transparent border-b border-[var(--border-strong)] py-4">
-                                    <span className="text-md font-black font-mono tracking-widest text-[var(--text)] uppercase">{rapport.heure || 'N/A'}</span>
+                            <div className="space-y-1 border-l-4 border-slate-100 pl-6">
+                                <p className="text-[9px] font-black text-slate-400 tracking-widest uppercase">HORAIRES & SALLE</p>
+                                <div className="flex items-center gap-4">
+                                    <div className="flex items-center gap-2">
+                                        <Clock className="w-3 h-3 text-[var(--primary)]" />
+                                        <p className="text-sm font-bold text-[var(--secondary)] uppercase font-mono">{rapport.heure || 'N/A'}</p>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <MapPin className="w-3 h-3 text-[var(--primary)]" />
+                                        <p className="text-sm font-bold text-[var(--secondary)] uppercase">{rapport.salle || 'N/A'}</p>
+                                    </div>
                                 </div>
                             </div>
                         </div>
 
-                        <div>
-                            <label className="block text-[10px] font-black tracking-[0.3em] text-[var(--text-muted)] uppercase mb-4 mt-6">STAGIAIRES ROLL CALL</label>
-                            <div className="border border-[var(--border-strong)] bg-[var(--surface)] max-h-[300px] overflow-y-auto custom-scrollbar">
+                        {/* Student List */}
+                        <div className="space-y-4">
+                            <div className="flex items-center justify-between">
+                                <label className="flex items-center gap-2 text-[10px] font-black tracking-widest text-slate-400 uppercase">
+                                    <Search className="w-3 h-3 text-[var(--primary)]" />
+                                    Liste d'Appel des Stagiaires
+                                </label>
+                                <span className="text-[10px] font-black text-[var(--primary)] uppercase">
+                                    {(rapport.stagiaires || []).filter(s => s.status === 'PRESENT').length} Présents / {(rapport.stagiaires || []).length} Total
+                                </span>
+                            </div>
+                            <div className="border border-slate-100 rounded-3xl overflow-hidden bg-slate-50/30">
                                 <table className="w-full text-left border-collapse">
-                                    <thead className="sticky top-0 bg-[var(--surface)] z-10 border-b border-[var(--border-strong)]">
-                                        <tr className="text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)]">
-                                            <th className="p-4">Cadet Alias</th>
-                                            <th className="p-4 text-right">Attendance</th>
+                                    <thead>
+                                        <tr className="bg-slate-50 text-[9px] font-black uppercase tracking-widest text-slate-400">
+                                            <th className="p-6">Stagiaire</th>
+                                            <th className="p-6">Matricule</th>
+                                            <th className="p-6 text-right">Statut</th>
                                         </tr>
                                     </thead>
-                                    <tbody className="divide-y divide-[var(--border-strong)]">
+                                    <tbody className="divide-y divide-slate-100">
                                         {(rapport.stagiaires || []).map((stagiaire, idx) => (
-                                            <tr key={idx} className="hover:bg-[var(--surface-hover)] transition-colors">
-                                                <td className="p-4">
-                                                    <div className="flex flex-col">
-                                                        <span className="text-xs font-bold tracking-widest text-[var(--primary)] uppercase">{stagiaire.name}</span>
-                                                        <span className="text-[9px] font-bold tracking-widest text-[var(--text-muted)] uppercase">{stagiaire.id}</span>
-                                                    </div>
+                                            <tr key={idx} className="hover:bg-white transition-colors">
+                                                <td className="p-6">
+                                                    <span className="text-sm font-black italic text-[var(--secondary)] uppercase">{stagiaire.name}</span>
                                                 </td>
-                                                <td className="p-4 text-right">
-                                                    <span className={`text-[9px] font-black tracking-[0.2em] px-3 py-1 border ${stagiaire.status === 'ABSENT' ? 'border-red-500 text-red-500 bg-red-500/10' : 'border-[var(--primary)] text-[var(--primary)] bg-[var(--primary)]/10'}`}>
+                                                <td className="p-6">
+                                                    <span className="text-[10px] font-bold text-slate-400 font-mono tracking-widest">{stagiaire.id}</span>
+                                                </td>
+                                                <td className="p-6 text-right">
+                                                    <span className={`text-[9px] font-black tracking-widest px-4 py-1.5 rounded-lg border ${stagiaire.status === 'ABSENT' ? 'border-red-500 text-red-500 bg-red-50' : 'border-[var(--primary)] text-[var(--primary)] bg-green-50'}`}>
                                                         {stagiaire.status}
                                                     </span>
                                                 </td>
@@ -129,14 +134,16 @@ const RapportModal = ({ isOpen, onClose, rapport }) => {
                             </div>
                         </div>
 
-                        <div className="pt-8 mt-auto flex justify-end">
+                        {/* Signature */}
+                        <div className="pt-8 flex justify-end">
                             <div className="flex flex-col items-center">
-                                <label className="text-[8px] font-black tracking-[0.3em] text-[var(--text-muted)] uppercase mb-2">DIGITAL SIGNATURE</label>
-                                <div className="px-8 py-3 border border-dashed border-[var(--primary)] bg-[var(--primary)]/5 min-w-[200px] flex items-center justify-center min-h-[80px]">
+                                <label className="text-[9px] font-black tracking-[0.3em] text-[var(--secondary)] uppercase mb-4">SIGNATURE NUMÉRIQUE</label>
+                                <div className="w-64 h-32 bg-slate-50 border border-dashed border-slate-200 rounded-[24px] flex items-center justify-center p-6 shadow-inner relative overflow-hidden">
+                                    <div className="absolute inset-0 opacity-[0.03] bg-[url('https://www.transparenttextures.com/patterns/graphy.png')]"></div>
                                     {rapport.signature ? (
-                                        <img src={rapport.signature} alt="Signature" className="max-h-16 invert" />
+                                        <img src={rapport.signature} alt="Signature" className="max-h-full relative z-10" />
                                     ) : (
-                                        <span className="font-['Brush_Script_MT',cursive] italic text-2xl text-[var(--primary)] tracking-wider">
+                                        <span className="font-['Brush_Script_MT',cursive] italic text-3xl text-[var(--secondary)] opacity-10 relative z-10">
                                             {rapport.formateur}
                                         </span>
                                     )}
@@ -146,6 +153,11 @@ const RapportModal = ({ isOpen, onClose, rapport }) => {
                     </div>
                 </div>
             </div>
+            <style>{`
+                .ista-scrollbar::-webkit-scrollbar { width: 4px; }
+                .ista-scrollbar::-webkit-scrollbar-track { background: transparent; }
+                .ista-scrollbar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
+            `}</style>
         </div>,
         document.body
     );

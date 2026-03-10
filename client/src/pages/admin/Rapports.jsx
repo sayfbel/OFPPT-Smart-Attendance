@@ -102,9 +102,9 @@ const Rapports = () => {
                 element.style.display = 'flex';
                 const opt = {
                     margin: 0,
-                    filename: `Rapport_Manifest_${recordId}.pdf`,
+                    filename: `Rapport_ISTA_${recordId}.pdf`,
                     image: { type: 'jpeg', quality: 0.98 },
-                    html2canvas: { scale: 1.5, useCORS: true, backgroundColor: '#000000' },
+                    html2canvas: { scale: 1.5, useCORS: true, backgroundColor: '#ffffff' },
                     jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
                 };
                 await window.html2pdf().set(opt).from(element).save();
@@ -116,36 +116,38 @@ const Rapports = () => {
     };
 
     return (
-        <div className="space-y-12 fade-up transition-colors duration-500">
+        <div className="space-y-12 fade-up transition-all duration-500">
             {/* Header */}
-            <div className="flex items-end justify-between border-b border-[var(--border-strong)] pb-12 transition-colors duration-500">
+            <div className="flex flex-col md:flex-row items-start md:items-end justify-between border-b border-slate-100 pb-8 lg:pb-12 gap-6 lg:gap-8">
                 <div className="space-y-4">
-                    <h1 className="text-7xl font-black tracking-tighter text-[var(--primary)] uppercase italic transition-colors duration-500">Rapports</h1>
-                    <p className="text-[var(--text-muted)] text-xs tracking-[0.4em] uppercase font-bold transition-colors duration-500">Absence & Attendance Intelligence</p>
+                    <h1 className="text-4xl md:text-5xl lg:text-7xl font-black tracking-tighter text-[var(--secondary)] uppercase italic leading-[0.9]">Rapports</h1>
+                    <p className="text-[var(--text-muted)] text-[10px] lg:text-xs tracking-[0.4em] uppercase font-black">Gestion des Présences et Statistiques</p>
                 </div>
-                <div className="flex gap-4">
+                <div className="flex flex-wrap gap-4 justify-end">
                     <div className="relative">
                         <button
                             onClick={() => setIsFilterDropdownOpen(!isFilterDropdownOpen)}
-                            className="btn-noir btn-outline px-6 py-3 flex items-center gap-2"
+                            className="bg-white border border-[var(--border)] px-6 py-4 rounded-xl flex items-center gap-4 hover:border-[var(--primary)] transition-all shadow-sm"
                         >
-                            <Filter className="w-3 h-3" />
-                            <span className="text-[10px] font-bold tracking-widest uppercase">{classFilter === 'ALL' ? 'ALL SQUADRONS' : classFilter}</span>
-                            <ChevronDown className={`w-3 h-3 transition-transform ${isFilterDropdownOpen ? 'rotate-180' : ''}`} />
+                            <Filter className="w-4 h-4 text-[var(--primary)]" />
+                            <span className="text-[10px] font-black tracking-widest uppercase text-[var(--secondary)]">
+                                {classFilter === 'ALL' ? 'TOUS LES GROUPES' : classFilter}
+                            </span>
+                            <ChevronDown className={`w-4 h-4 text-[var(--primary)] transition-transform ${isFilterDropdownOpen ? 'rotate-180' : ''}`} />
                         </button>
 
                         {isFilterDropdownOpen && (
-                            <div className="absolute top-full left-0 mt-2 bg-[var(--background)] border border-[var(--border-strong)] z-50 shadow-2xl min-w-[200px] fade-up">
+                            <div className="absolute top-full left-0 mt-3 bg-white border border-[var(--border)] rounded-2xl z-50 shadow-2xl min-w-[240px] overflow-hidden animate-in fade-in zoom-in-95 duration-200">
                                 <div
-                                    className={`px-6 py-4 cursor-pointer text-[10px] font-black tracking-widest uppercase transition-colors hover:bg-[var(--surface-hover)] ${classFilter === 'ALL' ? 'bg-[var(--primary)] text-[var(--background)] hover:bg-[var(--primary)]' : 'text-[var(--text-muted)] hover:text-[var(--primary)]'}`}
+                                    className={`px-6 py-4 cursor-pointer text-[10px] font-black tracking-widest uppercase transition-colors ${classFilter === 'ALL' ? 'bg-[var(--primary)] text-white' : 'text-[var(--secondary)] hover:bg-slate-50'}`}
                                     onClick={() => { setClassFilter('ALL'); setIsFilterDropdownOpen(false); }}
                                 >
-                                    ALL SQUADRONS
+                                    TOUS LES GROUPES
                                 </div>
                                 {availableClasses.map(cls => (
                                     <div
                                         key={cls.id}
-                                        className={`px-6 py-4 cursor-pointer text-[10px] font-black tracking-widest uppercase transition-colors hover:bg-[var(--surface-hover)] ${classFilter === cls.id ? 'bg-[var(--primary)] text-[var(--background)] hover:bg-[var(--primary)]' : 'text-[var(--text-muted)] hover:text-[var(--primary)]'}`}
+                                        className={`px-6 py-4 cursor-pointer text-[10px] font-black tracking-widest uppercase transition-colors ${classFilter === cls.id ? 'bg-[var(--primary)] text-white' : 'text-[var(--secondary)] hover:bg-slate-50'}`}
                                         onClick={() => {
                                             setClassFilter(cls.id);
                                             setIsFilterDropdownOpen(false);
@@ -160,102 +162,115 @@ const Rapports = () => {
                     <button
                         onClick={handleExportData}
                         disabled={isExporting || selectedRecords.length === 0}
-                        className={`btn-noir px-8 py-3 transition-all duration-300 ${selectedRecords.length === 0 ? 'opacity-50 cursor-not-allowed' : ''} ${isExporting ? 'animate-pulse' : ''}`}
+                        className={`btn-ista px-8 py-4 flex items-center gap-3 transition-all ${selectedRecords.length === 0 ? 'opacity-50 cursor-not-allowed scale-95 shadow-none' : 'shadow-lg hover:scale-[1.02] active:scale-[0.98]'}`}
                     >
-                        <Download className="w-3 h-3 mr-2 inline-block" />
-                        <span>{isExporting ? 'EXPORTING...' : 'Export Data'}</span>
+                        <Download className={`w-5 h-5 ${isExporting ? 'animate-bounce' : ''}`} />
+                        <span>{isExporting ? 'EXPORTATION...' : 'EXPORTER'}</span>
                     </button>
                 </div>
             </div>
 
-            {/* Main Section */}
-            <div className="space-y-8">
-                <div className="flex items-center justify-between">
-                    <h3 className="text-xs font-black tracking-[0.5em] uppercase text-[var(--text-muted)] transition-colors duration-500">Absence Manifest</h3>
-                    <div className="flex items-center gap-4">
-                        <CustomDatePicker
-                            selectedDate={selectedDate}
-                            onChange={setSelectedDate}
-                            placeholder="FIND DATE..."
+            {/* Filters bar */}
+            <div className="flex flex-col md:flex-row items-center justify-between gap-6 bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
+                <div className="flex items-center gap-6 w-full md:w-auto">
+                    <h3 className="text-[10px] font-black tracking-[0.3em] uppercase text-slate-400">Liste des Rapports</h3>
+                    <div className="h-4 w-px bg-slate-100 hidden md:block"></div>
+                    <div className="flex items-center bg-slate-50 border border-slate-100 rounded-2xl w-full md:w-64 group focus-within:border-[var(--primary)] transition-all px-4">
+                        <Search className="w-4 h-4 text-slate-300 group-focus-within:text-[var(--primary)] transition-colors" />
+                        <input
+                            type="text"
+                            placeholder="RECHERCHER..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="bg-transparent border-none text-[11px] font-bold py-3 px-3 w-full tracking-widest focus:ring-0 text-[var(--secondary)] placeholder-slate-300 uppercase"
                         />
-                        <div className="flex items-center border-b border-[var(--border)] w-64 group focus-within:border-[var(--primary)] transition-colors duration-500">
-                            <Search className="w-3 h-3 text-[var(--text-muted)] group-focus-within:text-[var(--primary)] transition-colors duration-500" />
-                            <input
-                                type="text"
-                                placeholder="FIND RECORD..."
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                className="bg-transparent border-none text-[10px] py-3 px-4 w-full tracking-widest focus:ring-0 text-[var(--primary)] placeholder-[var(--text-muted)]"
-                            />
-                        </div>
                     </div>
                 </div>
+                <div className="flex items-center gap-4 w-full md:w-auto">
+                    <Calendar className="w-4 h-4 text-[var(--primary)]" />
+                    <CustomDatePicker
+                        selectedDate={selectedDate}
+                        onChange={setSelectedDate}
+                        placeholder="FILTRER PAR DATE..."
+                    />
+                </div>
+            </div>
 
+            {/* Table or Empty State */}
+            <div className="bg-white rounded-[32px] border border-slate-100 shadow-sm overflow-hidden">
                 {loading ? (
-                    <div className="border border-[var(--border-strong)] border-dashed py-24 flex flex-col items-center justify-center text-center opacity-50">
-                        <div className="w-8 h-8 border-2 border-[var(--primary)] border-t-transparent animate-spin mb-4"></div>
-                        <span className="text-xs font-black tracking-[0.5em] uppercase text-[var(--text-muted)] mb-4">INITIALIZING TELEMETRY...</span>
-                        <p className="text-[10px] font-bold tracking-widest text-[var(--text-muted)] uppercase">Syncing with Central Registry.</p>
+                    <div className="py-24 flex flex-col items-center justify-center text-center">
+                        <div className="w-12 h-12 border-4 border-slate-100 border-t-[var(--primary)] rounded-full animate-spin mb-6"></div>
+                        <span className="text-[10px] font-black tracking-[0.4em] uppercase text-slate-400">CHARGEMENT DES DONNÉES...</span>
                     </div>
                 ) : displayedAbsences.length === 0 ? (
-                    <div className="border border-[var(--border-strong)] border-dashed py-24 flex flex-col items-center justify-center text-center opacity-50">
-                        <span className="text-xs font-black tracking-[0.5em] uppercase text-[var(--text-muted)] mb-4">NO RECORDS FOUND</span>
-                        <p className="text-[10px] font-bold tracking-widest text-[var(--text-muted)] uppercase">No absence records match the current filter parameters.</p>
+                    <div className="py-24 flex flex-col items-center justify-center text-center opacity-50">
+                        <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mb-6">
+                            <AlertTriangle className="w-8 h-8 text-slate-200" />
+                        </div>
+                        <span className="text-[10px] font-black tracking-[0.4em] uppercase text-slate-400">AUCUN RAPPORT TROUVÉ</span>
+                        <p className="text-[9px] font-bold tracking-widest text-slate-300 uppercase mt-2">Veuillez ajuster vos filtres de recherche.</p>
                     </div>
                 ) : (
-                    <div className="border border-[var(--border-strong)] overflow-hidden bg-[var(--background)] transition-colors duration-500">
-                        <table className="w-full text-left border-collapse">
+                    <div className="overflow-x-auto ista-scrollbar">
+                        <table className="w-full text-left border-collapse min-w-[900px]">
                             <thead>
-                                <tr className="bg-[var(--surface)] text-[var(--text-muted)] text-[10px] font-black uppercase tracking-widest transition-colors duration-500">
-                                    <th className="p-8 w-16">
-                                        <div onClick={toggleSelectAll} className="cursor-pointer">
+                                <tr className="bg-slate-50/50 text-slate-400 text-[9px] font-black uppercase tracking-widest border-b border-slate-100">
+                                    <th className="py-6 px-8 w-16 text-center">
+                                        <div onClick={toggleSelectAll} className="cursor-pointer flex justify-center">
                                             {selectedRecords.length === displayedAbsences.length && displayedAbsences.length > 0 ? (
-                                                <CheckSquare className="w-4 h-4 text-[var(--primary)]" />
+                                                <CheckSquare className="w-5 h-5 text-[var(--primary)]" />
                                             ) : (
-                                                <Square className="w-4 h-4 text-[var(--text-muted)] hover:text-[var(--primary)] transition-colors" />
+                                                <Square className="w-5 h-5 text-slate-200 hover:text-[var(--primary)] transition-colors" />
                                             )}
                                         </div>
                                     </th>
-                                    <th className="p-8">Date</th>
-                                    <th className="p-8">Formateur</th>
-                                    <th className="p-8">Module Session</th>
-                                    <th className="p-8">Absence Rate</th>
-                                    <th className="p-8 text-right">Document</th>
+                                    <th className="py-6 px-4">Date</th>
+                                    <th className="py-6 px-4">Formateur</th>
+                                    <th className="py-6 px-4">Module / Séance</th>
+                                    <th className="py-6 px-4">Groupe</th>
+                                    <th className="py-6 px-4">Taux d'Absence</th>
+                                    <th className="py-6 px-8 text-right">Actions</th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-[var(--border-strong)] transition-colors duration-500">
+                            <tbody className="divide-y divide-slate-50">
                                 {displayedAbsences.map((record) => (
-                                    <tr key={record.id} className="hover:bg-[var(--surface-hover)] transition-colors duration-500 group">
-                                        <td className="p-8 w-16">
-                                            <div onClick={() => toggleSelectRecord(record.id)} className="cursor-pointer">
+                                    <tr key={record.id} className="hover:bg-slate-50/30 transition-colors group">
+                                        <td className="py-6 px-8 w-16 text-center">
+                                            <div onClick={() => toggleSelectRecord(record.id)} className="cursor-pointer flex justify-center">
                                                 {selectedRecords.includes(record.id) ? (
-                                                    <CheckSquare className="w-4 h-4 text-[var(--primary)]" />
+                                                    <CheckSquare className="w-5 h-5 text-[var(--primary)]" />
                                                 ) : (
-                                                    <Square className="w-4 h-4 text-[var(--text-muted)] group-hover:text-[var(--primary)] transition-colors" />
+                                                    <Square className="w-5 h-5 text-slate-200 group-hover:text-[var(--primary)] transition-colors" />
                                                 )}
                                             </div>
                                         </td>
-                                        <td className="p-8 text-[10px] tracking-widest text-[var(--text-muted)] uppercase font-mono">
+                                        <td className="py-6 px-4 text-[10px] font-black text-slate-400 font-mono uppercase italic">
                                             {record.date}
                                         </td>
-                                        <td className="p-8 text-[10px] tracking-widest text-[var(--text-muted)] uppercase">
-                                            {record.formateur}
+                                        <td className="py-6 px-4">
+                                            <span className="text-sm font-black italic text-[var(--secondary)] uppercase group-hover:text-[var(--primary)] transition-colors">{record.formateur}</span>
                                         </td>
-                                        <td className="p-8 text-[10px] font-bold tracking-widest text-[var(--primary)] uppercase">
+                                        <td className="py-6 px-4 text-xs font-bold text-[var(--secondary)] uppercase truncate max-w-[200px]">
                                             {record.subject}
                                         </td>
-                                        <td className="p-8">
+                                        <td className="py-6 px-4">
+                                            <span className="px-3 py-1 bg-slate-50 text-[10px] font-black text-[var(--primary)] border border-green-500/10 rounded-lg">
+                                                {record.class_id}
+                                            </span>
+                                        </td>
+                                        <td className="py-6 px-4">
                                             <div className="flex flex-col">
-                                                <span className="text-xs font-bold tracking-widest text-[var(--primary)] uppercase italic transition-colors duration-500">
+                                                <span className="text-xs font-black italic text-[var(--primary)] uppercase">
                                                     {(record.stagiaires || []).filter(s => s.status === 'ABSENT').length} / {(record.stagiaires || []).length}
                                                 </span>
-                                                <span className="text-[9px] font-bold tracking-widest text-[var(--text-muted)] uppercase mt-1 transition-colors duration-500">ABSENCES</span>
+                                                <span className="text-[8px] font-bold text-slate-300 uppercase tracking-widest">STAGIAIRES ABSENTS</span>
                                             </div>
                                         </td>
-                                        <td className="p-8 text-right">
+                                        <td className="py-6 px-8 text-right">
                                             <button
                                                 onClick={() => setSelectedRapport(record)}
-                                                className="p-2 border border-[var(--border)] hover:border-[var(--primary)] hover:text-[var(--primary)] text-[var(--text-muted)] transition-colors duration-500 rounded-sm"
+                                                className="p-3 bg-white border border-slate-100 hover:border-[var(--primary)] hover:text-[var(--primary)] text-slate-300 transition-all rounded-xl shadow-sm"
                                             >
                                                 <FileText className="w-4 h-4" />
                                             </button>
@@ -275,119 +290,98 @@ const Rapports = () => {
                 rapport={selectedRapport}
             />
 
-            {/* Hidden export components */}
+            {/* Hidden export components (REBRANDED FOR ISTA) */}
             <div className="hidden">
                 {displayedAbsences.map(rapport => (
                     <div
                         key={`export-${rapport.id}`}
                         id={`pdf-export-${rapport.id}`}
-                        style={{ display: 'none', width: '297mm', height: '210mm', backgroundColor: '#000000' }}
-                        className="bg-[var(--background)] flex items-center justify-center p-8 relative export-container"
+                        style={{ display: 'none', width: '297mm', height: '210mm', backgroundColor: '#ffffff', color: '#005596' }}
+                        className="flex items-center justify-center p-12 relative"
                     >
-                        <div className="bg-[var(--background)] w-full h-full flex flex-row relative fade-up my-auto border border-[var(--border-strong)]">
-                            {/* Left Column (Info Panel) */}
-                            <div className="w-[350px] border-r border-[var(--border-strong)] p-12 flex flex-col relative bg-[var(--surface)] shrink-0">
-                                <div className="mb-12">
-                                    <span className="flex items-center gap-2 text-[10px] font-black tracking-[0.3em] text-[var(--primary)] uppercase mb-4">
-                                        <div className="w-2 h-2 bg-[var(--primary)]"></div>
-                                        RAPPORT MANIFEST
-                                    </span>
-                                    <h2 className="text-5xl font-black italic tracking-tighter text-[var(--primary)] leading-[0.9]">
-                                        ABSENCE<br />REPORT
-                                    </h2>
+                        <div className="w-full h-full flex flex-col border-[8px] border-[var(--secondary)] p-12 relative">
+                            {/* Header Section */}
+                            <div className="flex justify-between items-start border-b-4 border-[var(--primary)] pb-12 mb-12">
+                                <div>
+                                    <h4 className="text-[10px] font-black tracking-[0.4em] text-[var(--primary)] uppercase mb-4">REPUBLIQUE DU MAROC - OFPPT - ISTA</h4>
+                                    <h2 className="text-6xl font-black italic tracking-tighter text-[var(--secondary)] leading-none mb-2">RAPPORT DE <br /><span className="text-[var(--primary)]">PRÉSENCE</span></h2>
+                                    <p className="text-xs font-bold tracking-widest text-slate-400 uppercase italic">Code de Rapport: {rapport.id}</p>
                                 </div>
-                                <div className="space-y-8 mt-auto">
+                                <div className="text-right">
+                                    <div className="bg-[var(--primary)] text-white px-8 py-4 mb-4 inline-block rounded-xl">
+                                        <span className="text-xl font-black italic uppercase tracking-tight">{rapport.class_id}</span>
+                                    </div>
+                                    <p className="text-xs font-black tracking-widest text-[var(--secondary)] uppercase">{rapport.date}</p>
+                                </div>
+                            </div>
+
+                            {/* Info Section */}
+                            <div className="grid grid-cols-2 gap-16 mb-16">
+                                <div className="space-y-8">
                                     <div>
-                                        <label className="block text-[8px] font-black tracking-[0.3em] text-[var(--text-muted)] uppercase mb-3 text-left">DOCUMENT ID</label>
-                                        <div className="px-5 py-4 bg-[var(--background)] border border-[var(--border-strong)] flex items-center">
-                                            <span className="text-xl font-black italic text-[var(--primary)] tracking-tighter">
-                                                {rapport.id}
-                                            </span>
-                                        </div>
+                                        <label className="block text-[10px] font-black tracking-[0.4em] text-slate-400 uppercase mb-3">MODULE / DISCIPLINE</label>
+                                        <p className="text-2xl font-black italic uppercase text-[var(--secondary)] border-b-2 border-slate-100 pb-3">{rapport.subject}</p>
                                     </div>
                                     <div>
-                                        <label className="block text-[8px] font-black tracking-[0.3em] text-[var(--text-muted)] uppercase mb-3 text-left">STATUS</label>
-                                        <div className={`px-5 py-4 bg-[var(--background)] border flex items-center gap-3 ${rapport.status === 'JUSTIFIED' ? 'border-[var(--primary)]' : 'border-red-500'}`}>
-                                            <div className={`w-3 h-3 flex items-center justify-center ${rapport.status === 'JUSTIFIED' ? 'bg-[var(--primary)]' : 'bg-red-500'}`}>
-                                                <ChevronDown className="w-3 h-3 text-[var(--background)] -rotate-90" />
-                                            </div>
-                                            <span className={`text-xs font-black tracking-widest uppercase ${rapport.status === 'JUSTIFIED' ? 'text-[var(--primary)]' : 'text-red-500'}`}>
-                                                {rapport.status.replace('_', ' ')}
-                                            </span>
+                                        <label className="block text-[10px] font-black tracking-[0.4em] text-slate-400 uppercase mb-3">FORMATEUR RESPONSABLE</label>
+                                        <p className="text-2xl font-black italic uppercase text-[var(--secondary)] border-b-2 border-slate-100 pb-3">{rapport.formateur}</p>
+                                    </div>
+                                </div>
+                                <div className="bg-slate-50 p-8 rounded-3xl border border-slate-100">
+                                    <h5 className="text-[10px] font-black tracking-[0.4em] text-slate-400 uppercase mb-6 text-center">STATISTIQUES DE LA SÉANCE</h5>
+                                    <div className="flex justify-around items-center h-full">
+                                        <div className="text-center">
+                                            <p className="text-5xl font-black text-[var(--primary)] mb-2">{(rapport.stagiaires || []).filter(s => s.status === 'PRESENT').length}</p>
+                                            <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">PRÉSENTS</p>
+                                        </div>
+                                        <div className="w-px h-12 bg-slate-200"></div>
+                                        <div className="text-center">
+                                            <p className="text-5xl font-black text-red-500 mb-2">{(rapport.stagiaires || []).filter(s => s.status === 'ABSENT').length}</p>
+                                            <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">ABSENTS</p>
                                         </div>
                                     </div>
                                 </div>
                             </div>
-                            {/* Right Column (Details) */}
-                            <div className="flex-1 p-12 flex flex-col relative h-[100%] overflow-hidden text-white">
-                                <div className="mb-10 max-w-2xl shrink-0">
-                                    <h3 className="text-2xl font-black italic tracking-tighter text-[var(--primary)] uppercase mb-2">INCIDENT DETAILS</h3>
-                                    <p className="text-[10px] font-bold tracking-widest text-[var(--text-muted)] uppercase">Complete telemetry log for the recorded absence.</p>
-                                </div>
-                                <div className="space-y-8 flex-1 flex flex-col h-[100%]">
-                                    <div className="shrink-0">
-                                        <label className="block text-[10px] font-black tracking-[0.3em] text-[var(--text-muted)] uppercase mb-2">MODULE SESSION</label>
-                                        <div className="w-full bg-transparent border-b border-[var(--border-strong)] py-4">
-                                            <span className="text-md font-black tracking-widest uppercase">{rapport.subject}</span>
-                                        </div>
-                                    </div>
-                                    <div className="grid grid-cols-2 gap-8 shrink-0">
-                                        <div>
-                                            <label className="block text-[10px] font-black tracking-[0.3em] text-[var(--text-muted)] uppercase mb-2">FORMATEUR</label>
-                                            <div className="w-full bg-transparent border-b border-[var(--border-strong)] py-4">
-                                                <span className="text-md font-black tracking-widest uppercase">{rapport.formateur}</span>
-                                            </div>
-                                        </div>
-                                        <div>
-                                            <label className="block text-[10px] font-black tracking-[0.3em] text-[var(--text-muted)] uppercase mb-2">DATE UTC</label>
-                                            <div className="w-full bg-transparent border-b border-[var(--border-strong)] py-4">
-                                                <span className="text-md font-black font-mono tracking-widest uppercase">{rapport.date}</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div className="flex-1 flex flex-col pt-4 overflow-hidden min-h-0">
-                                        <label className="block text-[10px] font-black tracking-[0.3em] text-[var(--text-muted)] uppercase mb-4 shrink-0">STAGIAIRES ROLL CALL</label>
-                                        <div className="border border-[var(--border-strong)] bg-[var(--surface)] flex-1 overflow-auto">
-                                            <table className="w-full text-left border-collapse">
-                                                <thead className="bg-[var(--surface)] border-b border-[var(--border-strong)]">
-                                                    <tr className="text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)]">
-                                                        <th className="p-4">Cadet Alias</th>
-                                                        <th className="p-4 text-right">Attendance</th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody className="divide-y divide-[var(--border-strong)]">
-                                                    {(rapport.stagiaires || []).map((stagiaire, idx) => (
-                                                        <tr key={idx}>
-                                                            <td className="p-4">
-                                                                <div className="flex flex-col">
-                                                                    <span className="text-xs font-bold tracking-widest text-[var(--primary)] uppercase">{stagiaire.name}</span>
-                                                                    <span className="text-[9px] font-bold tracking-widest text-[var(--text-muted)] uppercase">{stagiaire.id}</span>
-                                                                </div>
-                                                            </td>
-                                                            <td className="p-4 text-right">
-                                                                <span className={`text-[9px] font-black tracking-[0.2em] px-3 py-1 border ${stagiaire.status === 'ABSENT' ? 'border-[#ef4444] text-[#ef4444] bg-[#ef4444]/10' : 'border-[#d4af37] text-[#d4af37] bg-[#d4af37]/10'}`}>
-                                                                    {stagiaire.status}
-                                                                </span>
-                                                            </td>
-                                                        </tr>
-                                                    ))}
-                                                </tbody>
-                                            </table>
-                                        </div>
-                                    </div>
-                                    <div className="pt-2 mt-auto flex justify-end shrink-0">
-                                        <div className="flex flex-col items-center">
-                                            <label className="text-[8px] font-black tracking-[0.3em] text-[var(--text-muted)] uppercase mb-2">DIGITAL SIGNATURE</label>
-                                            <div className="px-8 py-3 border border-dashed border-[var(--primary)] bg-[var(--primary)]/5 min-w-[150px] flex items-center justify-center min-h-[60px]">
-                                                {rapport.signature ? (
-                                                    <img src={rapport.signature} alt="Signature" style={{ maxHeight: '40px', filter: 'invert(1)' }} />
-                                                ) : (
-                                                    <span className="font-['Brush_Script_MT',cursive] italic text-xl text-[var(--primary)] tracking-wider">
-                                                        {rapport.formateur}
+
+                            {/* Table Section */}
+                            <div className="flex-1 overflow-hidden border border-slate-200 rounded-2xl mb-12">
+                                <table className="w-full text-left border-collapse">
+                                    <thead className="bg-slate-50 border-b-2 border-slate-200">
+                                        <tr className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+                                            <th className="p-6">NOM DU STAGIAIRE</th>
+                                            <th className="p-6">MATRICULE / ID</th>
+                                            <th className="p-6 text-right">STATUT</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-slate-100">
+                                        {(rapport.stagiaires || []).map((stagiaire, idx) => (
+                                            <tr key={idx}>
+                                                <td className="p-6 text-sm font-black text-[var(--secondary)] uppercase italic">{stagiaire.name}</td>
+                                                <td className="p-6 text-xs font-bold text-slate-400 font-mono tracking-widest">{stagiaire.id}</td>
+                                                <td className="p-6 text-right">
+                                                    <span className={`text-[10px] font-black tracking-widest px-4 py-1.5 rounded-lg border ${stagiaire.status === 'ABSENT' ? 'border-red-500 text-red-500' : 'border-[var(--primary)] text-[var(--primary)]'}`}>
+                                                        {stagiaire.status}
                                                     </span>
-                                                )}
-                                            </div>
-                                        </div>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            {/* Footer / Signature */}
+                            <div className="flex justify-between items-end mt-auto pt-8 border-t-2 border-slate-100">
+                                <div className="text-[10px] font-bold text-slate-300 tracking-[0.3em] uppercase">SYSTEME SMART ATTENDANCE ISTA v2.0</div>
+                                <div className="flex flex-col items-center">
+                                    <label className="text-[9px] font-black tracking-[0.4em] text-[var(--secondary)] uppercase mb-4">SIGNATURE FORMATEUR</label>
+                                    <div className="w-64 h-32 bg-slate-50 border border-dashed border-slate-200 rounded-2xl flex items-center justify-center p-4">
+                                        {rapport.signature ? (
+                                            <img src={rapport.signature} alt="Signature" style={{ maxHeight: '80%' }} />
+                                        ) : (
+                                            <span className="font-['Brush_Script_MT',cursive] italic text-3xl text-[var(--secondary)] opacity-30">
+                                                {rapport.formateur}
+                                            </span>
+                                        )}
                                     </div>
                                 </div>
                             </div>
@@ -395,6 +389,11 @@ const Rapports = () => {
                     </div>
                 ))}
             </div>
+            <style>{`
+                .ista-scrollbar::-webkit-scrollbar { width: 4px; height: 4px; }
+                .ista-scrollbar::-webkit-scrollbar-track { background: transparent; }
+                .ista-scrollbar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
+            `}</style>
         </div>
     );
 };

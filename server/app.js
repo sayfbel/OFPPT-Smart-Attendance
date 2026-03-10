@@ -5,6 +5,7 @@ const path = require('path');
 const authRoutes = require('./routes/authRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const formateurRoutes = require('./routes/formateurRoutes');
+const notificationRoutes = require('./routes/notificationRoutes');
 
 
 dotenv.config();
@@ -23,6 +24,7 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/formateur', formateurRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 
 // Error Handling Middleware
@@ -144,6 +146,22 @@ const initScheduleData = async () => {
             )
         `);
         console.log('✅ Live Presence Matrix initialized.');
+
+        // 8. Neural Notifications (Memory Node)
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS notifications (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                user_id INT,
+                type ENUM('request', 'message', 'alert', 'success') DEFAULT 'message',
+                category VARCHAR(50),
+                title VARCHAR(255) NOT NULL,
+                message TEXT,
+                is_read BOOLEAN DEFAULT FALSE,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+            )
+        `);
+        console.log('✅ Neural Notifications Registry initialized.');
 
         // Legacy check / Seeding
         const [existing] = await pool.query('SELECT COUNT(*) as count FROM classes');

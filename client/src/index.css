@@ -1,34 +1,54 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
-  --background: #f5f5f5;
+  /* OFPPT Brand Colors */
+  --primary: #00843D;
+  /* OFPPT Green */
+  --primary-light: #00A651;
+  --primary-dark: #006837;
+  --secondary: #005596;
+  /* OFPPT Blue */
+  --secondary-light: #006DB1;
+  --accent: #FDB913;
+  /* OFPPT Yellow/Gold */
+
+  /* UI Colors */
+  --background: #f8fafc;
   --surface: #ffffff;
-  --surface-hover: #f0f0f0;
-  --primary: #000000;
-  --primary-text: #ffffff;
-  --text: #000000;
-  --text-muted: #666666;
-  --border: rgba(0, 0, 0, 0.1);
-  --border-strong: rgba(0, 0, 0, 0.3);
+  --surface-hover: #f1f5f9;
+  --text: #1e293b;
+  --text-muted: #64748b;
+  --border: #e2e8f0;
+  --border-strong: #cbd5e1;
+
+  /* Status Colors */
+  --success: #10b981;
+  --error: #ef4444;
+  --warning: #f59e0b;
 
   /* Smoothness */
   --ease-out-expo: cubic-bezier(0.19, 1, 0.22, 1);
   --transition-slow: 0.6s var(--ease-out-expo);
   --transition-base: 0.3s var(--ease-out-expo);
+  --radius: 12px;
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
 }
 
-.dark-mode {
-  --background: #000000;
-  --surface: #0a0a0a;
-  --surface-hover: #111111;
-  --primary: #ffffff;
-  --primary-text: #000000;
-  --text: #ffffff;
-  --text-muted: #888888;
-  --border: rgba(255, 255, 255, 0.1);
-  --border-strong: rgba(255, 255, 255, 0.3);
+.dark {
+  --background: #0f172a;
+  --surface: #1e293b;
+  --surface-hover: #334155;
+  --text: #f8fafc;
+  --text-muted: #94a3b8;
+  --border: #334155;
+  --border-strong: #475569;
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.3);
 }
 
 * {
@@ -46,39 +66,43 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* Minimalist Noir Panel */
-.noir-panel {
+/* ISTA Branded Components */
+.ista-panel {
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 0;
-  /* Fashion often uses sharp corners or very subtle ones */
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
   transition: var(--transition-base);
 }
 
-.noir-card {
+.ista-card {
   background: var(--surface);
   border: 1px solid var(--border);
+  border-radius: var(--radius);
   padding: 1.5rem;
+  box-shadow: var(--shadow-sm);
   transition: var(--transition-base);
 }
 
-.noir-card:hover {
-  border-color: var(--border-strong);
-  background: var(--surface-hover);
+.ista-card:hover {
+  border-color: var(--primary-light);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
 }
 
 /* Typography Scale */
 h1 {
-  font-weight: 700;
-  letter-spacing: -0.05em;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  color: var(--secondary);
 }
 
 h2 {
-  font-weight: 600;
+  font-weight: 700;
   letter-spacing: -0.02em;
 }
 
-/* Ultra Smooth Animations */
+/* Animations */
 .fade-up {
   opacity: 0;
   transform: translateY(20px);
@@ -99,18 +123,20 @@ h2 {
 @keyframes pageIn {
   from {
     opacity: 0;
-    filter: blur(10px);
+    transform: scale(0.98);
+    filter: blur(5px);
   }
 
   to {
     opacity: 1;
+    transform: scale(1);
     filter: blur(0);
   }
 }
 
 /* Custom Scrollbar */
 ::-webkit-scrollbar {
-  width: 4px;
+  width: 6px;
 }
 
 ::-webkit-scrollbar-track {
@@ -119,100 +145,148 @@ h2 {
 
 ::-webkit-scrollbar-thumb {
   background: var(--border-strong);
+  border-radius: 10px;
 }
 
-/* Modern Noir Button */
-.btn-noir {
+::-webkit-scrollbar-thumb:hover {
+  background: var(--primary-light);
+}
+
+/* Modern ISTA Buttons */
+.btn-ista {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 0.75rem 2rem;
-  background: var(--primary);
-  color: var(--primary-text);
-  text-transform: uppercase;
-  font-size: 0.75rem;
-  font-weight: 700;
-  letter-spacing: 0.1em;
+  padding: 0.75rem 1.75rem;
+  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+  color: white;
+  border-radius: var(--radius);
+  font-weight: 600;
+  letter-spacing: 0.02em;
   border: none;
   cursor: pointer;
-  transition: var(--transition-base);
+  box-shadow: 0 4px 6px -1px rgba(0, 132, 61, 0.2);
+  transition: all 0.3s var(--ease-out-expo);
 }
 
-.btn-noir:hover {
-  filter: invert(0.1);
-  transform: scale(1.02);
+.btn-ista:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 15px -3px rgba(0, 132, 61, 0.3);
+  filter: brightness(1.1);
 }
 
-.btn-outline {
+.btn-ista:active {
+  transform: translateY(0);
+}
+
+.btn-ista-secondary {
+  background: linear-gradient(135deg, var(--secondary), var(--secondary-light));
+  box-shadow: 0 4px 6px -1px rgba(0, 85, 150, 0.2);
+}
+
+.btn-ista-secondary:hover {
+  box-shadow: 0 10px 15px -3px rgba(0, 85, 150, 0.3);
+}
+
+.btn-ista-outline {
   background: transparent;
-  color: var(--text);
-  border: 1px solid var(--border);
+  color: var(--primary);
+  border: 1.5px solid var(--primary);
 }
 
-.btn-outline:hover {
+.btn-ista-outline:hover {
   background: var(--primary);
-  color: var(--primary-text);
+  color: white;
 }
 
-input {
-  background: transparent;
-  border: none;
-  border-bottom: 1px solid var(--border);
+/* Inputs */
+input,
+select,
+textarea {
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
   color: var(--text);
-  padding: 1rem 0;
+  padding: 0.8rem 1rem;
   outline: none;
   transition: var(--transition-base);
+  width: 100%;
 }
 
-input:focus {
-  border-bottom-color: var(--primary);
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 4px rgba(0, 132, 61, 0.1);
 }
 
-@keyframes bounce-horizontal {
-
-  0%,
-  100% {
-    transform: translateX(0);
-  }
-
-  50% {
-    transform: translateX(-10px);
-  }
+/* Gradient Text */
+.text-gradient {
+  background: linear-gradient(to right, var(--primary), var(--secondary));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
-@keyframes bounce-horizontal-right {
-
-  0%,
-  100% {
-    transform: translateX(0);
-  }
-
-  50% {
-    transform: translateX(10px);
-  }
+/* Glassmorphism */
+.glass {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
-.animate-bounce-horizontal {
-  animation: bounce-horizontal 2s infinite;
+.dark .glass {
+  background: rgba(30, 41, 59, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-.animate-bounce-horizontal-right {
-  animation: bounce-horizontal-right 2s infinite;
+/* Status Badges */
+.badge {
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
 }
 
-.animate-spin-slow {
-  animation: spin 8s linear infinite;
+.badge-present {
+  background-color: rgba(0, 132, 61, 0.1);
+  color: var(--primary);
 }
 
-@keyframes spin {
-  from {
-    transform: rotate(0deg);
-  }
+.badge-absent {
+  background-color: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+}
 
-  to {
-    transform: rotate(360deg);
-  }
+/* Utility to hide scrollbar but keep functional scrolling */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
 
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Custom ISTA Scrollbar */
+.ista-scrollbar::-webkit-scrollbar {
+  width: 4px;
+  height: 6px;
+}
+
+.ista-scrollbar::-webkit-scrollbar-track {
+  background: #f8fafc;
+  border-radius: 10px;
+}
+
+.ista-scrollbar::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 10px;
+  border: 2px solid #f8fafc;
+}
+
+.ista-scrollbar::-webkit-scrollbar-thumb:active {
+  background: var(--primary);
 }
 
 /* Flip Card System */
@@ -243,6 +317,7 @@ input:focus {
   backface-visibility: hidden;
   top: 0;
   left: 0;
+  border-radius: var(--radius);
 }
 
 .card-back {
