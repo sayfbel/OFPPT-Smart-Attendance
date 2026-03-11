@@ -70,7 +70,7 @@ const IdentityModal = ({ isOpen, onClose, newUser, setNewUser, handleAddUser, ha
                     {/* Fixed Header */}
                     <div className="p-12 pb-8 border-b border-slate-50 flex justify-between items-start bg-white sticky top-0 z-30">
                         <div>
-                            <h3 className="text-2xl font-black italic tracking-tight text-[var(--secondary)] uppercase mb-2">Détails de l'utilisateur</h3>
+                            <h3 className="text-2xl font-black italic tracking-tight text-[var(--secondary)] uppercase mb-2">Détails du membre</h3>
                             <p className="text-[10px] font-bold text-slate-400 tracking-widest uppercase">Veuillez renseigner les paramètres d'accès ci-dessous.</p>
                         </div>
                         <button
@@ -213,7 +213,7 @@ const IdentityModal = ({ isOpen, onClose, newUser, setNewUser, handleAddUser, ha
                                     className="w-full btn-ista py-5 rounded-2xl font-black uppercase tracking-widest shadow-xl flex items-center justify-center gap-3 hover:scale-[1.01] active:scale-[0.99] transition-all"
                                 >
                                     {isEditing ? <Save className="w-5 h-5" /> : <UserPlus className="w-5 h-5" />}
-                                    <span>{isEditing ? 'Enregistrer les modifications' : 'Créer le profil utilisateur'}</span>
+                                    <span>{isEditing ? 'Enregistrer les modifications' : 'Créer le profil membre'}</span>
                                 </button>
                             </div>
                         </form>

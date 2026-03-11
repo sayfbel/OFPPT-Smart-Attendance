@@ -128,7 +128,7 @@ const DashboardLayout = ({ children }) => {
             case 'admin':
                 return [
                     { icon: LayoutDashboard, label: 'Tableau de bord', path: '/admin' },
-                    { icon: Users, label: 'Utilisateurs', path: '/admin/users' },
+                    { icon: Users, label: 'Membres', path: '/admin/users' },
                     { icon: BookOpen, label: 'Groupes', path: '/admin/classes' },
                     { icon: Calendar, label: 'Emploi du temps', path: '/admin/timetable' },
                     { icon: FileText, label: 'Rapports', path: '/admin/reports' },
