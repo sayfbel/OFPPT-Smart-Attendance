@@ -8,20 +8,23 @@ import {
     Calendar,
     LogOut,
     Bell,
-    Settings,
+
     Sun,
     Moon,
     FileText,
     ChevronRight,
     Menu,
-    X
+    X,
+    Languages
 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import axios from 'axios';
 import NotificationPanel from '../components/NotificationPanel';
 import ofpptLogo from '../assets/OFPPT.png';
 
 const DashboardLayout = ({ children }) => {
     const { user, logout } = useAuth();
+    const { t, i18n } = useTranslation();
     const navigate = useNavigate();
     const location = useLocation();
     const [isDark, setIsDark] = useState(false);
@@ -108,11 +111,19 @@ const DashboardLayout = ({ children }) => {
         }
     }, [isDark]);
 
-    // Close mobile menu when route changes
     useEffect(() => {
         setIsMobileMenuOpen(false);
         setIsNotifOpen(false);
     }, [location.pathname]);
+
+    useEffect(() => {
+        document.dir = i18n.language === 'ar' ? 'rtl' : 'ltr';
+    }, [i18n.language]);
+
+    const toggleLanguage = () => {
+        const nextLng = i18n.language === 'fr' ? 'ar' : 'fr';
+        i18n.changeLanguage(nextLng);
+    };
 
     const handleLogout = () => {
         logout();
@@ -127,17 +138,17 @@ const DashboardLayout = ({ children }) => {
         switch (user?.role) {
             case 'admin':
                 return [
-                    { icon: LayoutDashboard, label: 'Tableau de bord', path: '/admin' },
-                    { icon: Users, label: 'Membres', path: '/admin/users' },
-                    { icon: BookOpen, label: 'Groupes', path: '/admin/classes' },
-                    { icon: Calendar, label: 'Emploi du temps', path: '/admin/timetable' },
-                    { icon: FileText, label: 'Rapports', path: '/admin/reports' },
+                    { icon: LayoutDashboard, label: t('nav.dashboard'), path: '/admin' },
+                    { icon: Users, label: t('nav.members'), path: '/admin/users' },
+                    { icon: BookOpen, label: t('nav.groups'), path: '/admin/classes' },
+                    { icon: Calendar, label: t('nav.timetable'), path: '/admin/timetable' },
+                    { icon: FileText, label: t('nav.reports'), path: '/admin/reports' },
                 ];
             case 'formateur':
                 return [
-                    { icon: LayoutDashboard, label: 'Tableau de bord', path: '/formateur' },
-                    { icon: BookOpen, label: 'Mes Groupes', path: '/formateur/classes' },
-                    { icon: Calendar, label: 'Emploi du temps', path: '/formateur/timetable' },
+                    { icon: LayoutDashboard, label: t('nav.dashboard'), path: '/formateur' },
+                    { icon: BookOpen, label: t('nav.my_groups'), path: '/formateur/classes' },
+                    { icon: Calendar, label: t('nav.timetable'), path: '/formateur/timetable' },
                 ];
             default:
                 return [];
@@ -175,8 +186,8 @@ const DashboardLayout = ({ children }) => {
                     </div>
 
                     <div className="text-center hidden xl:block animate-in fade-in zoom-in duration-500">
-                        <h2 className="text-xl font-bold tracking-tight text-[var(--secondary)]">ISTA_PORTAL</h2>
-                        <p className="text-[9px] text-[var(--primary)] uppercase tracking-widest mt-1 font-black">Digital Campus</p>
+                        <h2 className="text-xl font-bold tracking-tight text-[var(--secondary)]">{t('nav.portal')}</h2>
+                        <p className="text-[9px] text-[var(--primary)] uppercase tracking-widest mt-1 font-black">{t('nav.digital_campus')}</p>
                     </div>
                 </div>
 
@@ -208,7 +219,7 @@ const DashboardLayout = ({ children }) => {
                         title="Déconnexion"
                     >
                         <LogOut className="w-5 h-5 flex-shrink-0" />
-                        <span className={`text-[11px] font-black uppercase tracking-widest ${isMobileMenuOpen ? 'block' : 'hidden xl:block'}`}>Déconnexion</span>
+                        <span className={`text-[11px] font-black uppercase tracking-widest ${isMobileMenuOpen ? 'block' : 'hidden xl:block'}`}>{t('nav.logout')}</span>
                     </button>
                 </nav>
             </aside>
@@ -231,16 +242,17 @@ const DashboardLayout = ({ children }) => {
                             </div>
                             <div className="hidden sm:block">
                                 <h3 className="text-[10px] lg:text-[11px] font-black tracking-widest text-[var(--secondary)] uppercase leading-none mb-1">{user?.name}</h3>
-                                <p className="text-[8px] lg:text-[9px] text-[var(--primary)] uppercase tracking-[0.2em] font-black opacity-70">{user?.role === 'admin' ? 'ADMIN ACCÈS' : 'FORMATEUR ACCÈS'}</p>
+                                <p className="text-[8px] lg:text-[9px] text-[var(--primary)] uppercase tracking-[0.2em] font-black opacity-70">{user?.role === 'admin' ? t('header.admin_access') : t('header.formateur_access')}</p>
                             </div>
                         </div>
                     </div>
 
                     <div className="flex items-center gap-2 lg:gap-3 relative">
+
                         <button
                             onClick={toggleTheme}
                             className="p-2 lg:p-2.5 rounded-xl bg-[var(--surface-hover)] text-[var(--text-muted)] hover:text-[var(--primary)] transition-all focus:outline-none"
-                            title="Changer le thème"
+                            title={t('header.theme_toggle')}
                         >
                             {isDark ? <Sun className="w-4 h-4 lg:w-5 lg:h-5" /> : <Moon className="w-4 h-4 lg:w-5 lg:h-5" />}
                         </button>
@@ -268,8 +280,13 @@ const DashboardLayout = ({ children }) => {
                             />
                         </div>
 
-                        <button className="p-2 lg:p-2.5 rounded-xl bg-[var(--surface-hover)] text-[var(--text-muted)] hover:text-[var(--primary)] transition-all">
-                            <Settings className="w-4 h-4 lg:w-5 lg:h-5" />
+                        <button
+                            onClick={toggleLanguage}
+                            className="p-2 lg:p-2.5 rounded-xl bg-[var(--surface-hover)] text-[var(--text-muted)] hover:text-[var(--primary)] transition-all flex items-center gap-2"
+                            title={i18n.language === 'fr' ? 'العربية' : 'Français'}
+                        >
+                            <Languages className="w-4 h-4 lg:w-5 lg:h-5" />
+                            <span className="text-[10px] font-black">{i18n.language === 'fr' ? 'AR' : 'FR'}</span>
                         </button>
                     </div>
                 </header>
