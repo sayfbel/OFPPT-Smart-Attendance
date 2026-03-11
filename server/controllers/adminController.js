@@ -496,14 +496,18 @@ exports.updateUser = async (req, res) => {
             res.json({ message: 'Stagiaire updated. New QR generated.', user: { ...updated, role: 'stagiaire' } });
         } else {
             const email = name.trim().toLowerCase().replace(/\s+/g, '.') + '@ofppt.ma';
+            const defaultPassword = email.split('@')[0];
+            const bcrypt = require('bcryptjs');
+            const hash = await bcrypt.hash(defaultPassword, 10);
+
             let main_class_id = null;
             if (role === 'formateur' && class_id) {
                 main_class_id = class_id.split(',')[0].trim();
             }
 
             await pool.query(
-                'UPDATE users SET name = ?, email = ?, role = ?, class_id = ? WHERE id = ?',
-                [name, email, role, main_class_id, id]
+                'UPDATE users SET name = ?, email = ?, password = ?, role = ?, class_id = ? WHERE id = ?',
+                [name, email, hash, role, main_class_id, id]
             );
 
             if (role === 'formateur' && class_id) {

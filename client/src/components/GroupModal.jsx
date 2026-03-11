@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import ReactDOM from 'react-dom';
 import { X, CheckSquare, Square, ChevronDown, BookOpen, UserCheck, Hash } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 const GroupModal = ({ isOpen, onClose, newClass, setNewClass, handleAddClass, formateurs = [] }) => {
+    const { t } = useTranslation();
     const [isFormateurDropdownOpen, setIsFormateurDropdownOpen] = useState(false);
 
     if (!isOpen) return null;
@@ -21,8 +23,8 @@ const GroupModal = ({ isOpen, onClose, newClass, setNewClass, handleAddClass, fo
                             <BookOpen className="w-6 h-6" />
                         </div>
                         <div>
-                            <h2 className="text-2xl font-black uppercase italic leading-none mb-1">Initialiser un Groupe</h2>
-                            <p className="text-[10px] font-bold text-white/60 tracking-widest uppercase">Configuration de la nouvelle division</p>
+                            <h2 className="text-2xl font-black uppercase italic leading-none mb-1">{t('modals.group.init_title')}</h2>
+                            <p className="text-[10px] font-bold text-white/60 tracking-widest uppercase">{t('modals.group.config_sub')}</p>
                         </div>
                     </div>
                 </div>
@@ -31,7 +33,7 @@ const GroupModal = ({ isOpen, onClose, newClass, setNewClass, handleAddClass, fo
                 <form onSubmit={handleAddClass} className="p-8 space-y-8">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="space-y-2">
-                            <label className="text-[10px] font-black tracking-widest text-[var(--text-muted)] uppercase">CODE DU GROUPE</label>
+                            <label className="text-[10px] font-black tracking-widest text-[var(--text-muted)] uppercase">{t('modals.group.code')}</label>
                             <input
                                 type="text"
                                 required
@@ -42,7 +44,7 @@ const GroupModal = ({ isOpen, onClose, newClass, setNewClass, handleAddClass, fo
                             />
                         </div>
                         <div className="space-y-2">
-                            <label className="text-[10px] font-black tracking-widest text-[var(--text-muted)] uppercase">FILIÈRE / STREAM</label>
+                            <label className="text-[10px] font-black tracking-widest text-[var(--text-muted)] uppercase">{t('modals.group.stream')}</label>
                             <input
                                 type="text"
                                 required
@@ -55,7 +57,7 @@ const GroupModal = ({ isOpen, onClose, newClass, setNewClass, handleAddClass, fo
                     </div>
 
                     <div className="space-y-2">
-                        <label className="text-[10px] font-black tracking-widest text-[var(--text-muted)] uppercase">NOM DU GROUPE / TITRE</label>
+                        <label className="text-[10px] font-black tracking-widest text-[var(--text-muted)] uppercase">{t('modals.group.title_label')}</label>
                         <input
                             type="text"
                             required
@@ -67,13 +69,13 @@ const GroupModal = ({ isOpen, onClose, newClass, setNewClass, handleAddClass, fo
                     </div>
 
                     <div className="space-y-2 relative">
-                        <label className="text-[10px] font-black tracking-widest text-[var(--text-muted)] uppercase">FORMATEURS RÉFÉRENTS</label>
+                        <label className="text-[10px] font-black tracking-widest text-[var(--text-muted)] uppercase">{t('modals.group.referent')}</label>
                         <div
                             onClick={() => setIsFormateurDropdownOpen(!isFormateurDropdownOpen)}
                             className="w-full bg-slate-50 border border-[var(--border)] rounded-xl p-4 flex justify-between items-center cursor-pointer hover:border-[var(--primary)] transition-all"
                         >
                             <span className={`text-sm font-bold truncate ${newClass.lead?.length > 0 ? 'text-[var(--secondary)]' : 'text-slate-400'}`}>
-                                {newClass.lead?.length > 0 ? newClass.lead.join(', ') : 'Sélectionner les formateurs...'}
+                                {newClass.lead?.length > 0 ? newClass.lead.join(', ') : t('modals.group.select_formateurs')}
                             </span>
                             <ChevronDown className={`w-5 h-5 text-[var(--primary)] transition-transform ${isFormateurDropdownOpen ? 'rotate-180' : ''}`} />
                         </div>
@@ -114,7 +116,7 @@ const GroupModal = ({ isOpen, onClose, newClass, setNewClass, handleAddClass, fo
                             className="w-full btn-ista py-5 rounded-xl font-black uppercase tracking-widest shadow-xl flex items-center justify-center gap-3 hover:scale-[1.01] active:scale-[0.99] transition-all"
                         >
                             <UserCheck className="w-5 h-5" />
-                            Créer le Groupe
+                            {t('modals.group.create_btn')}
                         </button>
                     </div>
                 </form>

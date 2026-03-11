@@ -1,39 +1,55 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Plus, BookOpen, Layers, Save, X, Filter, ChevronDown, Edit3, Trash2, CheckSquare, Square, Users } from 'lucide-react';
+import {
+    Layers,
+    Search,
+    Plus,
+    X,
+    Trash2,
+    Users,
+    GraduationCap,
+    Calendar,
+    ChevronRight,
+    LayoutDashboard,
+    Clock,
+    Activity,
+    Pencil
+} from 'lucide-react';
 import axios from 'axios';
+import { useNotification } from '../../context/NotificationContext';
 import GroupModal from '../../components/GroupModal';
 import ConfirmationModal from '../../components/ConfirmationModal';
-import { useNotification } from '../../context/NotificationContext';
-
+import { useTranslation } from 'react-i18next';
 
 const Squadrons = () => {
+    const { t, i18n } = useTranslation();
+    const isRtl = i18n.language === 'ar';
     const { addNotification } = useNotification();
     const [classes, setClasses] = useState([]);
-    const [formateurs, setFormateurs] = useState([]);
-    const [isClassModalOpen, setIsClassModalOpen] = useState(false);
-    const [newClass, setNewClass] = useState({ id: '', title: '', stream: '', lead: [] });
-
-    const [flippedCardId, setFlippedCardId] = useState(null);
-    const [editData, setEditData] = useState({ title: '', stream: '', lead: [] });
-    const [streamFilter, setStreamFilter] = useState('ALL');
-    const [isFilterDropdownOpen, setIsFilterDropdownOpen] = useState(false);
-    const [isEditDropdownOpen, setIsEditDropdownOpen] = useState(false);
-    const [purgeInfo, setPurgeInfo] = useState({ isOpen: false, classId: '' });
-
+    const [loading, setLoading] = useState(true);
+    const [searchQuery, setSearchQuery] = useState('');
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isEditing, setIsEditing] = useState(false);
+    const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+    const [classToDelete, setClassToDelete] = useState(null);
+    const [newClass, setNewClass] = useState({
+        id: '',
+        title: '',
+        stream: '',
+        lead: ''
+    });
 
     useEffect(() => {
         const fetchClasses = async () => {
             try {
                 const token = localStorage.getItem('token');
-                if (!token) return;
-                const config = { headers: { Authorization: `Bearer ${token}` } };
-                const res = await axios.get('/api/admin/schedule', config);
+                const res = await axios.get('/api/admin/classes', {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
                 setClasses(res.data.classes || []);
-
-                const formateurRes = await axios.get('/api/admin/formateurs', config);
-                setFormateurs(formateurRes.data.formateurs || []);
-            } catch (error) {
-                console.error('Error fetching classes or formateurs', error);
+            } catch (err) {
+                console.error('Error fetching classes:', err);
+            } finally {
+                setLoading(false);
             }
         };
         fetchClasses();
@@ -43,293 +59,253 @@ const Squadrons = () => {
         e.preventDefault();
         try {
             const token = localStorage.getItem('token');
-            const config = { headers: { Authorization: `Bearer ${token}` } };
-
-            const payload = {
-                ...newClass,
-                lead: Array.isArray(newClass.lead) ? newClass.lead.join(', ') : newClass.lead
-            };
-
-            const res = await axios.post('/api/admin/classes', payload, config);
-
-            setClasses([...classes, res.data.class]);
-            setIsClassModalOpen(false);
-            setNewClass({ id: '', title: '', stream: '', lead: [] });
-            addNotification('Groupe créé et déployé avec succès.', 'success');
-        } catch (error) {
-            console.error('Error creating class', error);
-            addNotification(error.response?.data?.message || 'Erreur lors de la configuration du groupe', 'error');
-        }
-    };
-
-    const handleUpdateClass = async (id) => {
-        try {
-            const token = localStorage.getItem('token');
-            const config = { headers: { Authorization: `Bearer ${token}` } };
-
-            const payload = {
-                ...editData,
-                lead: Array.isArray(editData.lead) ? editData.lead.join(', ') : editData.lead
-            };
-
-            const res = await axios.put(`/api/admin/classes/${id}`, payload, config);
-
-            setClasses(classes.map(c => c.id === id ? res.data.class : c));
-            setFlippedCardId(null);
-            addNotification('Informations du groupe mises à jour.', 'success');
-        } catch (error) {
-            console.error('Error updating class', error);
-            addNotification(error.response?.data?.message || 'Erreur lors de la mise à jour', 'error');
-        }
-    };
-
-    const handlePurgeClass = async () => {
-        const id = purgeInfo.classId;
-        try {
-            const token = localStorage.getItem('token');
-            const config = { headers: { Authorization: `Bearer ${token}` } };
-            await axios.delete(`/api/admin/classes/${id}`, config);
-            setClasses(prev => prev.filter(c => c.id !== id));
-            addNotification('Groupe supprimé du système.', 'success');
-            setPurgeInfo({ isOpen: false, classId: '' });
-        } catch (error) {
-            console.error('Error deleting class', error);
-            addNotification('Échec de la suppression: Erreur serveur.', 'error');
-            setPurgeInfo({ isOpen: false, classId: '' });
-        }
-    };
-
-
-    const handleFlip = (cls) => {
-        if (flippedCardId === cls.id) {
-            setFlippedCardId(null);
-        } else {
-            setFlippedCardId(cls.id);
-            setEditData({
-                title: cls.title || cls.name || '',
-                stream: cls.stream || '',
-                lead: cls.lead ? cls.lead.split(',').map(s => s.trim()) : []
+            const res = await axios.post('/api/admin/classes', newClass, {
+                headers: { Authorization: `Bearer ${token}` }
             });
-            setIsEditDropdownOpen(false);
+            setClasses([...classes, res.data.class]);
+            setIsModalOpen(false);
+            addNotification(t('groups.create_success'), 'success');
+            setNewClass({ id: '', title: '', stream: '', lead: '' });
+        } catch (err) {
+            addNotification(err.response?.data?.message || 'Error adding class', 'error');
         }
     };
 
-    const uniqueStreams = ['ALL', ...new Set(classes.map(c => c.stream).filter(Boolean))];
-    const filteredClasses = streamFilter === 'ALL' ? classes : classes.filter(c => c.stream === streamFilter);
+    const handleUpdateClass = async (e) => {
+        e.preventDefault();
+        try {
+            const token = localStorage.getItem('token');
+            const res = await axios.put(`/api/admin/classes/${newClass.id}`, newClass, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            setClasses(classes.map(c => c.id === res.data.class.id ? res.data.class : c));
+            setIsModalOpen(false);
+            setIsEditing(false);
+            addNotification(t('groups.update_success'), 'success');
+        } catch (err) {
+            addNotification(err.response?.data?.message || 'Error updating class', 'error');
+        }
+    };
+
+    const handleDeleteClass = async (id) => {
+        try {
+            const token = localStorage.getItem('token');
+            await axios.delete(`/api/admin/classes/${id}`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            setClasses(classes.filter(c => c.id !== id));
+            setIsConfirmOpen(false);
+            addNotification(t('groups.delete_success'), 'success');
+        } catch (err) {
+            addNotification('Error deleting class', 'error');
+        }
+    };
+
+    const filteredClasses = classes.filter(cls =>
+        cls.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        cls.id?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        cls.stream?.toLowerCase().includes(searchQuery.toLowerCase())
+    );
 
     return (
-        <div className="space-y-12 fade-up transition-all duration-500">
-            <div className="flex flex-col md:flex-row items-start md:items-end justify-between border-b border-[var(--border)] pb-8 lg:pb-12 gap-6 lg:gap-8">
+        <div className={`space-y-12 animate-in fade-in duration-700 ${isRtl ? 'text-right' : ''}`}>
+            {/* Header section */}
+            <div className={`flex flex-col md:flex-row md:items-end justify-between gap-8 border-b border-[var(--border)] pb-12 ${isRtl ? 'md:flex-row-reverse' : ''}`}>
                 <div className="space-y-4">
-                    <h1 className="text-4xl md:text-5xl lg:text-7xl font-black tracking-tighter text-[var(--secondary)] uppercase italic leading-[0.9]">Groupes</h1>
-                    <div className="flex items-center gap-3 text-[var(--primary)] text-[9px] lg:text-xs tracking-[0.4em] uppercase font-black">
-                        <div className="w-2 h-2 bg-[var(--primary)] rounded-full animate-pulse"></div>
-                        Filières et Divisions ISTA
-                    </div>
+                    <h1 className="text-4xl lg:text-7xl font-black tracking-tight text-[var(--secondary)] uppercase italic leading-[0.9]">
+                        {t('groups.title')}
+                    </h1>
+                    <p className="text-[var(--text-muted)] text-[11px] font-bold tracking-[0.4em] uppercase opacity-60">
+                        {t('groups.subtitle')}
+                    </p>
                 </div>
 
-                <div className="flex flex-wrap gap-4 justify-end">
-                    <div className="relative">
-                        <button
-                            onClick={() => setIsFilterDropdownOpen(!isFilterDropdownOpen)}
-                            className="bg-white border border-[var(--border)] px-6 py-4 rounded-xl flex items-center gap-4 hover:border-[var(--primary)] transition-all shadow-sm"
-                        >
-                            <Filter className="w-4 h-4 text-[var(--primary)]" />
-                            <span className="text-[10px] font-black tracking-widest uppercase text-[var(--secondary)]">{streamFilter === 'ALL' ? 'TOUTES LES FILIÈRES' : streamFilter}</span>
-                            <ChevronDown className={`w-4 h-4 text-[var(--primary)] transition-transform ${isFilterDropdownOpen ? 'rotate-180' : ''}`} />
-                        </button>
-
-                        {isFilterDropdownOpen && (
-                            <div className="absolute top-full right-0 mt-3 bg-white border border-[var(--border)] rounded-2xl z-50 shadow-2xl min-w-[240px] overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-                                {uniqueStreams.map(stream => (
-                                    <div
-                                        key={stream}
-                                        className={`px-6 py-4 cursor-pointer text-[10px] font-black tracking-widest uppercase transition-colors ${streamFilter === stream ? 'bg-[var(--primary)] text-white' : 'text-[var(--secondary)] hover:bg-slate-50'}`}
-                                        onClick={() => {
-                                            setStreamFilter(stream);
-                                            setIsFilterDropdownOpen(false);
-                                        }}
-                                    >
-                                        {stream === 'ALL' ? 'TOUTES LES FILIÈRES' : stream}
-                                    </div>
-                                ))}
-                            </div>
-                        )}
+                <div className={`flex flex-col sm:flex-row items-center gap-4 ${isRtl ? 'sm:flex-row-reverse w-full md:w-auto' : ''}`}>
+                    <div className={`flex items-center bg-white border border-[var(--border)] rounded-2xl w-full md:w-80 px-5 group focus-within:border-[var(--primary)] transition-all shadow-sm ${isRtl ? 'flex-row-reverse' : ''}`}>
+                        <Search className="w-4 h-4 text-slate-300 group-focus-within:text-[var(--primary)] transition-colors" />
+                        <input
+                            type="text"
+                            placeholder={t('groups.search_placeholder')}
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className={`bg-transparent border-none text-[11px] font-bold py-4 px-4 w-full tracking-widest focus:ring-0 text-[var(--secondary)] placeholder-slate-300 uppercase ${isRtl ? 'text-right' : ''}`}
+                        />
                     </div>
 
-                    <button onClick={() => setIsClassModalOpen(true)} className="btn-ista px-8 py-4 flex items-center gap-3">
-                        <Plus className="w-5 h-5" />
-                        <span>CRÉER UN GROUPE</span>
+                    <button
+                        onClick={() => { setIsEditing(false); setIsModalOpen(true); }}
+                        className="w-full sm:w-auto btn-ista px-8 py-4 flex items-center justify-center gap-3 shadow-xl"
+                    >
+                        <Plus className="w-4 h-4" />
+                        <span className="text-[10px] uppercase font-black tracking-widest">{t('groups.create_button')}</span>
                     </button>
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                {filteredClasses.map((cls) => (
-                    <div key={cls.id} className="perspective-1000 h-[420px]">
-                        <div className={`card-inner ${flippedCardId === cls.id ? 'card-flipped' : ''}`}>
-                            {/* Front Side */}
-                            <div className="card-front rounded-3xl border border-[var(--border)] bg-white p-10 shadow-sm hover:shadow-xl hover:border-[var(--primary)]/30 transition-all duration-500 group relative overflow-hidden h-full flex flex-col">
-                                <div className="absolute top-0 right-0 w-32 h-32 bg-slate-50 opacity-50 rounded-bl-[100px] transform translate-x-16 -translate-y-16 group-hover:bg-green-50 transition-all duration-500"></div>
+            {/* Content Section */}
+            <div className={`grid grid-cols-1 lg:grid-cols-12 gap-10 ${isRtl ? 'direction-rtl' : ''}`}>
 
-                                <div className="flex justify-between items-start mb-8 relative">
-                                    <div className="w-14 h-14 bg-slate-50 rounded-2xl flex items-center justify-center text-[var(--primary)] group-hover:bg-[var(--primary)] group-hover:text-white transition-all duration-500 border border-slate-100 group-hover:border-[var(--primary)]">
-                                        <Users className="w-6 h-6" />
-                                    </div>
-                                    <div className="flex gap-2">
-                                        <button
-                                            onClick={() => handleFlip(cls)}
-                                            className="p-3 bg-white rounded-xl border border-[var(--border)] hover:border-[var(--primary)] hover:text-[var(--primary)] text-slate-400 transition-all shadow-sm"
-                                        >
-                                            <Edit3 className="w-4 h-4" />
-                                        </button>
-                                        <button
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                setPurgeInfo({ isOpen: true, classId: cls.id });
-                                            }}
-                                            className="p-3 bg-white rounded-xl border border-[var(--border)] hover:border-red-500 hover:text-red-500 text-slate-400 transition-all shadow-sm"
-                                        >
-                                            <Trash2 className="w-4 h-4" />
-                                        </button>
-                                    </div>
-                                </div>
+                {/* Main list */}
+                <div className={`lg:col-span-8 space-y-8 ${isRtl ? 'order-1 lg:order-2' : ''}`}>
+                    <div className={`flex items-center gap-3 ${isRtl ? 'flex-row-reverse' : ''}`}>
+                        <div className="w-1.5 h-6 bg-[var(--primary)] rounded-full"></div>
+                        <h3 className="text-xs font-black tracking-widest uppercase text-[var(--secondary)]">{t('groups.list_title')}</h3>
+                    </div>
 
-                                <div className="flex-1 flex flex-col">
-                                    <div className="mb-2">
-                                        <span className="text-[10px] font-black text-[var(--primary)] tracking-widest uppercase">{cls.id}</span>
-                                        <h2 className="text-3xl font-black italic text-[var(--secondary)] tracking-tight leading-tight uppercase transition-colors duration-500 group-hover:text-[var(--primary)]">{cls.title || cls.name}</h2>
-                                    </div>
-                                    <p className="text-[10px] uppercase tracking-widest text-[var(--text-muted)] font-black mb-auto mt-2 italic">{cls.stream}</p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {filteredClasses.length > 0 ? (
+                            filteredClasses.map((cls) => (
+                                <div key={cls.id} className="ista-panel p-8 bg-white shadow-sm hover:shadow-xl hover:translate-y-[-4px] transition-all duration-300 group relative overflow-hidden">
+                                    <div className={`absolute top-0 w-24 h-24 bg-[var(--primary)] opacity-[0.02] rounded-bl-full group-hover:opacity-[0.05] transition-opacity ${isRtl ? 'left-0 rounded-br-full' : 'right-0 rounded-bl-full'}`}></div>
 
-                                    <div className="mt-8 grid grid-cols-2 gap-4 border-t border-slate-50 pt-8">
-                                        <div>
-                                            <p className="text-[9px] uppercase tracking-widest text-slate-400 font-black mb-1">Stagiaires</p>
-                                            <p className="text-2xl font-black text-[var(--secondary)] transition-colors duration-500">
-                                                {cls.students !== undefined && cls.students !== null ? cls.students : '0'}
-                                            </p>
+                                    <div className={`flex justify-between items-start mb-8 ${isRtl ? 'flex-row-reverse' : ''}`}>
+                                        <div className="px-3 py-1 bg-slate-50 border border-slate-100 rounded-lg text-[9px] font-black text-[var(--primary)] uppercase tracking-widest group-hover:bg-[var(--primary)] group-hover:text-white transition-all">
+                                            {cls.id}
                                         </div>
-                                        <div>
-                                            <p className="text-[9px] uppercase tracking-widest text-slate-400 font-black mb-1">Formateur(s)</p>
-                                            <p className="text-xs font-bold text-[var(--secondary)] truncate">{cls.formateur || cls.lead}</p>
+                                        <div className="flex gap-2">
+                                            <button
+                                                onClick={() => {
+                                                    setNewClass(cls);
+                                                    setIsEditing(true);
+                                                    setIsModalOpen(true);
+                                                }}
+                                                className="p-2.5 rounded-xl hover:bg-slate-50 text-slate-300 hover:text-[var(--primary)] transition-all"
+                                            >
+                                                <Pencil className="w-4 h-4" />
+                                            </button>
+                                            <button
+                                                onClick={() => {
+                                                    setClassToDelete(cls.id);
+                                                    setIsConfirmOpen(true);
+                                                }}
+                                                className="p-2.5 rounded-xl hover:bg-red-50 text-slate-300 hover:text-red-500 transition-all"
+                                            >
+                                                <Trash2 className="w-4 h-4" />
+                                            </button>
                                         </div>
                                     </div>
+
+                                    <div className={`space-y-4 ${isRtl ? 'text-right' : ''}`}>
+                                        <h4 className="text-2xl font-black italic tracking-tighter text-[var(--secondary)] leading-none uppercase group-hover:text-[var(--primary)] transition-colors">
+                                            {cls.title}
+                                        </h4>
+                                        <div className={`flex items-center gap-2 text-[9px] font-bold text-slate-400 uppercase tracking-widest ${isRtl ? 'flex-row-reverse' : ''}`}>
+                                            <GraduationCap className="w-3 h-3 text-[var(--primary)]" />
+                                            <span>{cls.stream}</span>
+                                        </div>
+                                    </div>
+
+                                    <div className={`mt-8 pt-8 border-t border-slate-50 flex items-center justify-between ${isRtl ? 'flex-row-reverse' : ''}`}>
+                                        <div className={`flex items-center gap-6 ${isRtl ? 'flex-row-reverse' : ''}`}>
+                                            <div className="flex flex-col">
+                                                <span className="text-[8px] font-black text-slate-300 uppercase tracking-[0.2em] mb-1">{t('groups.effectif')}</span>
+                                                <div className={`flex items-center gap-2 ${isRtl ? 'flex-row-reverse' : ''}`}>
+                                                    <Users className="w-3 h-3 text-[var(--secondary)]" />
+                                                    <span className="text-sm font-black text-[var(--secondary)]">--</span>
+                                                </div>
+                                            </div>
+                                            <div className="flex flex-col">
+                                                <span className="text-[8px] font-black text-slate-300 uppercase tracking-[0.2em] mb-1">{t('groups.formateur')}</span>
+                                                <div className={`flex items-center gap-2 ${isRtl ? 'flex-row-reverse' : ''}`}>
+                                                    <Clock className="w-3 h-3 text-[var(--secondary)]" />
+                                                    <span className="text-[10px] font-black text-[var(--secondary)] uppercase truncate max-w-[100px]">{cls.lead || 'NA'}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <ChevronRight className={`w-4 h-4 text-slate-200 group-hover:translate-x-1 transition-transform ${isRtl ? 'rotate-180 group-hover:-translate-x-1' : ''}`} />
+                                    </div>
                                 </div>
+                            ))
+                        ) : (
+                            <div className="md:col-span-2 ista-panel p-24 bg-white/50 border-2 border-dashed flex flex-col items-center justify-center opacity-40">
+                                <Activity className="w-12 h-12 text-slate-300 animate-pulse mb-4" />
+                                <p className="text-[10px] font-black uppercase tracking-[0.4em] italic text-slate-400">{t('groups.no_groups')}</p>
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                {/* Right side stats */}
+                <div className={`lg:col-span-4 space-y-10 ${isRtl ? 'order-2 lg:order-1' : ''}`}>
+                    <div className="ista-panel p-10 bg-[var(--secondary)] text-white relative overflow-hidden group">
+                        <div className={`absolute top-0 p-8 text-white/5 group-hover:rotate-12 transition-transform duration-700 ${isRtl ? 'left-0' : 'right-0'}`}>
+                            <Layers className="w-40 h-40" />
+                        </div>
+                        <div className="relative z-10 space-y-12">
+                            <div className={`space-y-4 ${isRtl ? 'text-right' : ''}`}>
+                                <h3 className="text-3xl font-black italic tracking-tighter leading-none">{t('groups.sidebar_overview')}</h3>
+                                <p className="text-[9px] font-bold text-white/40 tracking-[0.2em] uppercase">SYSTÈME DE CLASSIFICATION</p>
                             </div>
 
-                            {/* Back Side (Update Form) */}
-                            <div className="card-back rounded-3xl border border-[var(--border)] bg-slate-50 p-10 flex flex-col h-full shadow-2xl">
-                                <div className="flex justify-between items-center mb-8">
-                                    <span className="text-[10px] font-black tracking-widest text-[var(--secondary)] text-left uppercase">Mise à jour du Groupe</span>
-                                    <button onClick={() => setFlippedCardId(null)} className="p-2 hover:bg-white rounded-lg transition-all text-slate-400 hover:text-[var(--secondary)]">
-                                        <X className="w-5 h-5" />
-                                    </button>
-                                </div>
-
-                                <div className="space-y-6 flex-1 text-left overflow-y-auto ista-scrollbar pr-2">
-                                    <div>
-                                        <label className="block text-[9px] font-black tracking-widest text-slate-400 uppercase mb-2">Titre du Groupe</label>
-                                        <input
-                                            type="text"
-                                            value={editData.title}
-                                            onChange={(e) => setEditData({ ...editData, title: e.target.value })}
-                                            className="w-full text-xs font-bold bg-white border border-[var(--border)] rounded-xl px-4 py-3 text-[var(--secondary)] focus:border-[var(--primary)] focus:ring-4 focus:ring-green-500/10 outline-none transition-all"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="block text-[9px] font-black tracking-widest text-slate-400 uppercase mb-2">Filière</label>
-                                        <input
-                                            type="text"
-                                            value={editData.stream}
-                                            onChange={(e) => setEditData({ ...editData, stream: e.target.value })}
-                                            className="w-full text-xs font-bold bg-white border border-[var(--border)] rounded-xl px-4 py-3 text-[var(--secondary)] focus:border-[var(--primary)] focus:ring-4 focus:ring-green-500/10 outline-none transition-all"
-                                        />
-                                    </div>
-                                    <div className="relative">
-                                        <label className="block text-[9px] font-black tracking-widest text-slate-400 uppercase mb-2">Formateurs</label>
-                                        <div
-                                            onClick={() => setIsEditDropdownOpen(!isEditDropdownOpen)}
-                                            className="w-full bg-white border border-[var(--border)] rounded-xl px-4 py-3 flex justify-between items-center cursor-pointer hover:border-[var(--primary)] transition-all"
-                                        >
-                                            <span className={`text-[10px] font-bold tracking-widest uppercase truncate ${editData.lead.length > 0 ? 'text-[var(--secondary)]' : 'text-slate-400'}`}>
-                                                {editData.lead.length > 0 ? editData.lead.join(', ') : 'SÉLECTIONNER...'}
-                                            </span>
-                                            <ChevronDown className={`w-4 h-4 text-[var(--primary)] transition-transform ${isEditDropdownOpen ? 'rotate-180' : ''}`} />
+                            <div className="space-y-6">
+                                <div className={`p-6 bg-white/5 rounded-2xl border border-white/5 backdrop-blur-sm flex items-center justify-between group/card hover:bg-[var(--primary)] transition-all ${isRtl ? 'flex-row-reverse' : ''}`}>
+                                    <div className={`flex items-center gap-4 ${isRtl ? 'flex-row-reverse' : ''}`}>
+                                        <div className="w-12 h-12 rounded-xl bg-white/10 flex items-center justify-center text-[var(--primary)] group-hover/card:bg-white transition-all shadow-sm">
+                                            <Users className="w-6 h-6" />
                                         </div>
-
-                                        {isEditDropdownOpen && (
-                                            <div className="absolute top-full left-0 w-full mt-2 bg-white border border-[var(--border)] rounded-xl z-50 shadow-2xl max-h-40 overflow-y-auto ista-scrollbar">
-                                                {formateurs.map((f) => {
-                                                    const isSelected = editData.lead.includes(f.name);
-                                                    return (
-                                                        <div
-                                                            key={f.id}
-                                                            className={`px-4 py-3 cursor-pointer flex items-center justify-between transition-colors hover:bg-slate-50 ${isSelected ? 'bg-green-50' : ''}`}
-                                                            onClick={() => {
-                                                                const newLead = isSelected
-                                                                    ? editData.lead.filter(l => l !== f.name)
-                                                                    : [...editData.lead, f.name];
-                                                                setEditData({ ...editData, lead: newLead });
-                                                            }}
-                                                        >
-                                                            <span className={`text-[10px] font-bold uppercase ${isSelected ? 'text-[var(--primary)]' : 'text-[var(--secondary)]'}`}>{f.name}</span>
-                                                            {isSelected ? <CheckSquare className="w-4 h-4 text-[var(--primary)]" /> : <Square className="w-4 h-4 text-slate-200" />}
-                                                        </div>
-                                                    );
-                                                })}
-                                            </div>
-                                        )}
+                                        <div className={isRtl ? 'text-right' : ''}>
+                                            <p className="text-[8px] font-black text-white/40 uppercase tracking-widest mb-1">{t('dashboard.total_classes')}</p>
+                                            <p className="text-xl font-black">{classes.length}</p>
+                                        </div>
                                     </div>
                                 </div>
 
-                                <button
-                                    onClick={() => handleUpdateClass(cls.id)}
-                                    className="btn-ista w-full py-4 mt-8 flex items-center justify-center gap-3 shadow-lg hover:scale-[1.01] active:scale-[0.99]"
-                                >
-                                    <Save className="w-4 h-4" />
-                                    <span>ENREGISTRER</span>
-                                </button>
+                                <div className={`p-6 bg-white/5 rounded-2xl border border-white/5 backdrop-blur-sm flex items-center justify-between group/card hover:bg-royalblue transition-all ${isRtl ? 'flex-row-reverse' : ''}`}>
+                                    <div className={`flex items-center gap-4 ${isRtl ? 'flex-row-reverse' : ''}`}>
+                                        <div className="w-12 h-12 rounded-xl bg-white/10 flex items-center justify-center text-royalblue group-hover/card:bg-white transition-all shadow-sm">
+                                            <GraduationCap className="w-6 h-6" />
+                                        </div>
+                                        <div className={isRtl ? 'text-right' : ''}>
+                                            <p className="text-[8px] font-black text-white/40 uppercase tracking-widest mb-1">{t('groups.active_streams')}</p>
+                                            <p className="text-xl font-black">{[...new Set(classes.map(c => c.stream))].length}</p>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
-                ))}
 
-                {/* Create New Card */}
-                <div
-                    onClick={() => setIsClassModalOpen(true)}
-                    className="border-2 border-dashed border-slate-200 bg-white rounded-3xl p-10 flex flex-col items-center justify-center text-center cursor-pointer hover:bg-slate-50 hover:border-[var(--primary)]/30 transition-all duration-500 group h-[420px]"
-                >
-                    <div className="w-20 h-20 rounded-2xl border-2 border-dashed border-slate-200 flex items-center justify-center mb-6 group-hover:bg-[var(--primary)] group-hover:border-[var(--primary)] transition-all duration-500">
-                        <Plus className="w-10 h-10 text-slate-300 group-hover:text-white transition-all duration-500" />
+                    <div className="ista-panel p-10 bg-white shadow-xl relative overflow-hidden group">
+                        <div className={`absolute bottom-0 right-0 p-6 opacity-[0.03] group-hover:scale-110 transition-transform duration-700 ${isRtl ? 'left-0 right-auto' : 'right-0'}`}>
+                            <Calendar className="w-32 h-32" />
+                        </div>
+                        <div className={`space-y-6 relative z-10 ${isRtl ? 'text-right' : ''}`}>
+                            <h4 className="text-xs font-black tracking-widest text-[var(--secondary)] uppercase">{t('groups.recent_activities')}</h4>
+                            <div className="space-y-4">
+                                {[1, 2, 3].map(i => (
+                                    <div key={i} className={`flex gap-4 p-4 hover:bg-slate-50 rounded-2xl transition-all cursor-pointer border border-transparent hover:border-slate-100 ${isRtl ? 'flex-row-reverse' : ''}`}>
+                                        <div className="w-1.5 h-1.5 rounded-full bg-[var(--primary)] mt-2"></div>
+                                        <div>
+                                            <p className="text-[10px] font-black text-[var(--secondary)] uppercase tracking-tight">AJOUT DE GROUPE {i}</p>
+                                            <p className="text-[8px] font-bold text-slate-400 mt-1 uppercase">IL Y A 2 HEURES</p>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
                     </div>
-                    <h3 className="text-2xl font-black uppercase tracking-tight text-[var(--secondary)] mb-2 group-hover:text-[var(--primary)] transition-all">Initialiser un Groupe</h3>
-                    <p className="text-[10px] tracking-[0.2em] text-slate-400 uppercase font-black">Ajouter une nouvelle division</p>
                 </div>
             </div>
 
+            {/* Modals */}
             <GroupModal
-                isOpen={isClassModalOpen}
-                onClose={() => setIsClassModalOpen(false)}
+                isOpen={isModalOpen}
+                onClose={() => setIsModalOpen(false)}
                 newClass={newClass}
                 setNewClass={setNewClass}
                 handleAddClass={handleAddClass}
-                formateurs={formateurs}
+                handleUpdateClass={handleUpdateClass}
+                isEditing={isEditing}
             />
 
             <ConfirmationModal
-                isOpen={purgeInfo.isOpen}
-                onClose={() => setPurgeInfo({ isOpen: false, classId: '' })}
-                onConfirm={handlePurgeClass}
-                title="Suppression du Groupe"
-                message={`Êtes-vous sûr de vouloir supprimer le groupe ${purgeInfo.classId}? Cette action supprimera également toutes les séances associées dans l'emploi du temps.`}
+                isOpen={isConfirmOpen}
+                onClose={() => setIsConfirmOpen(false)}
+                onConfirm={() => handleDeleteClass(classToDelete)}
+                title={t('groups.delete_confirm_title')}
+                message={t('groups.delete_confirm_msg', { id: classToDelete })}
             />
-            <style>{`
-                .ista-scrollbar::-webkit-scrollbar { width: 4px; }
-                .ista-scrollbar::-webkit-scrollbar-track { background: transparent; }
-                .ista-scrollbar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
-            `}</style>
         </div>
-
     );
 };
 

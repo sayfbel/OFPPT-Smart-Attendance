@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import ReactDOM from 'react-dom';
 import { ChevronRight, X, ChevronDown, CheckSquare, Square, Calendar, Clock, BookOpen, User, MapPin, Save, Plus, Trash2 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import ConfirmationModal from './ConfirmationModal';
 
 const SeanceDossierModal = ({ isOpen, onClose, targetSeance, handleUpdateSeance, handleCreateSeance, handleDeleteSeance, availableClasses = [], formateurs = [] }) => {
+    const { t } = useTranslation();
     const timeSlots = ['08:30', '09:30', '10:30', '11:30', '12:30', '13:30', '14:30', '15:30', '16:30', '17:30', '18:30'];
-    const days = ['LUNDI', 'MARDI', 'MERCREDI', 'JEUDI', 'VENDREDI', 'SAMEDI'];
+    const days = t('formateur_timetable.days', { returnObjects: true }) || ['LUNDI', 'MARDI', 'MERCREDI', 'JEUDI', 'VENDREDI', 'SAMEDI'];
 
     const [isStartDropdownOpen, setIsStartDropdownOpen] = useState(false);
     const [isEndDropdownOpen, setIsEndDropdownOpen] = useState(false);
@@ -21,7 +23,7 @@ const SeanceDossierModal = ({ isOpen, onClose, targetSeance, handleUpdateSeance,
         formateur_id: '',
         formateur_name: '',
         class_id: '',
-        day: 'LUNDI',
+        day: days[0],
         startTime: '08:30',
         endTime: '10:30'
     });
@@ -47,7 +49,7 @@ const SeanceDossierModal = ({ isOpen, onClose, targetSeance, handleUpdateSeance,
                 formateur_id: matchingFormateur?.id || '',
                 formateur_name: targetSeance.formateur || '',
                 class_id: targetSeance.class || '',
-                day: targetSeance.day || 'LUNDI',
+                day: targetSeance.day || days[0],
                 startTime: start,
                 endTime: end
             });
@@ -59,12 +61,12 @@ const SeanceDossierModal = ({ isOpen, onClose, targetSeance, handleUpdateSeance,
                 formateur_id: '',
                 formateur_name: '',
                 class_id: '',
-                day: 'LUNDI',
+                day: days[0],
                 startTime: '08:30',
                 endTime: '10:30'
             });
         }
-    }, [targetSeance, formateurs]);
+    }, [targetSeance, formateurs, days]);
 
     if (!isOpen) return null;
 
@@ -92,28 +94,28 @@ const SeanceDossierModal = ({ isOpen, onClose, targetSeance, handleUpdateSeance,
                         <div className="w-16 h-16 bg-white/10 rounded-2xl flex items-center justify-center border border-white/20 mb-8">
                             <Calendar className="w-8 h-8 text-white" />
                         </div>
-                        <h2 className="text-5xl font-black italic tracking-tighter leading-[0.9] mb-4">
-                            SÉANCE <br /> <span className="text-[var(--primary)]">{isCreation ? 'NOUVELLE' : 'MODIFIER'}</span>
+                        <h2 className="text-4xl lg:text-5xl font-black italic tracking-tighter leading-[0.9] mb-4 uppercase">
+                            {t('modals.seance.title')} <br /> <span className="text-[var(--primary)]">{isCreation ? t('modals.seance.title_new') : t('modals.seance.title_edit')}</span>
                         </h2>
-                        <p className="text-[10px] font-bold text-white/50 tracking-[0.3em] uppercase">Service de Planification ISTA</p>
+                        <p className="text-[10px] font-bold text-white/50 tracking-[0.3em] uppercase">{t('modals.seance.service')}</p>
                     </div>
 
                     <div className="space-y-8 mt-12 bg-black/10 p-8 rounded-3xl border border-white/5">
                         <div className="space-y-1">
-                            <p className="text-[9px] font-black text-white/40 tracking-widest uppercase">GROUPE CIBLE</p>
-                            <p className="text-xl font-black italic uppercase tracking-tight text-[var(--primary)]">{seanceEdit.class_id || 'EN ATTENTE...'}</p>
+                            <p className="text-[9px] font-black text-white/40 tracking-widest uppercase">{t('modals.seance.group_target')}</p>
+                            <p className="text-xl font-black italic uppercase tracking-tight text-[var(--primary)]">{seanceEdit.class_id || t('modals.seance.waiting')}</p>
                         </div>
                         <div className="space-y-1">
-                            <p className="text-[9px] font-black text-white/40 tracking-widest uppercase">HORAIRE PRÉVU</p>
+                            <p className="text-[9px] font-black text-white/40 tracking-widest uppercase">{t('modals.seance.schedule_label')}</p>
                             <p className="text-sm font-bold uppercase tracking-tight">
                                 {seanceEdit.day} • {seanceEdit.startTime} - {seanceEdit.endTime}
                             </p>
                         </div>
                         <div className="space-y-1">
-                            <p className="text-[9px] font-black text-white/40 tracking-widest uppercase">STATUT OPÉRATIONNEL</p>
+                            <p className="text-[9px] font-black text-white/40 tracking-widest uppercase">{t('modals.seance.op_status')}</p>
                             <div className="flex items-center gap-2">
                                 <div className="w-2 h-2 bg-[var(--primary)] rounded-full animate-pulse"></div>
-                                <p className="text-[10px] font-black uppercase tracking-widest">{isCreation ? 'CRÉATION EN COURS' : 'MODIFICATION'}</p>
+                                <p className="text-[10px] font-black uppercase tracking-widest">{isCreation ? t('modals.seance.op_new') : t('modals.seance.op_edit')}</p>
                             </div>
                         </div>
                     </div>
@@ -128,8 +130,8 @@ const SeanceDossierModal = ({ isOpen, onClose, targetSeance, handleUpdateSeance,
                     {/* Fixed Header */}
                     <div className="p-12 pb-8 border-b border-slate-50 flex justify-between items-start sticky top-0 bg-white z-30">
                         <div>
-                            <h3 className="text-3xl font-black italic tracking-tight text-[var(--secondary)] uppercase mb-2 leading-none">Paramètres de la Séance</h3>
-                            <p className="text-[10px] font-bold text-slate-400 tracking-widest uppercase">Définissez les détails du cours pour l'emploi du temps.</p>
+                            <h3 className="text-2xl lg:text-3xl font-black italic tracking-tight text-[var(--secondary)] uppercase mb-2 leading-none">{t('modals.seance.details_title')}</h3>
+                            <p className="text-[10px] font-bold text-slate-400 tracking-widest uppercase">{t('modals.seance.details_sub')}</p>
                         </div>
                         <button
                             type="button"
@@ -148,14 +150,14 @@ const SeanceDossierModal = ({ isOpen, onClose, targetSeance, handleUpdateSeance,
                                     <div className="relative space-y-3">
                                         <label className="flex items-center gap-2 text-[10px] font-black tracking-widest text-slate-400 uppercase">
                                             <BookOpen className="w-3 h-3" />
-                                            Groupe (Section)
+                                            {t('modals.seance.group_label')}
                                         </label>
                                         <div
                                             className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-6 py-4 flex justify-between items-center cursor-pointer hover:border-[var(--primary)] transition-all"
                                             onClick={() => setIsClassDropdownOpen(!isClassDropdownOpen)}
                                         >
                                             <span className={`text-sm font-bold uppercase truncate ${seanceEdit.class_id ? 'text-[var(--secondary)]' : 'text-slate-300'}`}>
-                                                {seanceEdit.class_id || 'SÉLECTIONNER UN GROUPE...'}
+                                                {seanceEdit.class_id || t('modals.seance.select_group')}
                                             </span>
                                             <ChevronDown className={`w-5 h-5 text-[var(--primary)] transition-transform ${isClassDropdownOpen ? 'rotate-180' : ''}`} />
                                         </div>
@@ -178,7 +180,7 @@ const SeanceDossierModal = ({ isOpen, onClose, targetSeance, handleUpdateSeance,
                                     <div className="relative space-y-3">
                                         <label className="flex items-center gap-2 text-[10px] font-black tracking-widest text-slate-400 uppercase">
                                             <Calendar className="w-3 h-3" />
-                                            Jour de la Semaine
+                                            {t('modals.seance.day_label')}
                                         </label>
                                         <div
                                             className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-6 py-4 flex justify-between items-center cursor-pointer hover:border-[var(--primary)] transition-all"
@@ -210,14 +212,14 @@ const SeanceDossierModal = ({ isOpen, onClose, targetSeance, handleUpdateSeance,
                                 <div className="space-y-3">
                                     <label className="flex items-center gap-2 text-[10px] font-black tracking-widest text-slate-400 uppercase">
                                         <Plus className="w-3 h-3" />
-                                        Module / Discipline
+                                        {t('modals.seance.module_label')}
                                     </label>
                                     <input
                                         type="text"
                                         required
                                         value={seanceEdit.subject}
                                         onChange={e => setSeanceEdit({ ...seanceEdit, subject: e.target.value })}
-                                        placeholder="Nom du module..."
+                                        placeholder={t('modals.seance.module_placeholder')}
                                         className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-6 py-4 text-sm font-bold text-[var(--secondary)] focus:border-[var(--primary)] focus:ring-4 focus:ring-green-500/5 outline-none transition-all placeholder:text-slate-300"
                                     />
                                 </div>
@@ -226,14 +228,14 @@ const SeanceDossierModal = ({ isOpen, onClose, targetSeance, handleUpdateSeance,
                                 <div className="relative space-y-3">
                                     <label className="flex items-center gap-2 text-[10px] font-black tracking-widest text-slate-400 uppercase">
                                         <User className="w-3 h-3" />
-                                        Formateur Responsable
+                                        {t('modals.seance.formateur_label')}
                                     </label>
                                     <div
                                         className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-6 py-4 flex justify-between items-center cursor-pointer hover:border-[var(--primary)] transition-all"
                                         onClick={() => setIsFormateurDropdownOpen(!isFormateurDropdownOpen)}
                                     >
                                         <span className={`text-sm font-bold uppercase truncate ${seanceEdit.formateur_id ? 'text-[var(--secondary)]' : 'text-slate-300'}`}>
-                                            {seanceEdit.formateur_name || 'SÉLECTIONNER UN FORMATEUR...'}
+                                            {seanceEdit.formateur_name || t('modals.seance.select_formateur')}
                                         </span>
                                         <ChevronDown className={`w-5 h-5 text-[var(--primary)] transition-transform ${isFormateurDropdownOpen ? 'rotate-180' : ''}`} />
                                     </div>
@@ -260,14 +262,14 @@ const SeanceDossierModal = ({ isOpen, onClose, targetSeance, handleUpdateSeance,
                                 <div className="space-y-3">
                                     <label className="flex items-center gap-2 text-[10px] font-black tracking-widest text-slate-400 uppercase">
                                         <MapPin className="w-3 h-3" />
-                                        Salle de Cours
+                                        {t('modals.seance.room_label')}
                                     </label>
                                     <input
                                         type="text"
                                         required
                                         value={seanceEdit.room}
                                         onChange={e => setSeanceEdit({ ...seanceEdit, room: e.target.value.toUpperCase() })}
-                                        placeholder="Numéro ou Nom de la salle..."
+                                        placeholder={t('modals.seance.room_placeholder')}
                                         className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-6 py-4 text-sm font-bold text-[var(--secondary)] focus:border-[var(--primary)] focus:ring-4 focus:ring-green-500/5 outline-none transition-all placeholder:text-slate-300"
                                     />
                                 </div>
@@ -277,7 +279,7 @@ const SeanceDossierModal = ({ isOpen, onClose, targetSeance, handleUpdateSeance,
                                     <div className="relative space-y-3">
                                         <label className="flex items-center gap-2 text-[10px] font-black tracking-widest text-slate-400 uppercase">
                                             <Clock className="w-3 h-3" />
-                                            Heure de Début
+                                            {t('modals.seance.start_label')}
                                         </label>
                                         <div
                                             className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-6 py-4 flex justify-between items-center cursor-pointer hover:border-[var(--primary)] transition-all"
@@ -310,7 +312,7 @@ const SeanceDossierModal = ({ isOpen, onClose, targetSeance, handleUpdateSeance,
                                     <div className="relative space-y-3">
                                         <label className="flex items-center gap-2 text-[10px] font-black tracking-widest text-slate-400 uppercase">
                                             <Clock className="w-3 h-3" />
-                                            Heure de Fin
+                                            {t('modals.seance.end_label')}
                                         </label>
                                         <div
                                             className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-6 py-4 flex justify-between items-center cursor-pointer hover:border-[var(--primary)] transition-all"
@@ -355,7 +357,7 @@ const SeanceDossierModal = ({ isOpen, onClose, targetSeance, handleUpdateSeance,
                                         className="flex-1 btn-ista py-5 rounded-2xl font-black uppercase tracking-widest shadow-xl flex items-center justify-center gap-3 hover:scale-[1.01] active:scale-[0.99] transition-all"
                                     >
                                         {isCreation ? <Plus className="w-5 h-5" /> : <Save className="w-5 h-5" />}
-                                        <span>{isCreation ? 'Initialiser la séance' : 'Mettre à jour la séance'}</span>
+                                        <span>{isCreation ? t('modals.seance.init_btn') : t('modals.seance.update_btn')}</span>
                                     </button>
                                 </div>
                             </div>
@@ -378,8 +380,8 @@ const SeanceDossierModal = ({ isOpen, onClose, targetSeance, handleUpdateSeance,
                         handleDeleteSeance(targetSeance.id);
                     }
                 }}
-                title="Suppression de la Séance"
-                message={`Êtes-vous sûr de vouloir supprimer la séance "${targetSeance?.subject}" de ${targetSeance?.formateur} ?`}
+                title={t('modals.seance.delete_title')}
+                message={t('modals.seance.delete_message', { subject: targetSeance?.subject, formateur: targetSeance?.formateur })}
             />
         </div>,
         document.body

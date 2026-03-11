@@ -67,8 +67,29 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+[dir="rtl"] {
+  font-family: 'Tajawal', sans-serif;
+}
+
 [dir="rtl"] body {
   font-family: 'Tajawal', sans-serif;
+}
+
+.font-arabic {
+  font-family: 'Tajawal', sans-serif !important;
+}
+
+/* RTL Helpers */
+[dir="rtl"] .direction-rtl {
+  direction: rtl;
+}
+
+[dir="rtl"] .text-right-rtl {
+  text-align: right;
+}
+
+[dir="rtl"] .flex-row-rtl {
+  flex-direction: row-reverse;
 }
 
 

@@ -1,35 +1,30 @@
 import React, { useState, useEffect } from 'react';
 import {
     Users,
-    BookOpen,
-    FileText,
+    Key,
     Activity,
-    Shield,
-    Globe,
-    BarChart3,
-    GraduationCap,
-    CheckCircle
+    CheckCircle2,
+    XCircle,
+    Clock,
+    ArrowUpRight,
+    TrendingUp,
+    Calendar,
+    FileText,
+    RefreshCw,
+    Briefcase,
+    LayoutDashboard
 } from 'lucide-react';
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LabelList, PieChart, Pie, Cell } from 'recharts';
 import axios from 'axios';
-import {
-    ResponsiveContainer,
-    AreaChart,
-    Area,
-    XAxis,
-    YAxis,
-    CartesianGrid,
-    Tooltip,
-    PieChart,
-    Pie,
-    Cell
-} from 'recharts';
+import { useTranslation } from 'react-i18next';
 
 const AdminDashboard = () => {
+    const { t } = useTranslation();
     const [stats, setStats] = useState({
-        total_students: 0,
-        total_formateurs: 0,
-        total_classes: 0,
-        total_reports: 0
+        totalStudents: 0,
+        totalFormateurs: 0,
+        totalClasses: 0,
+        totalReports: 0
     });
     const [loading, setLoading] = useState(true);
 
@@ -37,172 +32,217 @@ const AdminDashboard = () => {
         const fetchStats = async () => {
             try {
                 const token = localStorage.getItem('token');
-                const config = { headers: { Authorization: `Bearer ${token}` } };
-                const res = await axios.get('/api/admin/summary', config);
-                setStats(res.data.summary);
-                setLoading(false);
+                const [usersRes, classesRes, reportsRes] = await Promise.all([
+                    axios.get('/api/admin/users', { headers: { Authorization: `Bearer ${token}` } }),
+                    axios.get('/api/admin/classes', { headers: { Authorization: `Bearer ${token}` } }),
+                    axios.get('/api/admin/reports', { headers: { Authorization: `Bearer ${token}` } })
+                ]);
+
+                const users = usersRes.data.users || [];
+                setStats({
+                    totalStudents: users.filter(u => u.role === 'stagiaire').length,
+                    totalFormateurs: users.filter(u => u.role === 'formateur').length,
+                    totalClasses: (classesRes.data.classes || []).length,
+                    totalReports: (reportsRes.data.reports || []).length
+                });
             } catch (error) {
-                console.error('Error fetching dashboard stats', error);
+                console.error('Error fetching stats', error);
+            } finally {
                 setLoading(false);
             }
         };
         fetchStats();
     }, []);
 
-    const summary = [
-        { label: 'Total Stagiaires', value: stats.total_students, icon: Users, status: 'ACTIF' },
-        { label: 'Formateurs', value: stats.total_formateurs, icon: GraduationCap, status: 'EN LIGNE' },
-        { label: 'Groupes Actifs', value: stats.total_classes, icon: BookOpen, status: 'OUVERT' },
-        { label: 'Rapports Générés', value: stats.total_reports, icon: FileText, status: 'ARCHIVÉ' },
+    const daySlugs = t('datepicker.days', { returnObjects: true });
+    // chartData needs LUN, MAR, MER, JEU, VEN
+    const data = [
+        { name: daySlugs[1], rate: 85 },
+        { name: daySlugs[2], rate: 92 },
+        { name: daySlugs[3], rate: 88 },
+        { name: daySlugs[4], rate: 95 },
+        { name: daySlugs[5], rate: 78 }
     ];
 
-    const attendanceHistory = [
-        { name: 'Lun', rate: 94 }, { name: 'Mar', rate: 96 }, { name: 'Mer', rate: 92 },
-        { name: 'Jeu', rate: 89 }, { name: 'Ven', rate: 95 }, { name: 'Sam', rate: 88 },
+    const pieData = [
+        { name: t('dashboard.present'), value: 85, color: '#22c55e' },
+        { name: t('dashboard.absent'), value: 15, color: '#ef4444' }
     ];
-
-    const distribution = [
-        { name: 'PRÉSENT', value: 88 },
-        { name: 'ABSENT', value: 12 },
-    ];
-
-    const COLORS = ['var(--primary)', 'var(--secondary)'];
 
     return (
-        <div className="space-y-10 fade-up">
+        <div className="space-y-10 animate-in fade-in duration-700">
             {/* Header Section */}
-            <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-[var(--border)] pb-8">
+            <div className="flex flex-col md:flex-row md:items-end justify-between border-b border-[var(--border)] pb-10 gap-6">
                 <div className="space-y-4">
                     <div className="flex items-center gap-3">
-                        <div className="w-2.5 h-2.5 bg-[var(--primary)] rounded-full animate-pulse"></div>
-                        <span className="text-[9px] lg:text-[10px] font-black tracking-widest text-[var(--primary)] uppercase">ISTA DIGITAL HUB</span>
+                        <span className="bg-[var(--primary)] text-white text-[9px] font-black px-4 py-1.5 rounded-full uppercase tracking-wider shadow-lg shadow-green-500/20">
+                            {t('dashboard.hub_name')}
+                        </span>
+                        <div className="w-1.5 h-1.5 rounded-full bg-[var(--primary)] animate-pulse"></div>
                     </div>
-                    <h1 className="text-4xl md:text-5xl lg:text-7xl font-black tracking-tighter text-[var(--secondary)] uppercase italic leading-[0.9]">Vue d'ensemble</h1>
-                    <p className="text-[var(--text-muted)] text-[9px] lg:text-[11px] tracking-widest uppercase font-bold">Statistiques et Analyse des Présences</p>
+                    <h1 className="text-4xl lg:text-6xl font-black tracking-tighter text-[var(--secondary)] uppercase italic leading-none">
+                        {t('dashboard.overview_title')}
+                    </h1>
+                    <p className="text-[var(--text-muted)] text-[11px] font-bold tracking-[0.3em] uppercase opacity-70">
+                        {t('dashboard.overview_subtitle')}
+                    </p>
                 </div>
-                <div className="flex gap-4 justify-end">
-                    <button className="btn-ista px-8 py-3 group shadow-lg">
-                        <Activity className="w-4 h-4 mr-2" />
-                        <span>Synchronisation</span>
-                    </button>
-                </div>
+
+                <button className="flex items-center gap-3 p-4 bg-white border border-[var(--border)] rounded-2xl text-[10px] font-black tracking-widest uppercase hover:bg-[var(--surface-hover)] transition-all shadow-sm group">
+                    <RefreshCw className="w-4 h-4 text-[var(--primary)] group-hover:rotate-180 transition-transform duration-500" />
+                    {t('dashboard.sync_button')}
+                </button>
             </div>
 
-            {/* Stats Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                {summary.map((item, i) => (
-                    <div key={i} className="ista-card p-8 group relative overflow-hidden bg-white">
-                        <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-[var(--primary)] to-transparent opacity-[0.03] rounded-bl-full"></div>
-                        <div className="flex justify-between items-start mb-10">
-                            <div className="w-12 h-12 bg-[var(--surface-hover)] rounded-xl flex items-center justify-center text-[var(--primary)] group-hover:bg-[var(--primary)] group-hover:text-white transition-all shadow-sm">
-                                <item.icon className="w-6 h-6" />
+            {/* Stats Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
+                {[
+                    { label: t('dashboard.total_students'), value: stats.totalStudents, icon: Users, color: 'var(--primary)', tag: t('dashboard.status_active') },
+                    { label: t('dashboard.total_formateurs'), value: stats.totalFormateurs, icon: Briefcase, color: 'royalblue', tag: t('dashboard.status_online') },
+                    { label: t('dashboard.total_classes'), value: stats.totalClasses, icon: LayoutDashboard, color: 'var(--secondary)', tag: t('dashboard.status_open') },
+                    { label: t('dashboard.total_reports'), value: stats.totalReports, icon: FileText, color: 'orange', tag: t('dashboard.status_archived') }
+                ].map((stat, i) => (
+                    <div key={i} className="ista-card relative overflow-hidden group hover:scale-[1.02] transition-all duration-300">
+                        <div className="flex items-start justify-between">
+                            <div className="space-y-4">
+                                <div className="p-3 bg-slate-50 border border-slate-100 rounded-xl w-fit group-hover:bg-white transition-colors">
+                                    <stat.icon className="w-5 h-5 text-[var(--text-muted)]" style={{ color: stat.color }} />
+                                </div>
+                                <div>
+                                    <h3 className="text-4xl font-black text-[var(--secondary)] tracking-tight">
+                                        {loading ? '...' : stat.value.toString().padStart(2, '0')}
+                                    </h3>
+                                    <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest mt-1 opacity-60">
+                                        {stat.label}
+                                    </p>
+                                </div>
                             </div>
-                            <span className="text-[9px] font-black tracking-widest text-[var(--primary)] bg-green-50 px-2 py-1 rounded border border-green-100">
-                                {item.status}
+                            <span className="text-[8px] font-black px-2 py-1 rounded bg-slate-50 text-[var(--text-muted)] border border-slate-100 group-hover:bg-white">
+                                {stat.tag}
                             </span>
                         </div>
-                        <h2 className="text-5xl font-black text-[var(--secondary)] tracking-tight mb-1">
-                            {loading ? '...' : item.value}
-                        </h2>
-                        <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-wider">{item.label}</p>
                     </div>
                 ))}
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-                {/* Chart Section */}
-                <div className="lg:col-span-8 ista-panel p-8 bg-white shadow-sm">
-                    <div className="flex items-center justify-between mb-8">
-                        <div>
-                            <h3 className="text-xs font-black tracking-widest uppercase text-[var(--secondary)]">Évolution de la Présence</h3>
-                            <p className="text-[9px] text-[var(--text-muted)] uppercase mt-1">Taux hebdomadaire global</p>
+            <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+                {/* Main Graph */}
+                <div className="xl:col-span-2 ista-panel p-10 bg-white shadow-xl relative overflow-hidden">
+                    <div className="flex items-center justify-between mb-10">
+                        <div className="flex items-center gap-3">
+                            <div className="w-1.5 h-6 bg-[var(--primary)] rounded-full"></div>
+                            <h3 className="text-xs font-black tracking-widest uppercase text-[var(--secondary)]">{t('dashboard.attendance_evolution')}</h3>
                         </div>
-                        <div className="flex gap-2">
-                            <div className="px-3 py-1 bg-green-50 text-[var(--primary)] text-[9px] font-bold rounded border border-green-100 uppercase tracking-widest flex items-center gap-2">
-                                <div className="w-1.5 h-1.5 bg-[var(--primary)] rounded-full"></div> Semaine en cours
-                            </div>
+                        <div className="flex flex-col items-end">
+                            <span className="text-2xl font-black text-[var(--primary)]">94.8%</span>
+                            <p className="text-[8px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em]">{t('dashboard.weekly_rate')}</p>
                         </div>
                     </div>
-                    <div className="h-[350px]">
+
+                    <div className="h-[350px] w-full mt-4">
                         <ResponsiveContainer width="100%" height="100%">
-                            <AreaChart data={attendanceHistory}>
+                            <AreaChart data={data}>
                                 <defs>
                                     <linearGradient id="colorRate" x1="0" y1="0" x2="0" y2="1">
                                         <stop offset="5%" stopColor="var(--primary)" stopOpacity={0.2} />
                                         <stop offset="95%" stopColor="var(--primary)" stopOpacity={0} />
                                     </linearGradient>
                                 </defs>
-                                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
-                                <XAxis dataKey="name" stroke="var(--text-muted)" fontSize={10} tickLine={false} axisLine={false} dy={10} />
-                                <YAxis stroke="var(--text-muted)" fontSize={10} tickLine={false} axisLine={false} />
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                                <XAxis
+                                    dataKey="name"
+                                    axisLine={false}
+                                    tickLine={false}
+                                    tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 900 }}
+                                />
+                                <YAxis hide />
                                 <Tooltip
                                     contentStyle={{
-                                        backgroundColor: 'rgba(255, 255, 255, 0.9)',
-                                        border: '1px solid var(--border)',
-                                        borderRadius: '12px',
-                                        padding: '12px',
-                                        boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)'
+                                        borderRadius: '16px',
+                                        border: 'none',
+                                        boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1)',
+                                        fontSize: '10px',
+                                        fontWeight: '900',
+                                        textTransform: 'uppercase'
                                     }}
                                 />
                                 <Area
                                     type="monotone"
                                     dataKey="rate"
                                     stroke="var(--primary)"
-                                    strokeWidth={3}
+                                    strokeWidth={4}
                                     fillOpacity={1}
                                     fill="url(#colorRate)"
                                 />
                             </AreaChart>
                         </ResponsiveContainer>
                     </div>
-                </div>
-
-                {/* Distribution Section */}
-                <div className="lg:col-span-4 space-y-6">
-                    <div className="ista-panel p-8 bg-white shadow-sm h-full flex flex-col">
-                        <h3 className="text-xs font-black tracking-widest uppercase text-[var(--secondary)] mb-6">Répartition par État</h3>
-
-                        <div className="flex-1 flex items-center justify-center relative">
-                            <div className="absolute text-center">
-                                <p className="text-4xl font-black text-[var(--primary)]">88%</p>
-                                <p className="text-[9px] font-bold tracking-widest text-[var(--text-muted)] uppercase">PRÉSENCES</p>
-                            </div>
-                            <ResponsiveContainer width="100%" height="220">
-                                <PieChart>
-                                    <Pie
-                                        data={distribution}
-                                        innerRadius={75}
-                                        outerRadius={95}
-                                        paddingAngle={5}
-                                        dataKey="value"
-                                        stroke="none"
-                                    >
-                                        {distribution.map((entry, index) => (
-                                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                                        ))}
-                                    </Pie>
-                                </PieChart>
-                            </ResponsiveContainer>
-                        </div>
-
-                        <div className="space-y-3 mt-8">
-                            {distribution.map((d, i) => (
-                                <div key={i} className="flex justify-between items-center p-4 bg-[var(--surface-hover)] rounded-xl group transition-all">
-                                    <div className="flex items-center gap-3">
-                                        <div className={`w-3 h-3 rounded-full ${i === 0 ? 'bg-[var(--primary)]' : 'bg-[var(--secondary)]'}`}></div>
-                                        <span className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-wider">{d.name}</span>
-                                    </div>
-                                    <span className="text-sm font-black text-[var(--secondary)]">{d.value}%</span>
-                                </div>
-                            ))}
-                        </div>
-
-                        <button className="w-full btn-ista btn-ista-secondary mt-auto py-5 flex items-center justify-center gap-3 shadow-lg">
-                            <FileText className="w-4 h-4" />
-                            <span className="text-[10px] uppercase font-bold tracking-widest">Générer Rapport Global</span>
-                        </button>
+                    <div className="absolute top-0 right-0 p-8">
+                        <TrendingUp className="w-24 h-24 text-slate-50 -rotate-12" />
                     </div>
                 </div>
+
+                {/* Status Distribution */}
+                <div className="ista-panel p-10 bg-[var(--secondary)] text-white relative overflow-hidden">
+                    <div className="flex items-center gap-3 mb-10">
+                        <div className="w-1.5 h-6 bg-[var(--primary)] rounded-full"></div>
+                        <h3 className="text-xs font-black tracking-widest uppercase text-white/60">{t('dashboard.distribution_title')}</h3>
+                    </div>
+
+                    <div className="relative h-[280px]">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <PieChart>
+                                <Pie
+                                    data={pieData}
+                                    innerRadius={70}
+                                    outerRadius={90}
+                                    paddingAngle={8}
+                                    dataKey="value"
+                                    stroke="none"
+                                >
+                                    {pieData.map((entry, index) => (
+                                        <Cell key={`cell-${index}`} fill={entry.color} />
+                                    ))}
+                                </Pie>
+                                <Tooltip />
+                            </PieChart>
+                        </ResponsiveContainer>
+                        <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                            <span className="text-4xl font-black italic">85%</span>
+                            <span className="text-[8px] font-black text-white/40 tracking-widest uppercase">{t('dashboard.attendance_rate')}</span>
+                        </div>
+                    </div>
+
+                    <div className="mt-10 space-y-4">
+                        {pieData.map((item, i) => (
+                            <div key={i} className="flex items-center justify-between p-4 bg-white/5 rounded-2xl border border-white/5 backdrop-blur-sm">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-2 h-2 rounded-full" style={{ backgroundColor: item.color }}></div>
+                                    <span className="text-[10px] font-black tracking-widest uppercase">{item.name}</span>
+                                </div>
+                                <span className="text-sm font-black">{item.value}%</span>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </div>
+
+            {/* Bottom Actions */}
+            <div className="flex flex-col lg:flex-row items-center justify-between p-8 bg-white border border-[var(--border)] rounded-[32px] shadow-sm gap-6">
+                <div className="flex items-center gap-6">
+                    <div className="p-4 bg-[var(--surface-hover)] rounded-2xl">
+                        <TrendingUp className="w-6 h-6 text-[var(--primary)]" />
+                    </div>
+                    <div>
+                        <h4 className="text-sm font-black italic tracking-tight text-[var(--secondary)] uppercase">{t('dashboard.current_week')} : ISTA MIRLEFT</h4>
+                        <p className="text-[9px] font-bold text-[var(--text-muted)] uppercase tracking-widest opacity-60">ANALYSE OPÉRATIONNELLE EN TEMPS RÉEL</p>
+                    </div>
+                </div>
+
+                <button className="w-full lg:w-auto btn-ista px-8 py-4 flex items-center justify-center gap-3">
+                    <TrendingUp className="w-4 h-4" />
+                    <span className="text-[10px] uppercase font-black tracking-widest">{t('dashboard.generate_global_report')}</span>
+                </button>
             </div>
         </div>
     );

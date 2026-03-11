@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Calendar as CalendarIcon, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
-const CustomDatePicker = ({ selectedDate, onChange, placeholder = "SELECT DATE..." }) => {
+const CustomDatePicker = ({ selectedDate, onChange, placeholder }) => {
+    const { t } = useTranslation();
     const [isOpen, setIsOpen] = useState(false);
     const [currentDate, setCurrentDate] = useState(selectedDate ? new Date(selectedDate) : new Date());
     const dropdownRef = useRef(null);
@@ -23,7 +25,8 @@ const CustomDatePicker = ({ selectedDate, onChange, placeholder = "SELECT DATE..
         return currentDate.getMonth();
     }
 
-    const monthNames = ["JANUARY", "FEBRUARY", "MARCH", "APRIL", "MAY", "JUNE", "JULY", "AUGUST", "SEPTEMBER", "OCTOBER", "NOVEMBER", "DECEMBER"];
+    const monthNames = t('datepicker.months', { returnObjects: true });
+    const dayAbbreviations = t('datepicker.days', { returnObjects: true });
 
     const handlePrevMonth = (e) => {
         e.stopPropagation();
@@ -53,7 +56,7 @@ const CustomDatePicker = ({ selectedDate, onChange, placeholder = "SELECT DATE..
             >
                 <CalendarIcon className={`w-3 h-3 text-[var(--text-muted)] group-hover:text-[var(--primary)] transition-colors duration-500 mr-4 ${isOpen ? 'text-[var(--primary)]' : ''}`} />
                 <span className="text-[10px] tracking-widest uppercase flex-1 font-bold truncate">
-                    {selectedDate ? <span className="text-[var(--primary)]">{selectedDate}</span> : <span className="text-[var(--text-muted)]">{placeholder}</span>}
+                    {selectedDate ? <span className="text-[var(--primary)]">{selectedDate}</span> : <span className="text-[var(--text-muted)]">{placeholder || t('datepicker.placeholder')}</span>}
                 </span>
                 <ChevronDown className={`w-3 h-3 text-[var(--text-muted)] transition-transform duration-300 ${isOpen ? 'rotate-180 text-[var(--primary)]' : ''}`} />
             </div>
@@ -73,7 +76,7 @@ const CustomDatePicker = ({ selectedDate, onChange, placeholder = "SELECT DATE..
                     </div>
 
                     <div className="grid grid-cols-7 gap-1 text-center mb-2 border-b border-[var(--border-strong)] pb-2">
-                        {['SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA'].map(day => (
+                        {dayAbbreviations.map(day => (
                             <div key={day} className="text-[8px] font-black tracking-widest text-[var(--text-muted)] uppercase">{day}</div>
                         ))}
                     </div>
@@ -109,7 +112,7 @@ const CustomDatePicker = ({ selectedDate, onChange, placeholder = "SELECT DATE..
                                 onClick={(e) => { e.stopPropagation(); onChange(''); setIsOpen(false); }}
                                 className="text-[8px] font-black tracking-[0.2em] text-[var(--text-muted)] hover:text-red-500 transition-colors uppercase"
                             >
-                                CLEAR SELECTION
+                                {t('datepicker.clear')}
                             </button>
                         </div>
                     )}

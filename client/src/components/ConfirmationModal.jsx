@@ -1,8 +1,10 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import { AlertTriangle, X } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 const ConfirmationModal = ({ isOpen, onClose, onConfirm, title, message }) => {
+    const { t } = useTranslation();
     if (!isOpen) return null;
 
     return ReactDOM.createPortal(
@@ -30,13 +32,13 @@ const ConfirmationModal = ({ isOpen, onClose, onConfirm, title, message }) => {
                         onClick={onClose}
                         className="flex-1 px-8 py-5 border border-slate-100 rounded-2xl text-slate-400 text-[10px] font-black tracking-widest uppercase hover:bg-slate-50 hover:text-[var(--secondary)] transition-all duration-300"
                     >
-                        ANNULER
+                        {t('common.cancel')}
                     </button>
                     <button
                         onClick={onConfirm}
                         className="flex-1 px-8 py-5 bg-red-500 text-white rounded-2xl text-[10px] font-black tracking-widest uppercase hover:bg-red-600 transition-all duration-300 shadow-xl shadow-red-500/20 active:scale-95"
                     >
-                        CONFIRMER
+                        {t('common.confirm')}
                     </button>
                 </div>
 
