@@ -5,7 +5,7 @@ const { spawn } = require('child_process');
 
 exports.getFormateurs = async (req, res) => {
     try {
-        const [formateurs] = await pool.query('SELECT id, name, email FROM users WHERE role = ?', ['formateur']);
+        const [formateurs] = await pool.query('SELECT id, name, email, role FROM users WHERE role = ?', ['formateur']);
         res.json({ formateurs });
     } catch (err) {
         console.error("GET FORMATEURS ERROR:", err);
