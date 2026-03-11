@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { protect, authorize } = require('../middlewares/authMiddleware');
 
-const { getDashboardSummary, getClassesAndSchedule, createClass, updateClass, deleteClass, updateSchedule, createSchedule, getUsersByClass, createUser, updateUser, deleteUser, getFormateurs, getReports } = require('../controllers/adminController');
+const { getDashboardSummary, getClassesAndSchedule, createClass, updateClass, deleteClass, updateSchedule, createSchedule, deleteSchedule, getUsersByClass, createUser, updateUser, deleteUser, getFormateurs, getReports } = require('../controllers/adminController');
 
 // Admin only routes
 router.get('/formateurs', protect, authorize('admin'), getFormateurs);
@@ -10,6 +10,7 @@ router.get('/summary', protect, authorize('admin'), getDashboardSummary);
 router.get('/schedule', protect, authorize('admin'), getClassesAndSchedule);
 router.post('/schedule', protect, authorize('admin'), createSchedule);
 router.put('/schedule/:id', protect, authorize('admin'), updateSchedule);
+router.delete('/schedule/:id', protect, authorize('admin'), deleteSchedule);
 router.post('/classes', protect, authorize('admin'), createClass);
 router.put('/classes/:id', protect, authorize('admin'), updateClass);
 router.delete('/classes/:id', protect, authorize('admin'), deleteClass);

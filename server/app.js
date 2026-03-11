@@ -177,8 +177,8 @@ const initScheduleData = async () => {
 
             // Seed initial timetable
             const timetableData = [
-                { day: 'MONDAY', time: '16:30 - 18:30', class: 'DEV101', subject: 'Présentiel', room: 'CFACE' },
-                { day: 'TUESDAY', time: '08:30 - 13:30', class: 'DEV101', subject: 'Présentiel', room: 'Salle TDI' }
+                { day: 'LUNDI', time: '16:30 - 18:30', class: 'DEV101', subject: 'Présentiel', room: 'CFACE' },
+                { day: 'MARDI', time: '08:30 - 13:30', class: 'DEV101', subject: 'Présentiel', room: 'Salle TDI' }
             ];
 
             for (let s of timetableData) {

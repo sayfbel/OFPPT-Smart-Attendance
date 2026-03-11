@@ -87,8 +87,22 @@ const Timelines = () => {
         }
     };
 
+    const handleDeleteSeance = async (id) => {
+        try {
+            const token = localStorage.getItem('token');
+            const config = { headers: { Authorization: `Bearer ${token}` } };
+            await axios.delete(`/api/admin/schedule/${id}`, config);
+
+            setSchedule(prev => prev.filter(s => s.id !== id));
+            setIsSeanceModalOpen(false);
+            addNotification('Séance supprimée avec succès.', 'success');
+        } catch (error) {
+            console.error('Error deleting seance', error);
+            addNotification(error.response?.data?.message || 'Erreur lors de la suppression', 'error');
+        }
+    };
+
     const days = ['LUNDI', 'MARDI', 'MERCREDI', 'JEUDI', 'VENDREDI', 'SAMEDI'];
-    const dayMap = { 'LUNDI': 'MONDAY', 'MARDI': 'TUESDAY', 'MERCREDI': 'WEDNESDAY', 'JEUDI': 'THURSDAY', 'VENDREDI': 'FRIDAY', 'SAMEDI': 'SATURDAY' };
 
     const timeSlots = [
         '08:30 - 09:30', '09:30 - 10:30', '10:30 - 11:30', '11:30 - 12:30', '12:30 - 13:30',
@@ -98,7 +112,7 @@ const Timelines = () => {
     const filteredSchedule = schedule.filter(slot => slot.class === selectedClass);
 
     const getSessionForDayAndStart = (day, startTime) => {
-        return filteredSchedule.find(s => s.day === dayMap[day] && s.time.startsWith(startTime));
+        return filteredSchedule.find(s => s.day === day && s.time.startsWith(startTime));
     };
 
     const getColSpan = (timeStr) => {
@@ -288,6 +302,7 @@ const Timelines = () => {
                 targetSeance={targetSeance}
                 handleUpdateSeance={handleUpdateSeance}
                 handleCreateSeance={handleCreateSeance}
+                handleDeleteSeance={handleDeleteSeance}
                 availableClasses={availableClasses}
                 formateurs={formateurs}
             />

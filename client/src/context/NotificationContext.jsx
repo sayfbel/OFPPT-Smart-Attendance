@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
+import ReactDOM from 'react-dom';
 import { AlertTriangle, CheckCircle, Info, X } from 'lucide-react';
 
 const NotificationContext = createContext();
@@ -20,15 +21,18 @@ export const NotificationProvider = ({ children }) => {
     return (
         <NotificationContext.Provider value={{ addNotification }}>
             {children}
-            <div className="fixed bottom-8 right-8 z-[9999] flex flex-col gap-4 pointer-events-none">
-                {notifications.map((notif) => (
-                    <NotificationCard
-                        key={notif.id}
-                        notification={notif}
-                        onClose={() => removeNotification(notif.id)}
-                    />
-                ))}
-            </div>
+            {ReactDOM.createPortal(
+                <div className="fixed bottom-8 right-8 z-[99999] flex flex-col gap-4 pointer-events-none">
+                    {notifications.map((notif) => (
+                        <NotificationCard
+                            key={notif.id}
+                            notification={notif}
+                            onClose={() => removeNotification(notif.id)}
+                        />
+                    ))}
+                </div>,
+                document.body
+            )}
         </NotificationContext.Provider>
     );
 };

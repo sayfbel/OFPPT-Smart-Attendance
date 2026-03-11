@@ -49,7 +49,7 @@ exports.getClassesAndSchedule = async (req, res) => {
                 LEFT JOIN users u_lead ON cs.formateur_id = u_lead.id
                 GROUP BY c.id
             `);
-            [timetable] = await pool.query(`
+            [schedule] = await pool.query(`
                 SELECT t.id, t.day, t.time, t.class_id as class, u.name as formateur, t.subject, t.room 
                 FROM timetable t
                 LEFT JOIN users u ON t.formateur_id = u.id
@@ -66,7 +66,7 @@ exports.getClassesAndSchedule = async (req, res) => {
                 lead: c.lead_formateurs || '',
                 students: c.student_count
             })),
-            schedule: timetable
+            schedule: schedule
         });
     } catch (err) {
         console.error("GET SCHEDULE ERROR:", err);
@@ -193,6 +193,37 @@ exports.updateSchedule = async (req, res) => {
             return res.status(400).json({ message: 'Fields subject, room, and formateur_id are required.' });
         }
 
+        const [currentSession] = await pool.query('SELECT class_id FROM timetable WHERE id = ?', [id]);
+        if (currentSession.length === 0) {
+            return res.status(404).json({ message: 'Séance non trouvée.' });
+        }
+        const class_id = currentSession[0].class_id;
+
+        const parseTime = (timeStr) => {
+            const [start, end] = timeStr.split('-').map(s => s.trim());
+            const [h1, m1] = start.split(':').map(Number);
+            const [h2, m2] = end.split(':').map(Number);
+            return { start: h1 * 60 + m1, end: h2 * 60 + m2 };
+        };
+
+        const hasOverlap = (t1, t2) => {
+            const o1 = parseTime(t1);
+            const o2 = parseTime(t2);
+            return Math.max(o1.start, o2.start) < Math.min(o1.end, o2.end);
+        };
+
+        const [existingSessions] = await pool.query('SELECT * FROM timetable WHERE day = ? AND id != ?', [day, id]);
+        for (const session of existingSessions) {
+            if (hasOverlap(time, session.time)) {
+                if (session.class_id === class_id) {
+                    return res.status(400).json({ message: 'Cette classe a déjà une séance à cette heure.' });
+                }
+                if (session.formateur_id === parseInt(formateur_id, 10)) {
+                    return res.status(400).json({ message: 'Ce formateur a déjà une séance à cette heure.' });
+                }
+            }
+        }
+
         await pool.query(
             'UPDATE timetable SET subject = ?, room = ?, formateur_id = ?, time = ?, day = ? WHERE id = ?',
             [subject, room, formateur_id, time, day, id]
@@ -213,6 +244,31 @@ exports.createSchedule = async (req, res) => {
             return res.status(400).json({ message: 'All fields are required.' });
         }
 
+        const parseTime = (timeStr) => {
+            const [start, end] = timeStr.split('-').map(s => s.trim());
+            const [h1, m1] = start.split(':').map(Number);
+            const [h2, m2] = end.split(':').map(Number);
+            return { start: h1 * 60 + m1, end: h2 * 60 + m2 };
+        };
+
+        const hasOverlap = (t1, t2) => {
+            const o1 = parseTime(t1);
+            const o2 = parseTime(t2);
+            return Math.max(o1.start, o2.start) < Math.min(o1.end, o2.end);
+        };
+
+        const [existingSessions] = await pool.query('SELECT * FROM timetable WHERE day = ?', [day]);
+        for (const session of existingSessions) {
+            if (hasOverlap(time, session.time)) {
+                if (session.class_id === class_id) {
+                    return res.status(400).json({ message: 'Cette classe a déjà une séance à cette heure.' });
+                }
+                if (session.formateur_id === parseInt(formateur_id, 10)) {
+                    return res.status(400).json({ message: 'Ce formateur a déjà une séance à cette heure.' });
+                }
+            }
+        }
+
         const [result] = await pool.query(
             'INSERT INTO timetable (class_id, formateur_id, subject, room, time, day) VALUES (?, ?, ?, ?, ?, ?)',
             [class_id, formateur_id, subject, room, time, day]
@@ -222,6 +278,24 @@ exports.createSchedule = async (req, res) => {
     } catch (err) {
         console.error("CREATE SCHEDULE ERROR:", err);
         res.status(500).json({ message: 'Server Error creating schedule' });
+    }
+};
+
+exports.deleteSchedule = async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        // Check if schedule exists
+        const [result] = await pool.query('SELECT * FROM timetable WHERE id = ?', [id]);
+        if (result.length === 0) {
+            return res.status(404).json({ message: 'Seance not found' });
+        }
+
+        await pool.query('DELETE FROM timetable WHERE id = ?', [id]);
+        res.json({ message: 'Seance supprimée avec succès' });
+    } catch (error) {
+        console.error("DELETE SCHEDULE ERROR:", error);
+        res.status(500).json({ message: 'Erreur serveur lors de la suppression' });
     }
 };
 

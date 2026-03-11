@@ -165,8 +165,8 @@ const rebuild = async () => {
         // Seed Timetable
         await connection.query(`
             INSERT INTO timetable (day, time, class_id, formateur_id, subject, room) VALUES 
-            ('MONDAY', '08:30 - 10:30', 'DEV101', ${firstFormateurId}, 'React Frontend', 'Lab A1'),
-            ('TUESDAY', '10:30 - 12:30', 'DEV101', ${firstFormateurId + 1}, 'Node.js Backend', 'Lab B2');
+            ('LUNDI', '08:30 - 10:30', 'DEV101', ${firstFormateurId}, 'React Frontend', 'Lab A1'),
+            ('MARDI', '10:30 - 12:30', 'DEV101', ${firstFormateurId + 1}, 'Node.js Backend', 'Lab B2');
         `);
 
         console.log('✅ Database rebuild and optimization complete!');

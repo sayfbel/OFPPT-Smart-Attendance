@@ -168,7 +168,7 @@ exports.getSchedule = async (req, res) => {
         `, [formateur_id]);
 
         // Today's Reminder Logic
-        const days = ['SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY'];
+        const days = ['DIMANCHE', 'LUNDI', 'MARDI', 'MERCREDI', 'JEUDI', 'VENDREDI', 'SAMEDI'];
         const todayName = days[new Date().getDay()];
         const todaySessions = schedule.filter(s => s.day.toUpperCase() === todayName);
 

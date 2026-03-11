@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { LogIn, Loader2, ShieldCheck } from 'lucide-react';
+import ofpptLogo from '../assets/OFPPT.png';
 
 const Login = () => {
     const [email, setEmail] = useState('');
@@ -37,7 +38,7 @@ const Login = () => {
             <div className="w-full max-w-sm space-y-10 fade-up relative z-10">
                 <div className="text-center space-y-6">
                     <img
-                        src="/ofppt_logo.png"
+                        src={ofpptLogo}
                         alt="OFPPT Logo"
                         className="h-24 mx-auto drop-shadow-sm"
                     />

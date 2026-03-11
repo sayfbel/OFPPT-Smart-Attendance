@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import ReactDOM from 'react-dom';
 import { Search, Plus, Filter, UserCheck, UserX, ChevronDown, Edit3, Trash2, AlertTriangle, X, User } from 'lucide-react';
 import axios from 'axios';
 import IdentityModal from '../../components/IdentityModal';
@@ -421,7 +422,7 @@ const Accounts = () => {
             </div>
 
             {/* DELETE CONFIRMATION OVERLAY */}
-            {userToDelete && (
+            {userToDelete && ReactDOM.createPortal(
                 <div className="fixed inset-0 z-[10000] bg-black/60 backdrop-blur-md flex items-center justify-center p-4 transition-all duration-500 animate-in fade-in">
                     <div className="bg-white rounded-[40px] w-full max-w-md p-12 relative shadow-2xl overflow-hidden">
                         <div className="absolute top-0 left-0 w-full h-2 bg-red-500"></div>
@@ -457,7 +458,8 @@ const Accounts = () => {
                             </div>
                         </div>
                     </div>
-                </div>
+                </div>,
+                document.body
             )}
 
             <IdentityModal

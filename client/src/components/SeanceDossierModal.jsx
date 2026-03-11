@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import ReactDOM from 'react-dom';
-import { ChevronRight, X, ChevronDown, CheckSquare, Square, Calendar, Clock, BookOpen, User, MapPin, Save, Plus } from 'lucide-react';
+import { ChevronRight, X, ChevronDown, CheckSquare, Square, Calendar, Clock, BookOpen, User, MapPin, Save, Plus, Trash2 } from 'lucide-react';
+import ConfirmationModal from './ConfirmationModal';
 
-const SeanceDossierModal = ({ isOpen, onClose, targetSeance, handleUpdateSeance, handleCreateSeance, availableClasses = [], formateurs = [] }) => {
+const SeanceDossierModal = ({ isOpen, onClose, targetSeance, handleUpdateSeance, handleCreateSeance, handleDeleteSeance, availableClasses = [], formateurs = [] }) => {
     const timeSlots = ['08:30', '09:30', '10:30', '11:30', '12:30', '13:30', '14:30', '15:30', '16:30', '17:30', '18:30'];
     const days = ['LUNDI', 'MARDI', 'MERCREDI', 'JEUDI', 'VENDREDI', 'SAMEDI'];
 
@@ -11,6 +12,7 @@ const SeanceDossierModal = ({ isOpen, onClose, targetSeance, handleUpdateSeance,
     const [isClassDropdownOpen, setIsClassDropdownOpen] = useState(false);
     const [isFormateurDropdownOpen, setIsFormateurDropdownOpen] = useState(false);
     const [isDayDropdownOpen, setIsDayDropdownOpen] = useState(false);
+    const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
     const [seanceEdit, setSeanceEdit] = useState({
         id: '',
@@ -338,10 +340,19 @@ const SeanceDossierModal = ({ isOpen, onClose, targetSeance, handleUpdateSeance,
                                         )}
                                     </div>
                                 </div>
-                                <div className="pt-12">
+                                <div className="pt-12 flex gap-4">
+                                    {!isCreation && (
+                                        <button
+                                            type="button"
+                                            onClick={() => setIsDeleteDialogOpen(true)}
+                                            className="w-16 h-16 flex-shrink-0 border border-slate-100 rounded-2xl flex items-center justify-center text-slate-400 hover:bg-red-50 hover:text-red-500 hover:border-red-100 transition-all shadow-sm"
+                                        >
+                                            <Trash2 className="w-5 h-5" />
+                                        </button>
+                                    )}
                                     <button
                                         type="submit"
-                                        className="w-full btn-ista py-5 rounded-2xl font-black uppercase tracking-widest shadow-xl flex items-center justify-center gap-3 hover:scale-[1.01] active:scale-[0.99] transition-all"
+                                        className="flex-1 btn-ista py-5 rounded-2xl font-black uppercase tracking-widest shadow-xl flex items-center justify-center gap-3 hover:scale-[1.01] active:scale-[0.99] transition-all"
                                     >
                                         {isCreation ? <Plus className="w-5 h-5" /> : <Save className="w-5 h-5" />}
                                         <span>{isCreation ? 'Initialiser la séance' : 'Mettre à jour la séance'}</span>
@@ -357,6 +368,19 @@ const SeanceDossierModal = ({ isOpen, onClose, targetSeance, handleUpdateSeance,
                 .ista-scrollbar::-webkit-scrollbar-track { background: transparent; }
                 .ista-scrollbar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
             `}</style>
+
+            <ConfirmationModal
+                isOpen={isDeleteDialogOpen}
+                onClose={() => setIsDeleteDialogOpen(false)}
+                onConfirm={() => {
+                    setIsDeleteDialogOpen(false);
+                    if (handleDeleteSeance && targetSeance) {
+                        handleDeleteSeance(targetSeance.id);
+                    }
+                }}
+                title="Suppression de la Séance"
+                message={`Êtes-vous sûr de vouloir supprimer la séance "${targetSeance?.subject}" de ${targetSeance?.formateur} ?`}
+            />
         </div>,
         document.body
     );

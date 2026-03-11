@@ -138,7 +138,7 @@ const Timelines = () => {
                             {/* Timeline Grid */}
                             <div className="space-y-4">
                                 {days.map((day) => {
-                                    const daySchedule = filteredSchedule.filter(slot => slot.day === (day === 'LUNDI' ? 'MONDAY' : day === 'MARDI' ? 'TUESDAY' : day === 'MERCREDI' ? 'WEDNESDAY' : day === 'JEUDI' ? 'THURSDAY' : day === 'VENDREDI' ? 'FRIDAY' : day === 'SAMEDI' ? 'SATURDAY' : day));
+                                    const daySchedule = filteredSchedule.filter(slot => slot.day === day);
 
                                     return (
                                         <div key={day} className="relative py-8 grid grid-cols-[150px_repeat(10,minmax(0,1fr))] gap-0 items-center group transition-colors hover:bg-slate-50/50 rounded-3xl">

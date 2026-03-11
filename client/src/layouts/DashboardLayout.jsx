@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import axios from 'axios';
 import NotificationPanel from '../components/NotificationPanel';
+import ofpptLogo from '../assets/OFPPT.png';
 
 const DashboardLayout = ({ children }) => {
     const { user, logout } = useAuth();
@@ -164,7 +165,7 @@ const DashboardLayout = ({ children }) => {
             `}>
                 <div className="p-4 xl:p-8 flex flex-col items-center">
                     <div className="flex items-center justify-between w-full lg:justify-center mb-8">
-                        <img src="/ofppt_logo.png" alt="OFPPT" className="h-10 xl:h-16" />
+                        <img src={ofpptLogo} alt="OFPPT" className="h-10 xl:h-16" />
                         <button
                             onClick={() => setIsMobileMenuOpen(false)}
                             className="p-2 hover:bg-slate-100 rounded-xl lg:hidden text-slate-400"
