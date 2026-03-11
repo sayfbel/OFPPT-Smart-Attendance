@@ -3,7 +3,7 @@
 ## 📖 Project Overview
 The **OFPPT Smart Attendance System** is a modern, comprehensive digital solution designed to streamline attendance tracking and administrative management within OFPPT (Office de la Formation Professionnelle et de la Promotion du Travail) institutes. 
 
-The primary purpose of this project is to replace traditional paper-based attendance methods with a fast, reliable, and automated system. It leverages modern web technologies and hardware integrations (like QR Codes and Facial Recognition concepts) to minimize administrative overhead for instructors (formateurs) and provide real-time visibility for the administration.
+The primary purpose of this project is to replace traditional paper-based attendance methods with a fast, reliable, and automated system. It leverages modern web technologies and QR Code hardware integration to minimize administrative overhead for instructors (formateurs) and provide real-time visibility for the administration.
 
 ## ✨ Key Features & Functions
 
@@ -22,7 +22,7 @@ The primary purpose of this project is to replace traditional paper-based attend
 - **Automatic Reminders:** Instructors receive automated system notifications reminding them of their sessions for the day.
 
 ### 4. Smart Check-in System (Neural Gateway)
-- **QR Code Scanning:** Fast, secure check-ins via generated QR codes.
+- **QR Code Scanning:** Fast, secure check-ins via generated QR codes using integrated Python scripts.
 - **Live Presence Matrix:** A real-time database table tracking students who are currently present in a specific session.
 - **Digital Reports:** Instructors can review the live attendance, manually override if necessary, digitally sign, and submit the daily attendance report.
 
@@ -55,8 +55,9 @@ Before you start, ensure you have the following installed on your system:
 
 ### Step 2: Database Initialization
 1. Start your MySQL server (via XAMPP or service).
-2. The project contains custom scripts to build the database for you.
-3. Navigate to the server folder and configure your environment variables:
+2. Create your database (`ofppt_attendance`).
+3. Import the `server/database.sql` file into your MySQL database to build the required tables and insert initial admin credentials. Alternatively, if you run the backend, `app.js` will attempt to build missing tables automatically!
+4. Navigate to the server folder and configure your environment variables:
    - Create a `.env` file in the `/server` directory:
      ```env
      PORT=5000
@@ -66,15 +67,9 @@ Before you start, ensure you have the following installed on your system:
      DB_NAME=ofppt_attendance
      JWT_SECRET=supersecretkey123
      ```
-4. Run the rebuild script to initialize the database tables and seed test data:
-   ```bash
-   cd server
-   npm install
-   node rebuild_db.js
-   ```
 
 ### Step 3: Install Dependencies
-You need to install packages for both the backend and frontend separately.
+You need to install packages for the backend, frontend, and the python scripts separately.
 
 **Backend (`/server`):**
 ```bash
@@ -86,6 +81,11 @@ npm install
 ```bash
 cd ../client
 npm install
+```
+
+**Python Scripts (Required for QR core functionalities):**
+```bash
+pip install qrcode[pil] opencv-python pygrabber
 ```
 
 ### Step 4: Run the Application
@@ -103,7 +103,7 @@ cd client
 npm run dev
 ```
 
-The frontend will start at `http://localhost:3000` and the backend at `http://localhost:5000`.
+The frontend will start at `http://localhost:5173` (depending on Vite configuration) and the backend at `http://localhost:5000`.
 
 ---
 
