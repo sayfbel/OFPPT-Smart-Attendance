@@ -221,7 +221,7 @@ exports.getUsersByClass = async (req, res) => {
         }
 
         const [users] = await pool.query(
-            'SELECT id, name, class_id, face_id FROM stagiaires WHERE class_id = ?',
+            'SELECT id, name, class_id FROM stagiaires WHERE class_id = ?',
             [classId]
         );
 
@@ -373,15 +373,3 @@ exports.updateProfile = async (req, res) => {
     }
 };
 
-// Neural Portal: Get all students face ids
-exports.getAllStudentsFaceIds = async (req, res) => {
-    try {
-        const [users] = await pool.query(
-            'SELECT id, name, class_id, face_id FROM stagiaires WHERE face_id IS NOT NULL'
-        );
-        res.json({ users });
-    } catch (err) {
-        console.error("GET ALL STUDENTS ERROR:", err);
-        res.status(500).json({ message: 'Internal Server Error' });
-    }
-};

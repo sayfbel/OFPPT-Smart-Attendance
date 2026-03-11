@@ -40,7 +40,6 @@ CREATE TABLE IF NOT EXISTS stagiaires (
     year VARCHAR(50) DEFAULT '2025/2026',
     profession VARCHAR(255) DEFAULT 'stagiaire',
     qr_path VARCHAR(255),
-    face_id LONGTEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (class_id) REFERENCES classes(id) ON DELETE SET NULL
 );

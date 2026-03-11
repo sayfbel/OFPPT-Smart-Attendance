@@ -29,7 +29,7 @@ router.post('/process-checkin-qr', protect, authorize('formateur'), processCheck
 router.get('/active-checkins/:classId', protect, authorize('formateur'), getActiveCheckins);
 router.post('/clear-checkins', protect, authorize('formateur'), clearCheckins);
 router.post('/update-checkin-status', protect, authorize('formateur'), updateCheckinStatus);
-router.get('/all-students-faceids', protect, authorize('formateur'), require('../controllers/formateurController').getAllStudentsFaceIds);
+
 
 // Python Scanner Bridge Control
 router.post('/start-external-scanner', protect, authorize('formateur'), startExternalScanner);

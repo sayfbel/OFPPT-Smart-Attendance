@@ -122,7 +122,6 @@ const initScheduleData = async () => {
                 year VARCHAR(50) DEFAULT '2025/2026',
                 profession VARCHAR(255) DEFAULT 'stagiaire',
                 qr_path VARCHAR(255),
-                face_id LONGTEXT,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (class_id) REFERENCES classes(id) ON DELETE SET NULL
             )
@@ -253,7 +252,6 @@ const initScheduleData = async () => {
 
         // Synchronize Identity Schema
         await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS image LONGTEXT`);
-        await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS face_id LONGTEXT`);
 
         // 7. SYNC PASSWORDS POLICY (Staff only)
         console.log('--- Syncing Passwords to Email Prefix Protocol ---');
