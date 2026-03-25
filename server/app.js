@@ -43,27 +43,80 @@ const initScheduleData = async () => {
     try {
         console.log('--- Database Synchronization Protocol Alpha ---');
 
-        // 1. Classes Registry
+        // 1. Infrastructure Registry (Filieres, Options, Salles)
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS filiere (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                nom VARCHAR(255) NOT NULL,
+                niveau VARCHAR(100) NOT NULL
+            )
+        `);
+
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS options (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                filiereId INT NOT NULL,
+                nom VARCHAR(255) NOT NULL,
+                niveau VARCHAR(100) NOT NULL,
+                FOREIGN KEY (filiereId) REFERENCES filiere(id) ON DELETE CASCADE
+            )
+        `);
+
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS salles (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                nom VARCHAR(255) NOT NULL
+            )
+        `);
+
+        // 2. Classes Registry
         await pool.query(`
             CREATE TABLE IF NOT EXISTS classes (
                 id VARCHAR(50) PRIMARY KEY,
-                title VARCHAR(255) NOT NULL,
-                stream VARCHAR(255) NOT NULL,
+                filiereId INT,
+                optionId INT,
+                année_scolaire VARCHAR(50) DEFAULT '2025/2026',
+                level VARCHAR(50) DEFAULT '1er',
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (filiereId) REFERENCES filiere(id) ON DELETE SET NULL,
+                FOREIGN KEY (optionId) REFERENCES options(id) ON DELETE SET NULL
+            )
+        `);
+
+        // 3. User Registry
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS admins (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                name VARCHAR(255) NOT NULL,
+                email VARCHAR(255) UNIQUE NOT NULL,
+                password VARCHAR(255) NOT NULL,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         `);
 
-        // 2. Class Supervisors (Junction)
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS formateurs (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                name VARCHAR(255) NOT NULL,
+                email VARCHAR(255) UNIQUE NOT NULL,
+                password VARCHAR(255) NOT NULL,
+                type ENUM('Parrain', 'Vacataire') DEFAULT 'Parrain',
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        `);
+
+        // 4. Class Supervisors (Junction)
         await pool.query(`
             CREATE TABLE IF NOT EXISTS class_supervisors (
                 class_id VARCHAR(50),
                 formateur_id INT,
                 PRIMARY KEY (class_id, formateur_id),
-                FOREIGN KEY (class_id) REFERENCES classes(id) ON DELETE CASCADE
+                FOREIGN KEY (class_id) REFERENCES classes(id) ON DELETE CASCADE,
+                FOREIGN KEY (formateur_id) REFERENCES formateurs(id) ON DELETE CASCADE
             )
         `);
 
-        // 3. Timetable Matrix
+        // 5. Timetable Matrix
         await pool.query(`
             CREATE TABLE IF NOT EXISTS timetable (
                 id INT AUTO_INCREMENT PRIMARY KEY,
@@ -73,11 +126,12 @@ const initScheduleData = async () => {
                 formateur_id INT,
                 subject VARCHAR(255) NOT NULL,
                 room VARCHAR(100) NOT NULL,
-                FOREIGN KEY (class_id) REFERENCES classes(id) ON DELETE CASCADE
+                FOREIGN KEY (class_id) REFERENCES classes(id) ON DELETE CASCADE,
+                FOREIGN KEY (formateur_id) REFERENCES formateurs(id) ON DELETE SET NULL
             )
         `);
 
-        // 4. Reports Matrix
+        // 6. Reports Matrix
         await pool.query(`
             CREATE TABLE IF NOT EXISTS reports (
                 id INT AUTO_INCREMENT PRIMARY KEY,
@@ -86,54 +140,50 @@ const initScheduleData = async () => {
                 class_id VARCHAR(50) NOT NULL,
                 date DATE NOT NULL,
                 subject VARCHAR(255) NOT NULL,
-                salle VARCHAR(100),
+                salleId INT,
                 heure VARCHAR(100),
                 signature LONGTEXT,
                 status ENUM('JUSTIFIED', 'UNJUSTIFIED') DEFAULT 'UNJUSTIFIED',
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (class_id) REFERENCES classes(id) ON DELETE CASCADE
+                FOREIGN KEY (class_id) REFERENCES classes(id) ON DELETE CASCADE,
+                FOREIGN KEY (formateur_id) REFERENCES formateurs(id) ON DELETE CASCADE,
+                FOREIGN KEY (salleId) REFERENCES salles(id) ON DELETE SET NULL
             )
         `);
 
-        // Ensure signature exists in reports
-        try {
-            await pool.query('ALTER TABLE reports ADD COLUMN signature LONGTEXT');
-        } catch (err) { }
+        // 7. Stagiaires Registry
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS stagiaires (
+                NumInscription INT AUTO_INCREMENT PRIMARY KEY,
+                name VARCHAR(255) NOT NULL,
+                class_id VARCHAR(50),
+                Année VARCHAR(50) DEFAULT '1er',
+                filiereId INT,
+                optionId INT,
+                Active BOOLEAN DEFAULT TRUE,
+                profession VARCHAR(255) DEFAULT 'stagiaire',
+                qr_path VARCHAR(255),
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (class_id) REFERENCES classes(id) ON DELETE SET NULL,
+                FOREIGN KEY (filiereId) REFERENCES filiere(id) ON DELETE SET NULL,
+                FOREIGN KEY (optionId) REFERENCES options(id) ON DELETE SET NULL
+            )
+        `);
 
-        // 5. Attendance Grid
+        // 8. Attendance Grid
         await pool.query(`
             CREATE TABLE IF NOT EXISTS report_attendance (
                 id INT AUTO_INCREMENT PRIMARY KEY,
                 report_id INT NOT NULL,
                 student_id INT NOT NULL,
                 status ENUM('PRESENT', 'ABSENT') NOT NULL,
+                Justifier BOOLEAN DEFAULT FALSE,
                 FOREIGN KEY (report_id) REFERENCES reports(id) ON DELETE CASCADE,
-                FOREIGN KEY (student_id) REFERENCES stagiaires(id) ON DELETE CASCADE
+                FOREIGN KEY (student_id) REFERENCES stagiaires(NumInscription) ON DELETE CASCADE
             )
         `);
 
-        // 6. Stagiaires Registry
-        await pool.query(`
-            CREATE TABLE IF NOT EXISTS stagiaires (
-                id INT AUTO_INCREMENT PRIMARY KEY,
-                name VARCHAR(255) NOT NULL,
-                class_id VARCHAR(50),
-                institute VARCHAR(255) DEFAULT 'OFPPT ISTA Mirleft',
-                year VARCHAR(50) DEFAULT '2025/2026',
-                profession VARCHAR(255) DEFAULT 'stagiaire',
-                qr_path VARCHAR(255),
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (class_id) REFERENCES classes(id) ON DELETE SET NULL
-            )
-        `);
-
-        // 6. Neural Profile Extension
-        try {
-            await pool.query('ALTER TABLE users ADD COLUMN image LONGTEXT');
-            console.log('✅ Users table extended with image column.');
-        } catch (colErr) { }
-
-        // 7. Live Presence Matrix
+        // 9. Live Presence Matrix
         await pool.query(`
             CREATE TABLE IF NOT EXISTS active_checkins (
                 id INT AUTO_INCREMENT PRIMARY KEY,
@@ -141,129 +191,134 @@ const initScheduleData = async () => {
                 class_id VARCHAR(50) NOT NULL,
                 timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 UNIQUE KEY (student_id, class_id),
-                FOREIGN KEY (student_id) REFERENCES stagiaires(id) ON DELETE CASCADE
+                FOREIGN KEY (student_id) REFERENCES stagiaires(NumInscription) ON DELETE CASCADE
             )
         `);
-        console.log('✅ Live Presence Matrix initialized.');
 
-        // 8. Neural Notifications (Memory Node)
+        // 10. Neural Notifications
         await pool.query(`
             CREATE TABLE IF NOT EXISTS notifications (
                 id INT AUTO_INCREMENT PRIMARY KEY,
-                user_id INT,
+                admin_id INT NULL,
+                formateur_id INT NULL,
                 type ENUM('request', 'message', 'alert', 'success') DEFAULT 'message',
                 category VARCHAR(50),
                 title VARCHAR(255) NOT NULL,
                 message TEXT,
                 is_read BOOLEAN DEFAULT FALSE,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+                FOREIGN KEY (admin_id) REFERENCES admins(id) ON DELETE CASCADE,
+                FOREIGN KEY (formateur_id) REFERENCES formateurs(id) ON DELETE CASCADE
             )
         `);
-        console.log('✅ Neural Notifications Registry initialized.');
 
-        // Legacy check / Seeding
-        const [existing] = await pool.query('SELECT COUNT(*) as count FROM classes');
-        if (existing[0].count === 0) {
-            console.log('--- Initializing Operational Data ---');
-
+        // 11. Legacy Data Migration & Deletion Protocol
+        const [usersExist] = await pool.query("SHOW TABLES LIKE 'users'");
+        if (usersExist.length > 0) {
+            console.log('--- Executing Legacy Data Migration Protocol ---');
+            
+            // Move Admin data
             await pool.query(`
-                INSERT INTO classes (id, title, stream) VALUES 
-                ('DEV101', 'DEV101', 'Full Stack Web Dev'),
-                ('DEV102', 'DEV102', 'Full Stack Web Dev'),
-                ('ID101', 'ID101', 'Infrastructure Digitale')
+                INSERT IGNORE INTO admins (name, email, password, created_at)
+                SELECT name, email, password, created_at FROM users WHERE role = 'admin'
             `);
 
-            // Seed initial timetable
-            const timetableData = [
-                { day: 'LUNDI', time: '16:30 - 18:30', class: 'DEV101', subject: 'Présentiel', room: 'CFACE' },
-                { day: 'MARDI', time: '08:30 - 13:30', class: 'DEV101', subject: 'Présentiel', room: 'Salle TDI' }
-            ];
+            // Move Formateur data
+            await pool.query(`
+                INSERT IGNORE INTO formateurs (name, email, password, created_at)
+                SELECT name, email, password, created_at FROM users WHERE role = 'formateur'
+            `);
 
-            for (let s of timetableData) {
-                await pool.query(`INSERT INTO timetable (day, time, class_id, subject, room) VALUES (?, ?, ?, ?, ?)`, [s.day, s.time, s.class, s.subject, s.room]);
+            // Move Stagiaire data
+            await pool.query(`
+                INSERT IGNORE INTO stagiaires (name, class_id, created_at)
+                SELECT name, class_id, created_at FROM users WHERE role = 'stagiaire'
+            `);
+
+            // Migrate class assignments for formateurs
+            await pool.query(`
+                INSERT IGNORE INTO class_supervisors (class_id, formateur_id)
+                SELECT u.class_id, f.id 
+                FROM users u 
+                JOIN formateurs f ON u.email = f.email
+                WHERE u.role = 'formateur' AND u.class_id IS NOT NULL
+            `);
+
+            // Final purge of the legacy table
+            await pool.query('DROP TABLE users');
+            console.log('✅ Legacy migration complete. "users" table has been purged.');
+        }
+
+        // Seeding Infrastructure if empty
+        const [filieres] = await pool.query('SELECT COUNT(*) as count FROM filiere');
+        if (filieres[0].count === 0) {
+            await pool.query(`INSERT INTO filiere (nom, niveau) VALUES 
+                ('Développement Digital', 'TS'),
+                ('Infrastructure Digitale', 'TS')`);
+        }
+
+        const [opts] = await pool.query('SELECT COUNT(*) as count FROM options');
+        if (opts[0].count === 0) {
+            const [[devDigital]] = await pool.query('SELECT id FROM filiere WHERE nom = "Développement Digital" LIMIT 1');
+            const [[infraDigital]] = await pool.query('SELECT id FROM filiere WHERE nom = "Infrastructure Digitale" LIMIT 1');
+            
+            if (devDigital) {
+                await pool.query('INSERT INTO options (filiereId, nom, niveau) VALUES (?, ?, ?)', [devDigital.id, 'Full Stack Web Dev', 'TS']);
             }
+            if (infraDigital) {
+                await pool.query('INSERT INTO options (filiereId, nom, niveau) VALUES (?, ?, ?)', [infraDigital.id, 'Infrastructure Digitale', 'TS']);
+            }
+        }
 
-            // Seed specific users requested by user
+        const [sallesCount] = await pool.query('SELECT COUNT(*) as count FROM salles');
+        if (sallesCount[0].count === 0) {
+            await pool.query("INSERT INTO salles (nom) VALUES ('SALLE 1'), ('SALLE 2'), ('SALLE 3'), ('SALLE 4'), ('S-D-A')");
+        }
+
+        // Seeding Classes
+        const [existing] = await pool.query('SELECT COUNT(*) as count FROM classes');
+        if (existing[0].count === 0) {
+            const [[optDev]] = await pool.query('SELECT id, filiereId FROM options WHERE nom = "Full Stack Web Dev" LIMIT 1');
+            const [[optInfra]] = await pool.query('SELECT id, filiereId FROM options WHERE nom = "Infrastructure Digitale" LIMIT 1');
+
+            if (optDev) {
+                await pool.query('INSERT INTO classes (id, filiereId, optionId, année_scolaire, level) VALUES (?, ?, ?, ?, ?)', ['DEV101', optDev.filiereId, optDev.id, '2025/2026', '1er']);
+                await pool.query('INSERT INTO classes (id, filiereId, optionId, année_scolaire, level) VALUES (?, ?, ?, ?, ?)', ['DEV102', optDev.filiereId, optDev.id, '2025/2026', '2eme']);
+            }
+            if (optInfra) {
+                await pool.query('INSERT INTO classes (id, filiereId, optionId, année_scolaire, level) VALUES (?, ?, ?, ?, ?)', ['ID101', optInfra.filiereId, optInfra.id, '2025/2026', '1er']);
+            }
+        }
+
             const bcrypt = require('bcryptjs');
-            const pwd = await bcrypt.hash('password123', 10);
 
-            // 2 Formateurs
-            const drAlamiEmail = 'alami@ofppt.ma';
-            const drAlamiPwd = await bcrypt.hash(drAlamiEmail.split('@')[0], 10);
-            await pool.query(`INSERT IGNORE INTO users (name, email, password, role) VALUES ('Dr. Alami', ?, ?, 'formateur')`, [drAlamiEmail, drAlamiPwd]);
-
-            const leilaEmail = 'filali@ofppt.ma';
-            const leilaPwd = await bcrypt.hash(leilaEmail.split('@')[0], 10);
-            await pool.query(`INSERT IGNORE INTO users (name, email, password, role) VALUES ('Leila Filali', ?, ?, 'formateur')`, [leilaEmail, leilaPwd]);
-
-            // No Stagiaire seeding here - handled by admin
-
-            // Ensure System Admin exists with admin123
+            // Seed Admin
             const adminHash = await bcrypt.hash('admin123', 10);
             await pool.query(`
-                INSERT INTO users (name, email, password, role) 
-                VALUES ('System Admin', 'admin@ofppt.ma', '${adminHash}', 'admin')
+                INSERT INTO admins (name, email, password) 
+                VALUES ('System Admin', 'admin@ofppt.ma', '${adminHash}')
                 ON DUPLICATE KEY UPDATE password = '${adminHash}'
             `);
 
-            // Seed a "Working" session for THURSDAY (Current Time simulation)
-            // Current is ~05:13. Let's set 04:30 - 06:30
-            const [[formateur]] = await pool.query('SELECT id FROM users WHERE role = "formateur" LIMIT 1');
+            // Seed Formateurs
+            const drAlamiEmail = 'alami@ofppt.ma';
+            const drAlamiPwd = await bcrypt.hash(drAlamiEmail.split('@')[0], 10);
+            await pool.query(`INSERT IGNORE INTO formateurs (name, email, password) VALUES ('Dr. Alami', ?, ?)`, [drAlamiEmail, drAlamiPwd]);
+
+            const leilaEmail = 'filali@ofppt.ma';
+            const leilaPwd = await bcrypt.hash(leilaEmail.split('@')[0], 10);
+            await pool.query(`INSERT IGNORE INTO formateurs (name, email, password) VALUES ('Leila Filali', ?, ?)`, [leilaEmail, leilaPwd]);
+
+            const [[formateur]] = await pool.query('SELECT id FROM formateurs LIMIT 1');
             const [[squadron]] = await pool.query('SELECT id FROM classes LIMIT 1');
             if (formateur && squadron) {
                 await pool.query('INSERT IGNORE INTO class_supervisors (class_id, formateur_id) VALUES (?, ?)', [squadron.id, formateur.id]);
-                await pool.query('DELETE FROM timetable WHERE day = "THURSDAY" AND time = "04:30 - 06:30"');
                 await pool.query(
                     'INSERT INTO timetable (day, time, class_id, formateur_id, subject, room) VALUES (?, ?, ?, ?, ?, ?)',
                     ['THURSDAY', '04:30 - 06:30', squadron.id, formateur.id, 'NEURAL INTERFACE LAB', 'ROOM_B101']
                 );
-            }
-
-            console.log('✅ Base registry synchronized with requested users and test session.');
         }
-
-        // Always ensure System Admin exists with admin123
-        const bcrypt = require('bcryptjs');
-        const adminHash = await bcrypt.hash('admin123', 10);
-        await pool.query(`
-            INSERT INTO users (name, email, password, role) 
-            VALUES ('System Admin', 'admin@ofppt.ma', '${adminHash}', 'admin')
-            ON DUPLICATE KEY UPDATE password = '${adminHash}'
-        `);
-        console.log('✅ Admin credentials synchronized.');
-
-        // 6. SYNC LIVE SESSION FOR ALAMI (THURSDAY 06:00 - 11:00 for DEV101)
-        const [alamiRows] = await pool.query('SELECT id FROM users WHERE email = "alami@ofppt.ma"');
-        const [classRows] = await pool.query('SELECT id FROM classes WHERE id = "DEV101"');
-
-        const drAlami = alamiRows[0];
-        const dev101 = classRows[0];
-
-        if (drAlami && dev101) {
-            await pool.query('INSERT IGNORE INTO class_supervisors (class_id, formateur_id) VALUES (?, ?)', [dev101.id, drAlami.id]);
-            await pool.query('DELETE FROM timetable WHERE day = "THURSDAY" AND class_id = "DEV101"');
-            await pool.query(
-                'INSERT INTO timetable (day, time, class_id, formateur_id, subject, room) VALUES (?, ?, ?, ?, ?, ?)',
-                ['THURSDAY', '06:00 - 11:00', dev101.id, drAlami.id, 'ADVANCED NEURAL SYSTEMS', 'LAB_REDOX']
-            );
-            console.log(`✅ Targeted Test Session Active: THURSDAY 06:00 - 11:00 for Dr. Alami (DEV101)`);
-        }
-
-        // Synchronize Identity Schema
-        await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS image LONGTEXT`);
-
-        // 7. SYNC PASSWORDS POLICY (Staff only)
-        console.log('--- Syncing Passwords to Email Prefix Protocol ---');
-        const [usersToSync] = await pool.query('SELECT id, email FROM users WHERE role IN ("formateur")');
-        const bcryptSync = require('bcryptjs');
-        for (const u of usersToSync) {
-            const prefix = u.email.split('@')[0];
-            const hash = await bcryptSync.hash(prefix, 10);
-            await pool.query('UPDATE users SET password = ? WHERE id = ?', [hash, u.id]);
-        }
-        console.log(`✅ Synced ${usersToSync.length} user passwords.`);
-
+        console.log('✅ Database synchronized with separate tables.');
     } catch (err) {
         console.error('Failed to synchronize database:', err);
     }

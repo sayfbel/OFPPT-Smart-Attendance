@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom';
 import { Search, Plus, Filter, UserCheck, UserX, ChevronDown, Edit3, Trash2, AlertTriangle, X, User } from 'lucide-react';
 import axios from 'axios';
 import IdentityModal from '../../components/IdentityModal';
+import ConfirmationModal from '../../components/ConfirmationModal';
 import { useNotification } from '../../context/NotificationContext';
 
 const Accounts = () => {
@@ -15,16 +16,19 @@ const Accounts = () => {
     const [isEditing, setIsEditing] = useState(false);
     const [newUser, setNewUser] = useState({ name: '', email: '', role: 'stagiaire', class_ids: [] });
     const [searchQuery, setSearchQuery] = useState('');
-    const [streamFilter, setStreamFilter] = useState('ALL');
+    const [optionFilter, setOptionFilter] = useState('ALL');
+    const [filieres, setFilieres] = useState([]);
+    const [options, setOptions] = useState([]);
+    const [salles, setSalles] = useState([]);
     const [isFilterDropdownOpen, setIsFilterDropdownOpen] = useState(false);
 
     // Delete Confirmation State
     const [userToDelete, setUserToDelete] = useState(null);
 
-    const uniqueStreams = ['ALL', ...new Set(availableClasses.map(cls => cls.id.replace(/[0-9_ -]/g, '').trim()))];
+    const uniqueOptions = ['ALL', ...new Set(availableClasses.map(cls => cls.option).filter(Boolean))];
 
     const displayedClasses = availableClasses.filter(cls =>
-        streamFilter === 'ALL' || cls.id.startsWith(streamFilter)
+        optionFilter === 'ALL' || cls.option === optionFilter
     );
 
     const displayedUsers = users.filter(user =>
@@ -52,6 +56,16 @@ const Accounts = () => {
 
                 const fRes = await axios.get('/api/admin/formateurs', config);
                 setFormateurs(fRes.data.formateurs || []);
+
+                // Fetch Infrastructure
+                const filRes = await axios.get('/api/admin/filieres', config);
+                setFilieres(filRes.data.filieres || []);
+
+                const optRes = await axios.get('/api/admin/options', config);
+                setOptions(optRes.data.options || []);
+
+                const salRes = await axios.get('/api/admin/salles', config);
+                setSalles(salRes.data.salles || []);
             } catch (error) {
                 console.error('Error fetching initial data', error);
             }
@@ -108,7 +122,7 @@ const Accounts = () => {
             }
 
             setIsModalOpen(false);
-            setNewUser({ name: '', email: '', role: 'stagiaire', class_ids: [] });
+            setNewUser({ name: '', email: '', role: 'stagiaire', class_ids: [], Année: '1er', Active: true });
             addNotification('Compte créé avec succès.', 'success');
         } catch (error) {
             console.error('Error adding user', error);
@@ -116,13 +130,14 @@ const Accounts = () => {
         }
     };
 
-    const handleEditClick = (user) => {
+    const handleEditClick = (user, role) => {
         const assignedClasses = availableClasses
             .filter(cls => cls.lead && cls.lead.includes(user.name))
             .map(cls => cls.id);
 
         setNewUser({
             ...user,
+            role: (role || user.role || 'stagiaire').toLowerCase().trim(),
             class_ids: assignedClasses,
             class_id: user.class_id || ''
         });
@@ -194,29 +209,29 @@ const Accounts = () => {
                             className="bg-white border border-[var(--border)] px-6 py-4 rounded-xl flex items-center gap-4 hover:border-[var(--primary)] transition-all shadow-sm"
                         >
                             <Filter className="w-4 h-4 text-[var(--primary)]" />
-                            <span className="text-[10px] font-black tracking-widest uppercase text-[var(--secondary)]">{streamFilter === 'ALL' ? 'TOUTES LES FILIÈRES' : streamFilter}</span>
+                            <span className="text-[10px] font-black tracking-widest uppercase text-[var(--secondary)]">{optionFilter === 'ALL' ? 'TOUTES LES OPTIONS' : optionFilter}</span>
                             <ChevronDown className={`w-4 h-4 text-[var(--primary)] transition-transform ${isFilterDropdownOpen ? 'rotate-180' : ''}`} />
                         </button>
 
                         {isFilterDropdownOpen && (
                             <div className="absolute top-full left-0 mt-3 bg-white border border-[var(--border)] rounded-2xl z-50 shadow-2xl min-w-[200px] overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-                                {uniqueStreams.map(stream => (
+                                {uniqueOptions.map(option => (
                                     <div
-                                        key={stream}
-                                        className={`px-6 py-4 cursor-pointer text-[10px] font-black tracking-widest uppercase transition-colors ${streamFilter === stream ? 'bg-[var(--primary)] text-white' : 'text-[var(--secondary)] hover:bg-slate-50'}`}
+                                        key={option}
+                                        className={`px-6 py-4 cursor-pointer text-[10px] font-black tracking-widest uppercase transition-colors ${optionFilter === option ? 'bg-[var(--primary)] text-white' : 'text-[var(--secondary)] hover:bg-slate-50'}`}
                                         onClick={() => {
-                                            setStreamFilter(stream);
+                                            setOptionFilter(option);
                                             setIsFilterDropdownOpen(false);
                                         }}
                                     >
-                                        {stream === 'ALL' ? 'TOUTES LES FILIÈRES' : stream}
+                                        {option === 'ALL' ? 'TOUTES LES OPTIONS' : option}
                                     </div>
                                 ))}
                             </div>
                         )}
                     </div>
                     <button onClick={() => {
-                        setNewUser({ name: '', email: '', role: 'stagiaire', class_ids: [] });
+                        setNewUser({ name: '', email: '', role: 'stagiaire', class_ids: [], Année: '1er', Active: true });
                         setIsEditing(false);
                         setIsModalOpen(true);
                     }} className="btn-ista px-8 py-4 flex items-center gap-3">
@@ -241,9 +256,9 @@ const Accounts = () => {
                             <span className="text-[10px] font-black tracking-widest text-[var(--primary)] uppercase">{cls.id}</span>
                             <div className={`w-3 h-3 rounded-full ${selectedClass === cls.id ? 'bg-[var(--primary)] animate-pulse' : 'bg-slate-200'}`}></div>
                         </div>
-                        <h3 className="text-xl font-black italic text-[var(--secondary)] tracking-tight mb-2 truncate group-hover:text-[var(--primary)] transition-colors">{cls.title}</h3>
+                        <h3 className="text-xl font-black italic text-[var(--secondary)] tracking-tight mb-2 truncate group-hover:text-[var(--primary)] transition-colors">{cls.filiere}</h3>
                         <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mt-4 border-t border-slate-50 pt-4">
-                            Filière: <span className="text-[var(--secondary)]">{cls.stream}</span>
+                            Option: <span className="text-[var(--secondary)]">{cls.option}</span>
                         </p>
                     </div>
                 ))}
@@ -321,7 +336,7 @@ const Accounts = () => {
                                             <td className="py-6 px-4 text-right">
                                                 <div className="flex justify-end gap-2">
                                                     <button
-                                                        onClick={() => handleEditClick(user)}
+                                                        onClick={() => handleEditClick(user, 'stagiaire')}
                                                         className="p-3 rounded-xl border border-slate-100 hover:border-[var(--primary)] hover:text-[var(--primary)] text-slate-400 transition-all bg-white shadow-sm"
                                                     >
                                                         <Edit3 className="w-4 h-4" />
@@ -392,14 +407,26 @@ const Accounts = () => {
                                                 </div>
                                             </td>
                                             <td className="py-6 px-4">
-                                                <span className="text-[9px] font-black tracking-widest px-3 py-1 rounded-full border border-[var(--primary)] text-[var(--primary)] bg-green-50/50">
-                                                    ACTIF
-                                                </span>
+                                                <div className="flex items-center gap-2">
+                                                    <span className="text-[9px] font-black tracking-widest px-3 py-1 rounded-full border border-[var(--primary)] text-[var(--primary)] bg-green-50/50">
+                                                        ACTIF
+                                                    </span>
+                                                    {formateur.type === 'Vacataire' && (
+                                                        <span className="text-[9px] font-black tracking-widest px-3 py-1 rounded-full border border-orange-500 text-orange-500 bg-orange-50/50 uppercase">
+                                                            Vacataire
+                                                        </span>
+                                                    )}
+                                                    {formateur.type === 'Parrain' && (
+                                                        <span className="text-[9px] font-black tracking-widest px-3 py-1 rounded-full border border-blue-500 text-blue-500 bg-blue-50/50 uppercase">
+                                                            Parrain
+                                                        </span>
+                                                    )}
+                                                </div>
                                             </td>
                                             <td className="py-6 px-4 text-right">
                                                 <div className="flex justify-end gap-2">
                                                     <button
-                                                        onClick={() => handleEditClick(formateur)}
+                                                        onClick={() => handleEditClick(formateur, 'formateur')}
                                                         className="p-3 rounded-xl border border-slate-100 hover:border-[var(--primary)] hover:text-[var(--primary)] text-slate-400 transition-all bg-white shadow-sm"
                                                     >
                                                         <Edit3 className="w-4 h-4" />
@@ -421,46 +448,13 @@ const Accounts = () => {
                 </div>
             </div>
 
-            {/* DELETE CONFIRMATION OVERLAY */}
-            {userToDelete && ReactDOM.createPortal(
-                <div className="fixed inset-0 z-[10000] bg-black/60 backdrop-blur-md flex items-center justify-center p-4 transition-all duration-500 animate-in fade-in">
-                    <div className="bg-white rounded-[40px] w-full max-w-md p-12 relative shadow-2xl overflow-hidden">
-                        <div className="absolute top-0 left-0 w-full h-2 bg-red-500"></div>
-                        <button
-                            onClick={() => setUserToDelete(null)}
-                            className="absolute top-8 right-8 text-slate-300 hover:text-[var(--secondary)] transition-all"
-                        >
-                            <X className="w-6 h-6" />
-                        </button>
-
-                        <div className="flex flex-col items-center text-center">
-                            <div className="w-20 h-20 bg-red-50 rounded-[32px] flex items-center justify-center mb-8">
-                                <AlertTriangle className="w-10 h-10 text-red-500" />
-                            </div>
-                            <h3 className="text-3xl font-black italic tracking-tighter text-[var(--secondary)] uppercase mb-4">Confirmation</h3>
-                            <p className="text-sm font-bold text-slate-400 leading-relaxed mb-10">
-                                Vous êtes sur le point de supprimer <span className="text-red-500">{userToDelete.name}</span>. Cette action est irréversible et révoquera tous les accès.
-                            </p>
-
-                            <div className="flex flex-col w-full gap-4">
-                                <button
-                                    onClick={handleDeleteUser}
-                                    className="w-full bg-red-500 text-white py-5 rounded-2xl font-black tracking-widest text-xs uppercase hover:bg-red-600 shadow-xl shadow-red-500/20 transition-all active:scale-[0.98]"
-                                >
-                                    SUPPRIMER DÉFINITIVEMENT
-                                </button>
-                                <button
-                                    onClick={() => setUserToDelete(null)}
-                                    className="w-full bg-slate-50 text-[var(--secondary)] py-5 rounded-2xl font-black tracking-widest text-xs uppercase hover:bg-slate-100 transition-all active:scale-[0.98]"
-                                >
-                                    ANNULER
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>,
-                document.body
-            )}
+            <ConfirmationModal 
+                isOpen={!!userToDelete}
+                onClose={() => setUserToDelete(null)}
+                onConfirm={handleDeleteUser}
+                title="ACTION CRITIQUE"
+                message={userToDelete ? `Êtes-vous sûr de vouloir supprimer ${userToDelete.name} ? Cette action est irréversible et révoquera tous les accès.` : ''}
+            />
 
             <IdentityModal
                 isOpen={isModalOpen}
@@ -475,6 +469,8 @@ const Accounts = () => {
                 handleUpdateUser={handleUpdateUser}
                 selectedClass={selectedClass}
                 availableClasses={availableClasses}
+                filieres={filieres}
+                options={options}
             />
             <style>{`
                 .ista-scrollbar::-webkit-scrollbar { width: 4px; height: 4px; }

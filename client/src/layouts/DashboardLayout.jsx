@@ -12,6 +12,7 @@ import {
     Sun,
     Moon,
     FileText,
+    HardDrive,
     ChevronRight,
     Menu,
     X

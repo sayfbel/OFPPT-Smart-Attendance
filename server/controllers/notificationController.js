@@ -3,8 +3,11 @@ const pool = require('../config/db');
 exports.getNotifications = async (req, res) => {
     try {
         const userId = req.user.id;
+        const role = req.user.role;
+        const column = role === 'admin' ? 'admin_id' : 'formateur_id';
+
         const [notifications] = await pool.query(
-            'SELECT * FROM notifications WHERE user_id = ? ORDER BY created_at DESC LIMIT 50',
+            `SELECT * FROM notifications WHERE ${column} = ? ORDER BY created_at DESC LIMIT 50`,
             [userId]
         );
         res.json({ notifications });
@@ -18,8 +21,11 @@ exports.markAsRead = async (req, res) => {
     try {
         const { id } = req.params;
         const userId = req.user.id;
+        const role = req.user.role;
+        const column = role === 'admin' ? 'admin_id' : 'formateur_id';
+
         await pool.query(
-            'UPDATE notifications SET is_read = TRUE WHERE id = ? AND user_id = ?',
+            `UPDATE notifications SET is_read = TRUE WHERE id = ? AND ${column} = ?`,
             [id, userId]
         );
         res.json({ message: 'Notification marked as read' });
@@ -32,8 +38,11 @@ exports.markAsRead = async (req, res) => {
 exports.markAllAsRead = async (req, res) => {
     try {
         const userId = req.user.id;
+        const role = req.user.role;
+        const column = role === 'admin' ? 'admin_id' : 'formateur_id';
+
         await pool.query(
-            'UPDATE notifications SET is_read = TRUE WHERE user_id = ?',
+            `UPDATE notifications SET is_read = TRUE WHERE ${column} = ?`,
             [userId]
         );
         res.json({ message: 'All notifications marked as read' });

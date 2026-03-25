@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Plus, BookOpen, Layers, Save, X, Filter, ChevronDown, Edit3, Trash2, CheckSquare, Square, Users } from 'lucide-react';
+import { Search, Plus, BookOpen, Layers, Save, X, Filter, ChevronDown, Edit3, Trash2, CheckSquare, Square, Users, Hash, AlertCircle } from 'lucide-react';
 import axios from 'axios';
 import GroupModal from '../../components/GroupModal';
 import ConfirmationModal from '../../components/ConfirmationModal';
@@ -11,50 +11,81 @@ const Squadrons = () => {
     const [classes, setClasses] = useState([]);
     const [formateurs, setFormateurs] = useState([]);
     const [isClassModalOpen, setIsClassModalOpen] = useState(false);
-    const [newClass, setNewClass] = useState({ id: '', title: '', stream: '', lead: [] });
+    const [newClass, setNewClass] = useState({ id: '', filiereId: '', optionId: '', lead: [], année_scolaire: '2025/2026', level: '1er' });
 
     const [flippedCardId, setFlippedCardId] = useState(null);
-    const [editData, setEditData] = useState({ title: '', stream: '', lead: [] });
-    const [streamFilter, setStreamFilter] = useState('ALL');
+    const [editData, setEditData] = useState({ filiereId: '', optionId: '', lead: [], année_scolaire: '', level: '' });
+    const [optionFilter, setOptionFilter] = useState('ALL');
+    const [yearFilter, setYearFilter] = useState('ALL');
     const [isFilterDropdownOpen, setIsFilterDropdownOpen] = useState(false);
+    const [isYearFilterDropdownOpen, setIsYearFilterDropdownOpen] = useState(false);
     const [isEditDropdownOpen, setIsEditDropdownOpen] = useState(false);
+    const [isLevelEditDropdownOpen, setIsLevelEditDropdownOpen] = useState(false);
+    const [isFiliereEditDropdownOpen, setIsFiliereEditDropdownOpen] = useState(false);
+    const [isOptionEditDropdownOpen, setIsOptionEditDropdownOpen] = useState(false);
+    const [isFiliereEditAutre, setIsFiliereEditAutre] = useState(false);
+    const [isOptionEditAutre, setIsOptionEditAutre] = useState(false);
+    const [availableFilieres, setAvailableFilieres] = useState([]);
+    const [availableOptions, setAvailableOptions] = useState([]);
+    const [customFiliere, setCustomFiliere] = useState({ nom: '', niveau: 'TS' });
+    const [customOption, setCustomOption] = useState({ nom: '', niveau: 'TS' });
+
     const [purgeInfo, setPurgeInfo] = useState({ isOpen: false, classId: '' });
+    const [isTransitionModalOpen, setIsTransitionModalOpen] = useState(false);
+    const [transitionData, setTransitionData] = useState({ currentYear: '2025/2026', nextYear: '2026/2027' });
+    const [isTransitioning, setIsTransitioning] = useState(false);
+
+    const levels = [
+        { value: '1er', label: '1ER ANNÉE' },
+        { value: '2eme', label: '2ÈME ANNÉE' },
+        { value: '3eme', label: '3ÈME ANNÉE' }
+    ];
 
 
     useEffect(() => {
-        const fetchClasses = async () => {
+        const fetchData = async () => {
             try {
                 const token = localStorage.getItem('token');
                 if (!token) return;
                 const config = { headers: { Authorization: `Bearer ${token}` } };
-                const res = await axios.get('/api/admin/schedule', config);
-                setClasses(res.data.classes || []);
 
-                const formateurRes = await axios.get('/api/admin/formateurs', config);
+                const [scheduleRes, formateurRes, filiereRes, optionRes] = await Promise.all([
+                    axios.get('/api/admin/schedule', config),
+                    axios.get('/api/admin/formateurs', config),
+                    axios.get('/api/admin/filieres', config),
+                    axios.get('/api/admin/options', config)
+                ]);
+
+                setClasses(scheduleRes.data.classes || []);
                 setFormateurs(formateurRes.data.formateurs || []);
+                setAvailableFilieres(filiereRes.data.filieres || []);
+                setAvailableOptions(optionRes.data.options || []);
             } catch (error) {
-                console.error('Error fetching classes or formateurs', error);
+                console.error('Error fetching dashboard data', error);
             }
         };
-        fetchClasses();
+        fetchData();
     }, []);
 
-    const handleAddClass = async (e) => {
-        e.preventDefault();
+
+    const handleAddClass = async (e, customData = null) => {
+        if (e && e.preventDefault) e.preventDefault();
         try {
             const token = localStorage.getItem('token');
             const config = { headers: { Authorization: `Bearer ${token}` } };
 
+            const dataToSubmit = customData || newClass;
+
             const payload = {
-                ...newClass,
-                lead: Array.isArray(newClass.lead) ? newClass.lead.join(', ') : newClass.lead
+                ...dataToSubmit,
+                lead: Array.isArray(dataToSubmit.lead) ? dataToSubmit.lead.join(', ') : dataToSubmit.lead
             };
 
             const res = await axios.post('/api/admin/classes', payload, config);
 
             setClasses([...classes, res.data.class]);
             setIsClassModalOpen(false);
-            setNewClass({ id: '', title: '', stream: '', lead: [] });
+            setNewClass({ id: '', filiereId: '', optionId: '', lead: [], année_scolaire: '2025/2026', level: '1er' });
             addNotification('Groupe créé et déployé avec succès.', 'success');
         } catch (error) {
             console.error('Error creating class', error);
@@ -67,12 +98,32 @@ const Squadrons = () => {
             const token = localStorage.getItem('token');
             const config = { headers: { Authorization: `Bearer ${token}` } };
 
+            let finalEditData = { ...editData };
+
+            // Handle Autre logic for edit
+            if (isFiliereEditAutre && customFiliere.nom) {
+                const resF = await axios.post('/api/admin/filieres', customFiliere, config);
+                finalEditData.filiereId = resF.data.id;
+                setAvailableFilieres(prev => [...prev, resF.data]);
+                setIsFiliereEditAutre(false);
+            }
+            if (finalEditData.level === '1er') {
+                finalEditData.optionId = null;
+            } else if (isOptionEditAutre && customOption.nom && finalEditData.filiereId) {
+                const resO = await axios.post('/api/admin/options', { ...customOption, filiereId: finalEditData.filiereId }, config);
+                finalEditData.optionId = resO.data.id;
+                setAvailableOptions(prev => [...prev, resO.data]);
+                setIsOptionEditAutre(false);
+            }
+
+
             const payload = {
-                ...editData,
-                lead: Array.isArray(editData.lead) ? editData.lead.join(', ') : editData.lead
+                ...finalEditData,
+                lead: Array.isArray(finalEditData.lead) ? finalEditData.lead.join(', ') : finalEditData.lead
             };
 
             const res = await axios.put(`/api/admin/classes/${id}`, payload, config);
+
 
             setClasses(classes.map(c => c.id === id ? res.data.class : c));
             setFlippedCardId(null);
@@ -99,6 +150,26 @@ const Squadrons = () => {
         }
     };
 
+    const handleTransition = async () => {
+        setIsTransitioning(true);
+        try {
+            const token = localStorage.getItem('token');
+            const config = { headers: { Authorization: `Bearer ${token}` } };
+            const res = await axios.post('/api/admin/classes/transition', transitionData, config);
+            addNotification(res.data.message, 'success');
+            setIsTransitionModalOpen(false);
+
+            // Refresh classes
+            const refreshRes = await axios.get('/api/admin/schedule', config);
+            setClasses(refreshRes.data.classes || []);
+        } catch (error) {
+            console.error('Transition Error', error);
+            addNotification(error.response?.data?.message || 'Échec de la transition annuelle.', 'error');
+        } finally {
+            setIsTransitioning(false);
+        }
+    };
+
 
     const handleFlip = (cls) => {
         if (flippedCardId === cls.id) {
@@ -106,16 +177,33 @@ const Squadrons = () => {
         } else {
             setFlippedCardId(cls.id);
             setEditData({
-                title: cls.title || cls.name || '',
-                stream: cls.stream || '',
+                id: cls.id,
+                filiereId: cls.filiereId || '',
+                optionId: cls.optionId || '',
+                année_scolaire: cls.année_scolaire || '',
+                level: cls.level || '1er',
                 lead: cls.lead ? cls.lead.split(',').map(s => s.trim()) : []
             });
+            setIsFiliereEditAutre(false);
+            setIsOptionEditAutre(false);
+            setCustomFiliere({ nom: '', niveau: 'TS' });
+            setCustomOption({ nom: '', niveau: 'TS' });
             setIsEditDropdownOpen(false);
+            setIsFiliereEditDropdownOpen(false);
+            setIsOptionEditDropdownOpen(false);
+            setIsLevelEditDropdownOpen(false);
+
         }
     };
 
-    const uniqueStreams = ['ALL', ...new Set(classes.map(c => c.stream).filter(Boolean))];
-    const filteredClasses = streamFilter === 'ALL' ? classes : classes.filter(c => c.stream === streamFilter);
+    const uniqueOptions = ['ALL', ...new Set(classes.map(c => c.option).filter(Boolean))];
+    const uniqueYears = ['ALL', ...new Set(classes.map(c => c.année_scolaire).filter(Boolean))];
+    
+    const filteredClasses = classes.filter(c => {
+        const matchOption = optionFilter === 'ALL' || c.option === optionFilter;
+        const matchYear = yearFilter === 'ALL' || c.année_scolaire === yearFilter;
+        return matchOption && matchYear;
+    });
 
     return (
         <div className="space-y-12 fade-up transition-all duration-500">
@@ -135,24 +223,61 @@ const Squadrons = () => {
                             className="bg-white border border-[var(--border)] px-6 py-4 rounded-xl flex items-center gap-4 hover:border-[var(--primary)] transition-all shadow-sm"
                         >
                             <Filter className="w-4 h-4 text-[var(--primary)]" />
-                            <span className="text-[10px] font-black tracking-widest uppercase text-[var(--secondary)]">{streamFilter === 'ALL' ? 'TOUTES LES FILIÈRES' : streamFilter}</span>
+                            <span className="text-[10px] font-black tracking-widest uppercase text-[var(--secondary)]">{optionFilter === 'ALL' ? 'TOUTES LES OPTIONS' : optionFilter}</span>
                             <ChevronDown className={`w-4 h-4 text-[var(--primary)] transition-transform ${isFilterDropdownOpen ? 'rotate-180' : ''}`} />
                         </button>
 
                         {isFilterDropdownOpen && (
                             <div className="absolute top-full right-0 mt-3 bg-white border border-[var(--border)] rounded-2xl z-50 shadow-2xl min-w-[240px] overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-                                {uniqueStreams.map(stream => (
+                                {uniqueOptions.map(option => (
                                     <div
-                                        key={stream}
-                                        className={`px-6 py-4 cursor-pointer text-[10px] font-black tracking-widest uppercase transition-colors ${streamFilter === stream ? 'bg-[var(--primary)] text-white' : 'text-[var(--secondary)] hover:bg-slate-50'}`}
+                                        key={option}
+                                        className={`px-6 py-4 cursor-pointer text-[10px] font-black tracking-widest uppercase transition-colors ${optionFilter === option ? 'bg-[var(--primary)] text-white' : 'text-[var(--secondary)] hover:bg-slate-50'}`}
                                         onClick={() => {
-                                            setStreamFilter(stream);
+                                            setOptionFilter(option);
                                             setIsFilterDropdownOpen(false);
                                         }}
                                     >
-                                        {stream === 'ALL' ? 'TOUTES LES FILIÈRES' : stream}
+                                        {option === 'ALL' ? 'TOUTES LES OPTIONS' : option}
                                     </div>
                                 ))}
+                            </div>
+                        )}
+                    </div>
+
+                    <div className="relative">
+                        <button
+                            onClick={() => setIsYearFilterDropdownOpen(!isYearFilterDropdownOpen)}
+                            className="bg-white border border-[var(--border)] px-6 py-4 rounded-xl flex items-center gap-4 hover:border-amber-500 hover:text-amber-500 transition-all shadow-sm"
+                        >
+                            <Layers className="w-4 h-4 text-amber-500" />
+                            <span className="text-[10px] font-black tracking-widest uppercase text-[var(--secondary)]">{yearFilter === 'ALL' ? 'TOUTES LES ANNÉES' : yearFilter}</span>
+                            <ChevronDown className={`w-4 h-4 text-amber-500 transition-transform ${isYearFilterDropdownOpen ? 'rotate-180' : ''}`} />
+                        </button>
+
+                        {isYearFilterDropdownOpen && (
+                            <div className="absolute top-full right-0 mt-3 bg-white border border-[var(--border)] rounded-2xl z-50 shadow-2xl min-w-[240px] overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                                {uniqueYears.map(year => (
+                                    <div
+                                        key={year}
+                                        className={`px-6 py-4 cursor-pointer text-[10px] font-black tracking-widest uppercase transition-colors ${yearFilter === year ? 'bg-amber-500 text-white' : 'text-[var(--secondary)] hover:bg-slate-50'}`}
+                                        onClick={() => {
+                                            setYearFilter(year);
+                                            setIsYearFilterDropdownOpen(false);
+                                        }}
+                                    >
+                                        {year === 'ALL' ? 'TOUTES LES ANNÉES' : year}
+                                    </div>
+                                ))}
+                                <div
+                                    className="px-6 py-4 cursor-pointer text-[9px] font-black text-amber-600 uppercase border-t border-slate-50 bg-amber-50/50 hover:bg-amber-100 transition-all"
+                                    onClick={() => {
+                                        setIsTransitionModalOpen(true);
+                                        setIsYearFilterDropdownOpen(false);
+                                    }}
+                                >
+                                    + LANCER LA TRANSITION ANNUELLE
+                                </div>
                             </div>
                         )}
                     </div>
@@ -197,10 +322,16 @@ const Squadrons = () => {
 
                                 <div className="flex-1 flex flex-col">
                                     <div className="mb-2">
-                                        <span className="text-[10px] font-black text-[var(--primary)] tracking-widest uppercase">{cls.id}</span>
-                                        <h2 className="text-3xl font-black italic text-[var(--secondary)] tracking-tight leading-tight uppercase transition-colors duration-500 group-hover:text-[var(--primary)]">{cls.title || cls.name}</h2>
+                                        <div className="flex justify-between items-center mb-1">
+                                            <span className="text-[10px] font-black text-[var(--primary)] tracking-widest uppercase">{cls.id}</span>
+                                            <div className="flex gap-2">
+                                                <span className="text-[8px] font-black bg-slate-100 text-slate-500 px-2 py-0.5 rounded tracking-widest uppercase">{cls.level}</span>
+                                                <span className="text-[9px] font-black text-slate-400 tracking-widest uppercase">{cls.année_scolaire}</span>
+                                            </div>
+                                        </div>
+                                        <h2 className="text-3xl font-black italic text-[var(--secondary)] tracking-tight leading-tight uppercase transition-colors duration-500 group-hover:text-[var(--primary)]">{cls.filiere}</h2>
                                     </div>
-                                    <p className="text-[10px] uppercase tracking-widest text-[var(--text-muted)] font-black mb-auto mt-2 italic">{cls.stream}</p>
+                                    <p className="text-[10px] uppercase tracking-widest text-[var(--text-muted)] font-black mb-auto mt-2 italic">{cls.option}</p>
 
                                     <div className="mt-8 grid grid-cols-2 gap-4 border-t border-slate-50 pt-8">
                                         <div>
@@ -227,24 +358,202 @@ const Squadrons = () => {
                                 </div>
 
                                 <div className="space-y-6 flex-1 text-left overflow-y-auto ista-scrollbar pr-2">
+                                    <div className="space-y-4">
+                                        {/* Filière Selector */}
+                                        <div className="relative">
+                                            <label className="block text-[9px] font-black tracking-widest text-slate-400 uppercase mb-2">Filière</label>
+                                            {!isFiliereEditAutre ? (
+                                                <div className="space-y-2">
+                                                    <div
+                                                        onClick={() => setIsFiliereEditDropdownOpen(!isFiliereEditDropdownOpen)}
+                                                        className="w-full bg-white border border-[var(--border)] rounded-xl px-4 py-3 flex justify-between items-center cursor-pointer hover:border-[var(--primary)] transition-all"
+                                                    >
+                                                        <div className="flex items-center gap-3">
+                                                            <BookOpen className="w-4 h-4 text-[var(--primary)]" />
+                                                            <span className="text-[10px] font-bold text-[var(--secondary)] uppercase tracking-tight truncate">
+                                                                {availableFilieres.find(f => f.id === editData.filiereId)?.nom || 'SÉLECTIONNER...'}
+                                                            </span>
+                                                        </div>
+                                                        <ChevronDown className={`w-4 h-4 text-[var(--primary)] transition-transform ${isFiliereEditDropdownOpen ? 'rotate-180' : ''}`} />
+                                                    </div>
+
+                                                    {isFiliereEditDropdownOpen && (
+                                                        <div className="absolute top-full left-0 w-full mt-2 bg-white border border-slate-100 rounded-xl shadow-2xl z-[60] overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                                                            <div className="max-h-40 overflow-y-auto ista-scrollbar">
+                                                                {availableFilieres.map(f => (
+                                                                    <div
+                                                                        key={f.id}
+                                                                        className={`px-4 py-3 cursor-pointer flex items-center justify-between hover:bg-slate-50 transition-colors ${editData.filiereId === f.id ? 'bg-green-50' : ''}`}
+                                                                        onClick={() => {
+                                                                            setEditData({ ...editData, filiereId: f.id, optionId: '' });
+                                                                            setIsFiliereEditDropdownOpen(false);
+                                                                        }}
+                                                                    >
+                                                                        <span className={`text-[10px] font-bold uppercase ${editData.filiereId === f.id ? 'text-[var(--primary)]' : 'text-[var(--secondary)]'}`}>
+                                                                            {f.nom}
+                                                                        </span>
+                                                                        {editData.filiereId === f.id && <div className="w-1 h-1 bg-[var(--primary)] rounded-full mr-2"></div>}
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                            <div
+                                                                className="px-4 py-3 cursor-pointer flex items-center justify-between transition-colors border-t border-slate-50 bg-slate-50/50 hover:bg-slate-100"
+                                                                onClick={() => {
+                                                                    setIsFiliereEditAutre(true);
+                                                                    setIsFiliereEditDropdownOpen(false);
+                                                                }}
+                                                            >
+                                                                <span className="text-[9px] font-black text-[var(--primary)] uppercase tracking-widest">AUTRE (PERSONNALISÉ)</span>
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            ) : (
+                                                <div className="relative">
+                                                    <input
+                                                        type="text"
+                                                        autoFocus
+                                                        value={customFiliere.nom}
+                                                        onChange={e => setCustomFiliere({ ...customFiliere, nom: e.target.value.toUpperCase() })}
+                                                        placeholder="NOM DE LA FILIÈRE..."
+                                                        className="w-full bg-white border border-[var(--border)] rounded-xl px-4 py-3 text-[10px] font-bold text-[var(--secondary)] focus:ring-4 focus:ring-green-500/10 focus:border-[var(--primary)] outline-none transition-all"
+                                                    />
+                                                    <button
+                                                        onClick={() => setIsFiliereEditAutre(false)}
+                                                        className="absolute right-3 top-1/2 -translate-y-1/2 p-1 hover:bg-slate-100 rounded-full transition-all text-slate-400"
+                                                    >
+                                                        <X className="w-3 h-3" />
+                                                    </button>
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        {/* Niveau Selector (Previous Option Position) */}
+                                        <div className="relative">
+                                            <label className="block text-[9px] font-black tracking-widest text-slate-400 uppercase mb-2">Niveau</label>
+                                            <div
+                                                onClick={() => setIsLevelEditDropdownOpen(!isLevelEditDropdownOpen)}
+                                                className="w-full bg-white border border-[var(--border)] rounded-xl px-4 py-3 flex justify-between items-center cursor-pointer hover:border-[var(--primary)] transition-all"
+                                            >
+                                                <div className="flex items-center gap-3">
+                                                    <Layers className="w-4 h-4 text-[var(--primary)]" />
+                                                    <span className="text-[10px] font-bold text-[var(--secondary)] uppercase tracking-tight">
+                                                        {levels.find(l => l.value === (editData.level || '1er'))?.label}
+                                                    </span>
+                                                </div>
+                                                <ChevronDown className={`w-4 h-4 text-[var(--primary)] transition-transform ${isLevelEditDropdownOpen ? 'rotate-180' : ''}`} />
+                                            </div>
+
+                                            {isLevelEditDropdownOpen && (
+                                                <div className="absolute top-full left-0 w-full mt-2 bg-white border border-slate-100 rounded-xl shadow-2xl z-[60] overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                                                    {levels.map((level) => (
+                                                        <div
+                                                            key={level.value}
+                                                            className={`px-4 py-3 cursor-pointer flex items-center justify-between hover:bg-slate-50 transition-colors ${editData.level === level.value ? 'bg-green-50' : ''}`}
+                                                            onClick={() => {
+                                                                setEditData({ ...editData, level: level.value });
+                                                                setIsLevelEditDropdownOpen(false);
+                                                            }}
+                                                        >
+                                                            <div className="flex items-center gap-3">
+                                                                <Layers className={`w-3.5 h-3.5 ${editData.level === level.value ? 'text-[var(--primary)]' : 'text-slate-300'}`} />
+                                                                <span className={`text-[10px] font-bold uppercase ${editData.level === level.value ? 'text-[var(--primary)]' : 'text-[var(--secondary)]'}`}>
+                                                                    {level.label}
+                                                                </span>
+                                                            </div>
+                                                            {editData.level === level.value && <div className="w-1 h-1 bg-[var(--primary)] rounded-full"></div>}
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </div>
+
+
+                                    </div>
+
                                     <div>
-                                        <label className="block text-[9px] font-black tracking-widest text-slate-400 uppercase mb-2">Titre du Groupe</label>
+                                        <label className="block text-[9px] font-black tracking-widest text-slate-400 uppercase mb-2">Année Scolaire</label>
                                         <input
                                             type="text"
-                                            value={editData.title}
-                                            onChange={(e) => setEditData({ ...editData, title: e.target.value })}
+                                            value={editData.année_scolaire}
+                                            onChange={(e) => setEditData({ ...editData, année_scolaire: e.target.value })}
                                             className="w-full text-xs font-bold bg-white border border-[var(--border)] rounded-xl px-4 py-3 text-[var(--secondary)] focus:border-[var(--primary)] focus:ring-4 focus:ring-green-500/10 outline-none transition-all"
                                         />
                                     </div>
-                                    <div>
-                                        <label className="block text-[9px] font-black tracking-widest text-slate-400 uppercase mb-2">Filière</label>
-                                        <input
-                                            type="text"
-                                            value={editData.stream}
-                                            onChange={(e) => setEditData({ ...editData, stream: e.target.value })}
-                                            className="w-full text-xs font-bold bg-white border border-[var(--border)] rounded-xl px-4 py-3 text-[var(--secondary)] focus:border-[var(--primary)] focus:ring-4 focus:ring-green-500/10 outline-none transition-all"
-                                        />
+                                    {/* Option Selector (Previous Niveau Position) */}
+                                    <div className="relative">
+                                        <label className="block text-[9px] font-black tracking-widest text-slate-400 uppercase mb-2">Option</label>
+                                        {editData.level === '1er' ? (
+                                            <div className="w-full bg-slate-100 border border-[var(--border)] rounded-xl px-4 py-3 flex items-center gap-3 opacity-75 cursor-not-allowed grayscale">
+                                                <Hash className="w-4 h-4 text-slate-400" />
+                                                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-tight">TRONC COMMUN (TR)</span>
+                                            </div>
+                                        ) : !isOptionEditAutre ? (
+                                            <div className="space-y-2">
+                                                <div
+                                                    onClick={() => setIsOptionEditDropdownOpen(!isOptionEditDropdownOpen)}
+                                                    className="w-full bg-white border border-[var(--border)] rounded-xl px-4 py-2.5 flex justify-between items-center cursor-pointer hover:border-[var(--primary)] transition-all"
+                                                >
+                                                    <div className="flex items-center gap-3">
+                                                        <Hash className="w-4 h-4 text-[var(--primary)]" />
+                                                        <span className="text-[10px] font-bold text-[var(--secondary)] uppercase tracking-tight truncate">
+                                                            {availableOptions.find(o => o.id === editData.optionId)?.nom || 'SÉLECTIONNER...'}
+                                                        </span>
+                                                    </div>
+                                                    <ChevronDown className={`w-4 h-4 text-[var(--primary)] transition-transform ${isOptionEditDropdownOpen ? 'rotate-180' : ''}`} />
+                                                </div>
+
+                                                {isOptionEditDropdownOpen && (
+                                                    <div className="absolute top-full left-0 w-full mt-2 bg-white border border-slate-100 rounded-xl shadow-2xl z-[60] overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                                                        <div className="max-h-40 overflow-y-auto ista-scrollbar">
+                                                            {(editData.filiereId ? availableOptions.filter(o => o.filiereId === editData.filiereId) : availableOptions).map(opt => (
+                                                                <div
+                                                                    key={opt.id}
+                                                                    className={`px-4 py-3 cursor-pointer flex items-center justify-between hover:bg-slate-50 transition-colors ${editData.optionId === opt.id ? 'bg-green-50' : ''}`}
+                                                                    onClick={() => {
+                                                                        setEditData({ ...editData, optionId: opt.id });
+                                                                        setIsOptionEditDropdownOpen(false);
+                                                                    }}
+                                                                >
+                                                                    <span className={`text-[10px] font-bold uppercase ${editData.optionId === opt.id ? 'text-[var(--primary)]' : 'text-[var(--secondary)]'}`}>
+                                                                        {opt.nom}
+                                                                    </span>
+                                                                    {editData.optionId === opt.id && <div className="w-1 h-1 bg-[var(--primary)] rounded-full mr-2"></div>}
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                        <div
+                                                            className="px-4 py-3 cursor-pointer flex items-center justify-between transition-colors border-t border-slate-50 bg-slate-50/50 hover:bg-slate-100"
+                                                            onClick={() => {
+                                                                setIsOptionEditAutre(true);
+                                                                setIsOptionEditDropdownOpen(false);
+                                                            }}
+                                                        >
+                                                            <span className="text-[9px] font-black text-[var(--primary)] uppercase tracking-widest">AUTRE (NOUVEAU)</span>
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        ) : (
+                                            <div className="relative">
+                                                <input
+                                                    type="text"
+                                                    autoFocus
+                                                    value={customOption.nom}
+                                                    onChange={e => setCustomOption({ ...customOption, nom: e.target.value.toUpperCase() })}
+                                                    placeholder="NOM DE L'OPTION..."
+                                                    className="w-full bg-white border border-[var(--border)] rounded-xl px-4 py-3 text-[10px] font-bold text-[var(--secondary)] focus:ring-4 focus:ring-green-500/10 focus:border-[var(--primary)] outline-none transition-all"
+                                                />
+                                                <button
+                                                    onClick={() => setIsOptionEditAutre(false)}
+                                                    className="absolute right-3 top-1/2 -translate-y-1/2 p-1 hover:bg-slate-100 rounded-full transition-all text-slate-400"
+                                                >
+                                                    <X className="w-3 h-3" />
+                                                </button>
+                                            </div>
+                                        )}
                                     </div>
+
                                     <div className="relative">
                                         <label className="block text-[9px] font-black tracking-widest text-slate-400 uppercase mb-2">Formateurs</label>
                                         <div
@@ -314,6 +623,7 @@ const Squadrons = () => {
                 setNewClass={setNewClass}
                 handleAddClass={handleAddClass}
                 formateurs={formateurs}
+                classes={classes}
             />
 
             <ConfirmationModal
@@ -323,6 +633,74 @@ const Squadrons = () => {
                 title="Suppression du Groupe"
                 message={`Êtes-vous sûr de vouloir supprimer le groupe ${purgeInfo.classId}? Cette action supprimera également toutes les séances associées dans l'emploi du temps.`}
             />
+
+            {/* Transition Modal */}
+            {isTransitionModalOpen && (
+                <div className="fixed inset-0 z-[9999] bg-black/60 backdrop-blur-md flex items-center justify-center p-4">
+                    <div className="bg-white rounded-[32px] w-full max-w-lg p-10 shadow-2xl animate-in zoom-in-95 duration-300">
+                        <div className="flex justify-between items-start mb-8">
+                            <div>
+                                <h3 className="text-2xl font-black italic text-[var(--secondary)] uppercase leading-none mb-2">Transition Annuelle</h3>
+                                <p className="text-[9px] font-black text-slate-400 tracking-[0.3em] uppercase">Préparation de la nouvelle année scolaire</p>
+                            </div>
+                            <button onClick={() => setIsTransitionModalOpen(false)} className="p-2 hover:bg-slate-50 rounded-xl transition-all">
+                                <X className="w-6 h-6 text-slate-300" />
+                            </button>
+                        </div>
+
+                        <div className="space-y-6 mb-10">
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest">ANNÉE ACTUELLE</label>
+                                    <input
+                                        type="text"
+                                        value={transitionData.currentYear}
+                                        onChange={e => setTransitionData({ ...transitionData, currentYear: e.target.value })}
+                                        className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-sm font-bold text-[var(--secondary)] focus:border-[var(--primary)] outline-none"
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest">NOUVELLE ANNÉE</label>
+                                    <input
+                                        type="text"
+                                        value={transitionData.nextYear}
+                                        onChange={e => setTransitionData({ ...transitionData, nextYear: e.target.value })}
+                                        className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-sm font-bold text-[var(--secondary)] focus:border-[var(--primary)] outline-none"
+                                    />
+                                </div>
+                            </div>
+                            <div className="bg-amber-50 border border-amber-100 rounded-2xl p-6 flex gap-4">
+                                <AlertCircle className="w-8 h-8 text-amber-500 shrink-0" />
+                                <div className="space-y-1">
+                                    <p className="text-[10px] font-black text-amber-700 uppercase">Attention - Transformation Critique</p>
+                                    <p className="text-[9px] font-bold text-amber-600/80 leading-relaxed uppercase">
+                                        Cette opération va dupliquer toutes les classes pour la nouvelle année,
+                                        vider les listes de stagiaires, et augmenter le niveau (1er → 2eme).
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <button
+                            onClick={handleTransition}
+                            disabled={isTransitioning}
+                            className="w-full btn-ista py-5 flex items-center justify-center gap-3 shadow-xl shadow-green-500/20"
+                        >
+                            {isTransitioning ? (
+                                <>
+                                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                                    TRAITEMENT EN COURS...
+                                </>
+                            ) : (
+                                <>
+                                    <Layers className="w-5 h-5" />
+                                    EXÉCUTER LA TRANSITION
+                                </>
+                            )}
+                        </button>
+                    </div>
+                </div>
+            )}
             <style>{`
                 .ista-scrollbar::-webkit-scrollbar { width: 4px; }
                 .ista-scrollbar::-webkit-scrollbar-track { background: transparent; }

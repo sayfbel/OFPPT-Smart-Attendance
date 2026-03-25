@@ -2,20 +2,27 @@ import React, { useRef, useState, useEffect } from 'react';
 import ReactDOM from 'react-dom';
 import { X, CheckCircle2, AlertTriangle, ArrowRight, PenTool, Hash, Users, Activity, XCircle, ShieldCheck, ClipboardCheck, Clock } from 'lucide-react';
 
-const ClassDossierModal = ({ isOpen, onClose, activeSession, students, stats, onConfirm, submitting }) => {
+const ClassDossierModal = ({ isOpen, onClose, activeSession, students, stats, onConfirm, submitting, salles = [] }) => {
     const canvasRef = useRef(null);
     const [isDrawing, setIsDrawing] = useState(false);
     const [hasSignature, setHasSignature] = useState(false);
     const [startTime, setStartTime] = useState('');
     const [endTime, setEndTime] = useState('');
+    const [localStudents, setLocalStudents] = useState([]);
+    const [selectedSalleId, setSelectedSalleId] = useState('');
+
+    useEffect(() => {
+        setLocalStudents(students.map(s => ({ ...s, Justifier: s.Justifier || false })));
+    }, [students]);
 
     useEffect(() => {
         if (isOpen && activeSession?.time) {
             const [start, end] = activeSession.time.split(' - ');
             setStartTime(start || '');
             setEndTime(end || '');
+            setSelectedSalleId(activeSession.salleId || (salles.length > 0 ? salles[0].Id : ''));
         }
-    }, [isOpen, activeSession]);
+    }, [isOpen, activeSession, salles]);
 
     useEffect(() => {
         if (isOpen && canvasRef.current) {
@@ -79,7 +86,11 @@ const ClassDossierModal = ({ isOpen, onClose, activeSession, students, stats, on
             return;
         }
         const signatureData = canvasRef.current.toDataURL();
-        onConfirm(signatureData, { startTime, endTime });
+        onConfirm(signatureData, { startTime, endTime, students: localStudents, salleId: selectedSalleId });
+    };
+
+    const toggleJustifier = (id) => {
+        setLocalStudents(prev => prev.map(s => s.id === id ? { ...s, Justifier: !s.Justifier } : s));
     };
 
     if (!isOpen) return null;
@@ -132,7 +143,7 @@ const ClassDossierModal = ({ isOpen, onClose, activeSession, students, stats, on
                             </div>
 
                             <div className="space-y-3 bg-slate-50/50 border border-slate-100 rounded-3xl p-6 max-h-[500px] overflow-y-auto ista-scrollbar">
-                                {students.length > 0 ? students.map((student) => (
+                                {localStudents.length > 0 ? localStudents.map((student) => (
                                     <div key={student.id} className="flex justify-between items-center p-5 bg-white rounded-2xl border border-slate-100 shadow-sm hover:border-[var(--primary)]/40 hover:shadow-md transition-all group">
                                         <div className="flex items-center gap-4">
                                             <div className="w-12 h-12 bg-slate-50 rounded-xl flex items-center justify-center text-[12px] font-black text-[var(--secondary)] group-hover:bg-[var(--primary)] group-hover:text-white transition-all">
@@ -143,11 +154,23 @@ const ClassDossierModal = ({ isOpen, onClose, activeSession, students, stats, on
                                                 <span className="text-[9px] text-slate-400 uppercase font-black tracking-widest">MATRICULE: {student.id}</span>
                                             </div>
                                         </div>
-                                        <div className={`px-4 py-2 rounded-xl text-[9px] font-black tracking-widest uppercase border ${student.status === 'PRESENT'
-                                            ? 'bg-green-50 text-[var(--primary)] border-green-100'
-                                            : 'bg-red-50 text-red-500 border-red-100'
-                                            }`}>
-                                            {student.status}
+                                        <div className="flex items-center gap-3">
+                                            {student.status === 'ABSENT' && (
+                                                <button
+                                                    onClick={() => toggleJustifier(student.id)}
+                                                    className={`px-3 py-2 rounded-xl text-[9px] font-black tracking-widest uppercase border transition-all ${student.Justifier 
+                                                        ? 'bg-amber-50 text-amber-600 border-amber-200' 
+                                                        : 'bg-slate-50 text-slate-400 border-slate-100 hover:border-amber-200 hover:text-amber-500'}`}
+                                                >
+                                                    {student.Justifier ? 'JUSTIFIÉ' : 'NON JUSTIFIÉ'}
+                                                </button>
+                                            )}
+                                            <div className={`px-4 py-2 rounded-xl text-[9px] font-black tracking-widest uppercase border ${student.status === 'PRESENT'
+                                                ? 'bg-green-50 text-[var(--primary)] border-green-100'
+                                                : 'bg-red-50 text-red-500 border-red-100'
+                                                }`}>
+                                                {student.status}
+                                            </div>
                                         </div>
                                     </div>
                                 )) : (
@@ -220,6 +243,21 @@ const ClassDossierModal = ({ isOpen, onClose, activeSession, students, stats, on
                                         className="w-full bg-white border border-slate-100 rounded-2xl p-5 text-sm font-black text-[var(--primary)] focus:ring-4 focus:ring-green-500/5 focus:border-[var(--primary)] outline-none transition-all"
                                     />
                                 </div>
+                                <div className="col-span-2 space-y-4">
+                                    <label className="text-[10px] font-black tracking-widest text-slate-400 uppercase flex items-center gap-2">
+                                        <Hash className="w-3 h-3" /> Salle de Cours
+                                    </label>
+                                    <select
+                                        value={selectedSalleId}
+                                        onChange={(e) => setSelectedSalleId(e.target.value)}
+                                        className="w-full bg-white border border-slate-100 rounded-2xl p-5 text-sm font-black text-[var(--secondary)] focus:ring-4 focus:ring-green-500/5 focus:border-[var(--primary)] outline-none transition-all uppercase"
+                                    >
+                                        <option value="">SÉLECTIONNER UNE SALLE</option>
+                                        {salles.map(s => (
+                                            <option key={s.id} value={s.id}>{s.nom} ({s.id})</option>
+                                        ))}
+                                    </select>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -247,7 +285,7 @@ const ClassDossierModal = ({ isOpen, onClose, activeSession, students, stats, on
                             </>
                         )}
                     </button>
-                    <p className="text-center mt-6 text-[8px] font-black text-slate-300 tracking-[0.5em] uppercase">SYSTEME DEPointage DIGITAL - OFPPT ISTA</p>
+                    <p className="text-center mt-6 text-[8px] font-black text-slate-300 tracking-[0.5em] uppercase">SYSTEME DE POINTAGE DIGITAL - OFPPT ISTA</p>
                 </div>
             </div>
 

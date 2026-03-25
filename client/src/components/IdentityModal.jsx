@@ -1,10 +1,13 @@
 import React, { useState } from 'react';
 import ReactDOM from 'react-dom';
-import { ChevronRight, X, ChevronDown, CheckSquare, Square, UserPlus, Save, Mail, Shield, GraduationCap, Briefcase, Settings, User } from 'lucide-react';
+import { ChevronRight, X, ChevronDown, CheckSquare, Square, UserPlus, Save, Mail, Shield, GraduationCap, Briefcase, Settings, User, Layers as LayersIcon, BookOpen } from 'lucide-react';
 
-const IdentityModal = ({ isOpen, onClose, newUser, setNewUser, handleAddUser, handleUpdateUser, selectedClass, availableClasses = [], isEditing = false }) => {
+const IdentityModal = ({ isOpen, onClose, newUser, setNewUser, handleAddUser, handleUpdateUser, selectedClass, availableClasses = [], isEditing = false, filieres = [], options = [] }) => {
     const [isRoleDropdownOpen, setIsRoleDropdownOpen] = useState(false);
     const [isClassDropdownOpen, setIsClassDropdownOpen] = useState(false);
+    const [isFiliereDropdownOpen, setIsFiliereDropdownOpen] = useState(false);
+    const [isOptionDropdownOpen, setIsOptionDropdownOpen] = useState(false);
+    const [isAnneeDropdownOpen, setIsAnneeDropdownOpen] = useState(false);
 
     if (!isOpen) return null;
 
@@ -23,7 +26,7 @@ const IdentityModal = ({ isOpen, onClose, newUser, setNewUser, handleAddUser, ha
         { value: 'admin', label: 'Administrateur', icon: Shield }
     ];
 
-    const currentRole = roles.find(r => r.value === newUser.role) || roles[0];
+    const currentRole = roles.find(r => r.value === newUser.role?.toLowerCase()?.trim()) || roles[0];
 
     return ReactDOM.createPortal(
         <div className="fixed inset-0 z-[9999] bg-black/60 backdrop-blur-md flex items-center justify-center p-4 sm:p-8 animate-in fade-in duration-300">
@@ -96,7 +99,7 @@ const IdentityModal = ({ isOpen, onClose, newUser, setNewUser, handleAddUser, ha
                                         value={newUser.name}
                                         onChange={e => {
                                             const name = e.target.value;
-                                            const email = name.trim().toLowerCase().replace(/\s+/g, '.') + '@ofppt.ma';
+                                            const email = name.trim().toLowerCase().replace(/\s+/g, '.') + '@ofppt-edu.ma';
                                             setNewUser({ ...newUser, name, email });
                                         }}
                                         placeholder="Prénom et Nom..."
@@ -105,43 +108,97 @@ const IdentityModal = ({ isOpen, onClose, newUser, setNewUser, handleAddUser, ha
                                 </div>
 
                                 {/* Rôle */}
-                                <div className="relative space-y-3">
-                                    <label className="flex items-center gap-2 text-[10px] font-black tracking-widest text-slate-400 uppercase">
-                                        <Shield className="w-3 h-3" />
-                                        Niveau d'Accès
-                                    </label>
-                                    <div
-                                        onClick={() => setIsRoleDropdownOpen(!isRoleDropdownOpen)}
-                                        className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-6 py-4 flex justify-between items-center cursor-pointer hover:border-[var(--primary)] transition-all"
-                                    >
-                                        <div className="flex items-center gap-3">
-                                            <currentRole.icon className="w-4 h-4 text-[var(--primary)]" />
-                                            <span className="text-sm font-bold text-[var(--secondary)] uppercase tracking-tight">{currentRole.label}</span>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                    <div className="relative space-y-3">
+                                        <label className="flex items-center gap-2 text-[10px] font-black tracking-widest text-slate-400 uppercase">
+                                            <Shield className="w-3 h-3" />
+                                            Niveau d'Accès
+                                        </label>
+                                        <div
+                                            onClick={() => setIsRoleDropdownOpen(!isRoleDropdownOpen)}
+                                            className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-6 py-4 flex justify-between items-center cursor-pointer hover:border-[var(--primary)] transition-all"
+                                        >
+                                            <div className="flex items-center gap-3">
+                                                <currentRole.icon className="w-4 h-4 text-[var(--primary)]" />
+                                                <span className="text-sm font-bold text-[var(--secondary)] uppercase tracking-tight">{currentRole.label}</span>
+                                            </div>
+                                            <ChevronDown className={`w-5 h-5 text-[var(--primary)] transition-transform ${isRoleDropdownOpen ? 'rotate-180' : ''}`} />
                                         </div>
-                                        <ChevronDown className={`w-5 h-5 text-[var(--primary)] transition-transform ${isRoleDropdownOpen ? 'rotate-180' : ''}`} />
+
+                                        {isRoleDropdownOpen && (
+                                            <div className="absolute top-full left-0 w-full mt-2 bg-white border border-slate-100 rounded-2xl shadow-2xl z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                                                {roles.map((role) => (
+                                                    <div
+                                                        key={role.value}
+                                                        className={`px-6 py-4 cursor-pointer flex items-center justify-between hover:bg-slate-50 transition-colors ${newUser.role?.toLowerCase()?.trim() === role.value ? 'bg-green-50' : ''}`}
+                                                        onClick={() => {
+                                                            const updatedUser = { ...newUser, role: role.value };
+                                                            if (role.value === 'formateur') {
+                                                                updatedUser.type = updatedUser.type || 'Parrain';
+                                                            }
+                                                            setNewUser(updatedUser);
+                                                            setIsRoleDropdownOpen(false);
+                                                        }}
+                                                    >
+                                                        <div className="flex items-center gap-3">
+                                                            <role.icon className={`w-4 h-4 ${newUser.role?.toLowerCase()?.trim() === role.value ? 'text-[var(--primary)]' : 'text-slate-400'}`} />
+                                                            <span className={`text-[10px] font-black uppercase tracking-widest ${newUser.role?.toLowerCase()?.trim() === role.value ? 'text-[var(--primary)]' : 'text-slate-400'}`}>{role.label}</span>
+                                                        </div>
+                                                        {newUser.role?.toLowerCase()?.trim() === role.value && <div className="w-1.5 h-1.5 bg-[var(--primary)] rounded-full"></div>}
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
                                     </div>
 
-                                    {isRoleDropdownOpen && (
-                                        <div className="absolute top-full left-0 w-full mt-2 bg-white border border-slate-100 rounded-2xl shadow-2xl z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-                                            {roles.map((role) => (
-                                                <div
-                                                    key={role.value}
-                                                    className={`px-6 py-4 cursor-pointer flex items-center justify-between hover:bg-slate-50 transition-colors ${newUser.role === role.value ? 'bg-green-50' : ''}`}
-                                                    onClick={() => {
-                                                        setNewUser({ ...newUser, role: role.value });
-                                                        setIsRoleDropdownOpen(false);
-                                                    }}
-                                                >
-                                                    <div className="flex items-center gap-3">
-                                                        <role.icon className={`w-4 h-4 ${newUser.role === role.value ? 'text-[var(--primary)]' : 'text-slate-400'}`} />
-                                                        <span className={`text-[10px] font-black uppercase tracking-widest ${newUser.role === role.value ? 'text-[var(--primary)]' : 'text-slate-400'}`}>{role.label}</span>
-                                                    </div>
-                                                    {newUser.role === role.value && <div className="w-1.5 h-1.5 bg-[var(--primary)] rounded-full"></div>}
-                                                </div>
-                                            ))}
+                                    {newUser.role?.toLowerCase()?.trim() === 'formateur' && (
+                                        <div className="relative space-y-3">
+                                            <label className="flex items-center gap-2 text-[10px] font-black tracking-widest text-slate-400 uppercase">
+                                                <Briefcase className="w-3 h-3" />
+                                                Type de Formateur
+                                            </label>
+                                            <div className="flex gap-2">
+                                                {['Parrain', 'Vacataire'].map((t) => (
+                                                    <button
+                                                        key={t}
+                                                        type="button"
+                                                        onClick={() => {
+                                                            const email = newUser.name ? (newUser.name.trim().toLowerCase().replace(/\s+/g, '.') + '@ofppt-edu.ma') : '';
+                                                            setNewUser({ ...newUser, type: t, email });
+                                                        }}
+                                                        className={`flex-1 px-4 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest border transition-all ${newUser.type === t
+                                                            ? 'bg-[var(--primary)] border-[var(--primary)] text-white shadow-lg shadow-green-500/20'
+                                                            : 'bg-slate-50 border-slate-100 text-slate-400 hover:border-[var(--primary)]/30'
+                                                            }`}
+                                                    >
+                                                        {t}
+                                                    </button>
+                                                ))}
+                                            </div>
                                         </div>
                                     )}
                                 </div>
+
+                                {/* Custom Email Input for Stagiaires and Formateurs */}
+                                {(newUser.role?.toLowerCase()?.trim() === 'formateur' || newUser.role?.toLowerCase()?.trim() === 'stagiaire') && (
+                                    <div className="space-y-3">
+                                        <label className="flex items-center gap-2 text-[10px] font-black tracking-widest text-slate-400 uppercase">
+                                            <Mail className="w-3 h-3" />
+                                            Adresse Email {(newUser.type === 'Vacataire' || newUser.role === 'stagiaire') && <span className="text-[var(--primary)] font-black italic">(PERSONNALISÉ)</span>}
+                                        </label>
+                                        <input
+                                            type="email"
+                                            required
+                                            value={newUser.email}
+                                            onChange={e => setNewUser({ ...newUser, email: e.target.value })}
+                                            placeholder="nom.prenom@ofppt-edu.ma"
+                                            className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-6 py-4 text-sm font-bold text-[var(--secondary)] focus:border-[var(--primary)] focus:ring-4 focus:ring-green-500/5 outline-none transition-all placeholder:text-slate-300"
+                                        />
+                                        {(newUser.type === 'Vacataire' || newUser.role === 'stagiaire') && (
+                                            <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest ml-2 italic">Suggestion: {newUser.name ? newUser.name.trim().toLowerCase().replace(/\s+/g, '.') : 'nom.prenom'}@ofppt-edu.ma</p>
+                                        )}
+                                    </div>
+                                )}
 
                                 {/* Groupes */}
                                 <div className="space-y-3">
@@ -149,7 +206,7 @@ const IdentityModal = ({ isOpen, onClose, newUser, setNewUser, handleAddUser, ha
                                         <Briefcase className="w-3 h-3" />
                                         Affectation aux Groupes
                                     </label>
-                                    {newUser.role === 'admin' ? (
+                                    {newUser.role?.toLowerCase()?.trim() === 'admin' ? (
                                         <div className="px-6 py-4 bg-slate-50 border border-dashed border-slate-200 rounded-2xl">
                                             <p className="text-[10px] font-black text-slate-400 uppercase italic">Accès global au système - Aucun groupe requis</p>
                                         </div>
@@ -159,7 +216,7 @@ const IdentityModal = ({ isOpen, onClose, newUser, setNewUser, handleAddUser, ha
                                                 onClick={() => setIsClassDropdownOpen(!isClassDropdownOpen)}
                                                 className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-6 py-4 flex justify-between items-center cursor-pointer hover:border-[var(--primary)] transition-all"
                                             >
-                                                <span className={`text-sm font-bold truncate ${newUser.role === 'stagiaire'
+                                                <span className={`text-sm font-bold truncate ${newUser.role?.toLowerCase()?.trim() === 'stagiaire'
                                                     ? (newUser.class_id ? 'text-[var(--secondary)]' : 'text-slate-400')
                                                     : (newUser.class_ids?.length > 0 ? 'text-[var(--secondary)]' : 'text-slate-400')
                                                     }`}>
@@ -183,7 +240,7 @@ const IdentityModal = ({ isOpen, onClose, newUser, setNewUser, handleAddUser, ha
                                                                 key={cls.id}
                                                                 className={`px-6 py-4 cursor-pointer flex items-center justify-between hover:bg-slate-50 transition-colors ${isSelected ? 'bg-green-50' : ''}`}
                                                                 onClick={() => {
-                                                                    if (newUser.role === 'stagiaire') {
+                                                                    if (newUser.role?.toLowerCase()?.trim() === 'stagiaire') {
                                                                         setNewUser({ ...newUser, class_id: cls.id });
                                                                         setIsClassDropdownOpen(false);
                                                                     } else {
@@ -202,6 +259,110 @@ const IdentityModal = ({ isOpen, onClose, newUser, setNewUser, handleAddUser, ha
                                                     })}
                                                 </div>
                                             )}
+                                        </div>
+                                    )}
+                                    {newUser.role?.toLowerCase()?.trim() === 'stagiaire' && (
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-4">
+                                            {/* Année Formation */}
+                                            <div className="relative space-y-3">
+                                                <label className="flex items-center gap-2 text-[10px] font-black tracking-widest text-slate-400 uppercase">
+                                                    <LayersIcon className="w-3 h-3" />
+                                                    Année de Formation
+                                                </label>
+                                                <div
+                                                    onClick={() => setIsAnneeDropdownOpen(!isAnneeDropdownOpen)}
+                                                    className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-6 py-4 flex justify-between items-center cursor-pointer hover:border-[var(--primary)] transition-all"
+                                                >
+                                                    <span className="text-sm font-bold text-[var(--secondary)] uppercase tracking-tight">
+                                                        {newUser.Année || '1er'}
+                                                    </span>
+                                                    <ChevronDown className={`w-5 h-5 text-[var(--primary)] transition-transform ${isAnneeDropdownOpen ? 'rotate-180' : ''}`} />
+                                                </div>
+                                                {isAnneeDropdownOpen && (
+                                                    <div className="absolute top-full left-0 w-full mt-2 bg-white border border-slate-100 rounded-2xl shadow-2xl z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                                                        {['1er', '2eme', '3eme'].map((yr) => (
+                                                            <div
+                                                                key={yr}
+                                                                className={`px-6 py-4 cursor-pointer flex items-center justify-between hover:bg-slate-50 transition-colors ${newUser.Année === yr ? 'bg-green-50' : ''}`}
+                                                                onClick={() => {
+                                                                    setNewUser({ ...newUser, Année: yr });
+                                                                    setIsAnneeDropdownOpen(false);
+                                                                }}
+                                                            >
+                                                                <span className={`text-[10px] font-black uppercase tracking-widest ${newUser.Année === yr ? 'text-[var(--primary)]' : 'text-slate-400'}`}>{yr} Formation</span>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                )}
+                                            </div>
+
+                                            {/* Statut Actif - Removed per user request: managed by reports */}
+
+                                            {/* Filiére */}
+                                            <div className="relative space-y-3">
+                                                <label className="flex items-center gap-2 text-[10px] font-black tracking-widest text-slate-400 uppercase">
+                                                    <BookOpen className="w-3 h-3" />
+                                                    Filiére
+                                                </label>
+                                                <div
+                                                    onClick={() => setIsFiliereDropdownOpen(!isFiliereDropdownOpen)}
+                                                    className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-6 py-4 flex justify-between items-center cursor-pointer hover:border-[var(--primary)] transition-all"
+                                                >
+                                                    <span className="text-sm font-bold text-[var(--secondary)] uppercase tracking-tight truncate">
+                                                        {filieres.find(f => f.id === newUser.filiereId)?.nom || 'SÉLECTIONNER...'}
+                                                    </span>
+                                                    <ChevronDown className={`w-5 h-5 text-[var(--primary)] transition-transform ${isFiliereDropdownOpen ? 'rotate-180' : ''}`} />
+                                                </div>
+                                                {isFiliereDropdownOpen && (
+                                                    <div className="absolute top-full left-0 w-full mt-2 bg-white border border-slate-100 rounded-2xl shadow-2xl z-50 max-h-40 overflow-y-auto ista-scrollbar animate-in fade-in zoom-in-95 duration-200">
+                                                        {filieres.map((f) => (
+                                                            <div
+                                                                key={f.id}
+                                                                className={`px-6 py-4 cursor-pointer flex items-center justify-between hover:bg-slate-50 transition-colors ${newUser.filiereId === f.id ? 'bg-green-50' : ''}`}
+                                                                onClick={() => {
+                                                                    setNewUser({ ...newUser, filiereId: f.id });
+                                                                    setIsFiliereDropdownOpen(false);
+                                                                }}
+                                                            >
+                                                                <span className="text-[10px] font-black uppercase tracking-widest">{f.nom}</span>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                )}
+                                            </div>
+
+                                            {/* Option (Only for 2eme/3eme) */}
+                                            <div className={`relative space-y-3 transition-all duration-300 ${newUser.Année === '1er' ? 'opacity-30 pointer-events-none' : ''}`}>
+                                                <label className="flex items-center gap-2 text-[10px] font-black tracking-widest text-slate-400 uppercase">
+                                                    <LayersIcon className="w-3 h-3" />
+                                                    Option {newUser.Année === '1er' && <span className="text-xs italic">(N/A en 1er)</span>}
+                                                </label>
+                                                <div
+                                                    onClick={() => setIsOptionDropdownOpen(!isOptionDropdownOpen)}
+                                                    className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-6 py-4 flex justify-between items-center cursor-pointer hover:border-[var(--primary)] transition-all"
+                                                >
+                                                    <span className="text-sm font-bold text-[var(--secondary)] uppercase tracking-tight truncate">
+                                                        {options.find(o => o.id === newUser.optionId)?.nom || 'SÉLECTIONNER...'}
+                                                    </span>
+                                                    <ChevronDown className={`w-5 h-5 text-[var(--primary)] transition-transform ${isOptionDropdownOpen ? 'rotate-180' : ''}`} />
+                                                </div>
+                                                {isOptionDropdownOpen && (
+                                                    <div className="absolute top-full left-0 w-full mt-2 bg-white border border-slate-100 rounded-2xl shadow-2xl z-50 max-h-40 overflow-y-auto ista-scrollbar animate-in fade-in zoom-in-95 duration-200">
+                                                        {options.filter(o => o.filiereId === newUser.filiereId).map((o) => (
+                                                            <div
+                                                                key={o.id}
+                                                                className={`px-6 py-4 cursor-pointer flex items-center justify-between hover:bg-slate-50 transition-colors ${newUser.optionId === o.id ? 'bg-green-50' : ''}`}
+                                                                onClick={() => {
+                                                                    setNewUser({ ...newUser, optionId: o.id });
+                                                                    setIsOptionDropdownOpen(false);
+                                                                }}
+                                                            >
+                                                                <span className="text-[10px] font-black uppercase tracking-widest">{o.nom}</span>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                )}
+                                            </div>
                                         </div>
                                     )}
                                 </div>

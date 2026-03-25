@@ -29,6 +29,7 @@ const FormateurDashboard = () => {
     const [classes, setClasses] = useState([]);
     const [activeSession, setActiveSession] = useState(null);
     const [students, setStudents] = useState([]);
+    const [salles, setSalles] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
     const [isConfirming, setIsConfirming] = useState(false);
@@ -65,6 +66,9 @@ const FormateurDashboard = () => {
                 const fetchedSchedule = res.data.schedule || [];
                 setSchedule(fetchedSchedule);
                 setClasses(res.data.classes || []);
+
+                const salRes = await axios.get('/api/admin/salles', config);
+                setSalles(salRes.data.salles || []);
 
                 // Auto-select class from URL if present
                 const selectedClassId = searchParams.get('selectedClass');
@@ -103,7 +107,8 @@ const FormateurDashboard = () => {
         const session = schedule.find(s => s.class === classId) || {
             class: classId,
             subject: 'SÉANCE_EN_COURS',
-            room: 'SALLE_TP',
+            room: salles.length > 0 ? salles[0].nom : 'SALLE_TP',
+            salleId: salles.length > 0 ? salles[0].id : null,
             time: `${new Date().getHours()}:00 - ${new Date().getHours() + 2}:00`
         };
 
@@ -184,8 +189,13 @@ const FormateurDashboard = () => {
                 date: new Date().toISOString().split('T')[0],
                 subject: activeSession.subject,
                 salle: activeSession.room,
+                salleId: meta.salleId || activeSession.salleId,
                 heure: meta.startTime && meta.endTime ? `${meta.startTime} - ${meta.endTime}` : activeSession.time,
-                stagiaires: students.map(s => ({ id: s.id, status: s.status })),
+                stagiaires: (meta.students || students).map(s => ({ 
+                    id: s.id, 
+                    status: s.status,
+                    Justifier: s.Justifier 
+                })),
                 signature: signatureData
             };
 
@@ -422,6 +432,7 @@ const FormateurDashboard = () => {
                 stats={stats}
                 onConfirm={handleSubmitReport}
                 submitting={submitting}
+                salles={salles}
             />
         </div>
     );
