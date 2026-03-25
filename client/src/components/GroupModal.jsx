@@ -2,9 +2,12 @@ import React, { useState, useEffect } from 'react';
 import ReactDOM from 'react-dom';
 import { X, CheckSquare, Square, ChevronDown, BookOpen, UserCheck, Hash, Layers, ArrowLeft, Trash2 } from 'lucide-react';
 import axios from 'axios';
-import ConfirmationModal from './ConfirmationModal';
+import { useNotification } from '../context/NotificationContext';
+import { useTranslation } from 'react-i18next';
 
-const GroupModal = ({ isOpen, onClose, newClass, setNewClass, handleAddClass, formateurs = [], classes = [] }) => {
+const GroupModal = ({ isOpen, onClose, newClass, setNewClass, handleAddClass, formateurs = [], classes = [], isEditing = false }) => {
+    const { t, i18n } = useTranslation();
+    const isRtl = i18n.language === 'ar';
 
     const [isLevelDropdownOpen, setIsLevelDropdownOpen] = useState(false);
     const [isFiliereDropdownOpen, setIsFiliereDropdownOpen] = useState(false);
@@ -142,17 +145,21 @@ const GroupModal = ({ isOpen, onClose, newClass, setNewClass, handleAddClass, fo
             <div className="bg-white rounded-3xl w-full max-w-2xl shadow-2xl relative overflow-hidden flex flex-col">
 
                 {/* Header */}
-                <div className="p-8 border-b border-[var(--border)] bg-gradient-to-r from-[var(--secondary)] to-[#003d6b] text-white">
-                    <button onClick={onClose} className="absolute top-6 right-6 p-2 hover:bg-white/10 rounded-full transition-all">
+                <div className={`p-8 border-b border-[var(--border)] bg-gradient-to-r from-[var(--secondary)] to-[#003d6b] text-white ${isRtl ? 'flex-row-reverse text-right' : ''}`}>
+                    <button onClick={onClose} className={`absolute top-6 p-2 hover:bg-white/10 rounded-full transition-all ${isRtl ? 'left-6' : 'right-6'}`}>
                         <X className="w-6 h-6" />
                     </button>
-                    <div className="flex items-center gap-4">
+                    <div className={`flex items-center gap-4 ${isRtl ? 'flex-row-reverse' : ''}`}>
                         <div className="w-12 h-12 bg-white/10 rounded-xl flex items-center justify-center border border-white/20">
                             <BookOpen className="w-6 h-6" />
                         </div>
                         <div>
-                            <h2 className="text-2xl font-black uppercase italic leading-none mb-1">Initialiser un Groupe</h2>
-                            <p className="text-[10px] font-bold text-white/60 tracking-widest uppercase">Configuration de la nouvelle division</p>
+                            <h2 className="text-2xl font-black uppercase italic leading-none mb-1">
+                                {isEditing ? t('groups.update_title') : t('groups.init_title')}
+                            </h2>
+                            <p className="text-[10px] font-bold text-white/60 tracking-widest uppercase">
+                                {t('groups.init_subtitle')}
+                            </p>
                         </div>
                     </div>
                 </div>

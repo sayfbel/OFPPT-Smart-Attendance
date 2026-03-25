@@ -1,7 +1,9 @@
 import React from 'react';
 import { X, Bell, User, Calendar, MessageSquare, CheckCircle, AlertCircle, Clock } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 const NotificationPanel = ({ isOpen, onClose, notifications = [], onMarkRead, onMarkAllRead }) => {
+    const { t } = useTranslation();
     if (!isOpen) return null;
 
     const getIcon = (type) => {
@@ -19,14 +21,14 @@ const NotificationPanel = ({ isOpen, onClose, notifications = [], onMarkRead, on
             {/* Header */}
             <div className="p-6 border-b border-slate-50 bg-slate-50/50 flex items-center justify-between">
                 <div>
-                    <h3 className="text-sm font-black italic text-[var(--secondary)] uppercase tracking-tight">Notifications</h3>
-                    <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Mises à jour et alertes en direct</p>
+                    <h3 className="text-sm font-black italic text-[var(--secondary)] uppercase tracking-tight">{t('notifications.title')}</h3>
+                    <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">{t('notifications.subtitle')}</p>
                 </div>
                 <button
                     onClick={onMarkAllRead}
                     className="text-[9px] font-black text-[var(--primary)] hover:text-[var(--primary-dark)] uppercase tracking-widest transition-colors"
                 >
-                    Tout marquer lu
+                    {t('notifications.mark_all_read')}
                 </button>
             </div>
 
@@ -37,7 +39,7 @@ const NotificationPanel = ({ isOpen, onClose, notifications = [], onMarkRead, on
                         <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mb-4">
                             <Bell className="w-8 h-8 text-slate-200" />
                         </div>
-                        <span className="text-[10px] font-black tracking-widest uppercase text-slate-400">Aucune notification</span>
+                        <span className="text-[10px] font-black tracking-widest uppercase text-slate-400">{t('notifications.no_notifications')}</span>
                     </div>
                 ) : (
                     <div className="space-y-1">
@@ -79,7 +81,7 @@ const NotificationPanel = ({ isOpen, onClose, notifications = [], onMarkRead, on
                     onClick={onClose}
                     className="w-full py-3 text-[9px] font-black text-slate-400 hover:text-[var(--secondary)] uppercase tracking-[0.3em] transition-all text-center"
                 >
-                    FERMER LE PANNEAU
+                    {t('notifications.close')}
                 </button>
             </div>
         </div>

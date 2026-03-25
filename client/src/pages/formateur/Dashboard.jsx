@@ -16,10 +16,12 @@ import {
 } from 'lucide-react';
 import axios from 'axios';
 import { useNotification } from '../../context/NotificationContext';
-import { Html5Qrcode } from 'html5-qrcode';
+import { useTranslation } from 'react-i18next';
 import ClassDossierModal from '../../components/ClassDossierModal';
 
 const FormateurDashboard = () => {
+    const { t, i18n } = useTranslation();
+    const isRtl = i18n.language === 'ar';
     const { user } = useAuth();
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
@@ -29,7 +31,6 @@ const FormateurDashboard = () => {
     const [classes, setClasses] = useState([]);
     const [activeSession, setActiveSession] = useState(null);
     const [students, setStudents] = useState([]);
-    const [salles, setSalles] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
     const [isConfirming, setIsConfirming] = useState(false);
@@ -67,22 +68,17 @@ const FormateurDashboard = () => {
                 setSchedule(fetchedSchedule);
                 setClasses(res.data.classes || []);
 
-                const salRes = await axios.get('/api/admin/salles', config);
-                setSalles(salRes.data.salles || []);
-
                 // Auto-select class from URL if present
                 const selectedClassId = searchParams.get('selectedClass');
                 if (selectedClassId) {
-                    // We need to pass the schedule directly because state update is async
                     const session = fetchedSchedule.find(s => s.class === selectedClassId) || {
                         class: selectedClassId,
-                        subject: 'SÉANCE_EN_COURS',
-                        room: 'SALLE_TP',
+                        subject: 'SESSION',
+                        room: 'ROOM',
                         time: `${new Date().getHours()}:00 - ${new Date().getHours() + 2}:00`
                     };
                     setActiveSession({ ...session, class: selectedClassId });
 
-                    // Fetch students for the class
                     const sRes = await axios.get(`/api/formateur/users/by-class/${selectedClassId}`, config);
                     setStudents((sRes.data.users || []).map(u => ({ ...u, status: 'ABSENT' })));
                 }
@@ -103,18 +99,16 @@ const FormateurDashboard = () => {
             return;
         }
 
-        // Try to find a scheduled session for this class to get more details
         const session = schedule.find(s => s.class === classId) || {
             class: classId,
-            subject: 'SÉANCE_EN_COURS',
-            room: salles.length > 0 ? salles[0].nom : 'SALLE_TP',
-            salleId: salles.length > 0 ? salles[0].id : null,
+            subject: 'SESSION',
+            room: 'ROOM',
             time: `${new Date().getHours()}:00 - ${new Date().getHours() + 2}:00`
         };
 
         setActiveSession({
             ...session,
-            class: classId // ensure class property is correctly set
+            class: classId
         });
         fetchStudents(classId);
     };
@@ -125,9 +119,7 @@ const FormateurDashboard = () => {
             const config = { headers: { Authorization: `Bearer ${token}` } };
             const res = await axios.get(`/api/formateur/users/by-class/${classId}`, config);
             const fetchedUsers = res.data.users || [];
-            // Initialize all as ABSENT by default
             setStudents(fetchedUsers.map(u => ({ ...u, status: 'ABSENT' })));
-
         } catch (error) {
             console.error('Error fetching session students', error);
         }
@@ -158,7 +150,6 @@ const FormateurDashboard = () => {
     }, [activeSession]);
 
     const handleStatusChange = async (studentId, status) => {
-        // Optimistic UI update
         setStudents(prev => prev.map(s => s.id === studentId ? { ...s, status } : s));
 
         try {
@@ -171,9 +162,7 @@ const FormateurDashboard = () => {
             }, config);
         } catch (error) {
             console.error('Manual Override Failed', error);
-            // Optionally revert UI on error? But teacher might be frustrated. 
-            // Better to show error.
-            addNotification('Échec de la mise à jour manuelle.', 'error');
+            addNotification(t('formateur.update_fail'), 'error');
         }
     };
 
@@ -189,28 +178,22 @@ const FormateurDashboard = () => {
                 date: new Date().toISOString().split('T')[0],
                 subject: activeSession.subject,
                 salle: activeSession.room,
-                salleId: meta.salleId || activeSession.salleId,
                 heure: meta.startTime && meta.endTime ? `${meta.startTime} - ${meta.endTime}` : activeSession.time,
-                stagiaires: (meta.students || students).map(s => ({ 
-                    id: s.id, 
-                    status: s.status,
-                    Justifier: s.Justifier 
-                })),
+                stagiaires: students.map(s => ({ id: s.id, status: s.status })),
                 signature: signatureData
             };
 
             await axios.post('/api/formateur/submit-report', reportData, config);
 
-            // Clear active checkins after success
             try {
                 await axios.post('/api/formateur/clear-checkins', { classId: activeSession.class }, config);
             } catch (err) { console.error("Clear Checkins Error:", err); }
 
-            addNotification(`Le rapport du groupe ${activeSession.class} a été archivé.`, 'success');
+            addNotification(t('formateur.report_success', { class: activeSession.class }), 'success');
             setIsConfirming(false);
         } catch (error) {
             console.error('Submission failed', error);
-            addNotification(error.response?.data?.message || 'Erreur lors de la soumission.', 'error');
+            addNotification(error.response?.data?.message || t('formateur.report_error'), 'error');
         } finally {
             setSubmitting(false);
         }
@@ -229,57 +212,59 @@ const FormateurDashboard = () => {
 
 
     if (loading) {
-        return <div className="flex items-center justify-center h-screen bg-[var(--background)] text-[var(--secondary)] font-bold italic tracking-widest uppercase animate-pulse">Initialisation du portail...</div>;
+        return <div className="flex items-center justify-center h-screen bg-[var(--background)] text-[var(--secondary)] font-bold italic tracking-widest uppercase animate-pulse">
+            {t('formateur.initializing')}
+        </div>;
     }
 
     return (
-        <div className="relative">
+        <div className={`relative ${isRtl ? 'text-right' : ''}`}>
             <div className={`space-y-10 fade-up ${isConfirming ? 'blur-sm scale-[0.99] pointer-events-none' : ''} transition-all duration-500`}>
                 {/* Header Section */}
-                <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-8 border-b border-[var(--border)] pb-10">
+                <div className={`flex flex-col lg:flex-row lg:items-end justify-between gap-8 border-b border-[var(--border)] pb-10 ${isRtl ? 'lg:flex-row-reverse' : ''}`}>
                     <div className="space-y-4">
-                        <div className="flex items-center gap-3">
+                        <div className={`flex items-center gap-3 ${isRtl ? 'flex-row-reverse' : ''}`}>
                             <span className="bg-[var(--primary)] text-white text-[9px] font-black px-3 py-1 rounded-full uppercase tracking-wider">
-                                {currentTime.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}
+                                {currentTime.toLocaleDateString(i18n.language === 'ar' ? 'ar-SA' : 'fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}
                             </span>
-                            <div className="flex items-center gap-2 text-[var(--text-muted)] font-bold text-[10px] tracking-widest bg-[var(--surface-hover)] px-3 py-1 rounded-full">
+                            <div className={`flex items-center gap-2 text-[var(--text-muted)] font-bold text-[10px] tracking-widest bg-[var(--surface-hover)] px-3 py-1 rounded-full ${isRtl ? 'flex-row-reverse' : ''}`}>
                                 <Clock className="w-3 h-3 text-[var(--primary)]" />
                                 <span>{currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                             </div>
                         </div>
                         <div className="flex flex-col">
-                            <h1 className="text-6xl font-black tracking-tight text-[var(--secondary)] uppercase italic leading-[1.1]">
-                                {activeSession ? `Séance : ${activeSession.class}` : `Bienvenue, Mr. ${user?.name}`}
+                            <h1 className="text-4xl md:text-5xl lg:text-7xl font-black tracking-tight text-[var(--secondary)] uppercase italic leading-[1.1]">
+                                {activeSession ? t('formateur.session', { class: activeSession.class }) : t('formateur.welcome', { name: user?.name })}
                             </h1>
-                            <div className="flex items-center gap-3 mt-4">
+                            <div className={`flex items-center gap-3 mt-4 ${isRtl ? 'flex-row-reverse' : ''}`}>
                                 <p className="text-[var(--text-muted)] text-[11px] font-bold tracking-widest uppercase bg-white px-3 py-1.5 rounded-lg border border-[var(--border)] shadow-sm">
-                                    {activeSession ? `${activeSession.subject} ᛫ Salle ${activeSession.room}` : 'Veuillez sélectionner un groupe pour commencer la séance.'}
+                                    {activeSession ? `${activeSession.subject} ᛫ ${t('modals.dossier.room_label')} ${activeSession.room}` : t('formateur.select_prompt')}
                                 </p>
                             </div>
                         </div>
                     </div>
 
-                    <div className="flex items-center gap-3">
-                        <div className="relative" ref={selectRef}>
+                    <div className={`flex flex-col sm:flex-row items-center gap-3 ${isRtl ? 'sm:flex-row-reverse' : ''}`}>
+                        <div className="relative w-full sm:w-auto" ref={selectRef}>
                             <button
                                 onClick={() => setIsSelectOpen(!isSelectOpen)}
-                                className={`bg-white border rounded-xl ${isSelectOpen ? 'border-[var(--primary)] ring-4 ring-green-500/10' : 'border-[var(--border)]'} text-[var(--secondary)] px-6 py-4 text-[10px] font-black tracking-widest uppercase transition-all shadow-sm min-w-[280px] flex items-center justify-between group`}
+                                className={`bg-white border rounded-xl ${isSelectOpen ? 'border-[var(--primary)] ring-4 ring-green-500/10' : 'border-[var(--border)]'} text-[var(--secondary)] px-6 py-4 text-[10px] font-black tracking-widest uppercase transition-all shadow-sm w-full sm:min-w-[280px] flex items-center justify-between group ${isRtl ? 'flex-row-reverse' : ''}`}
                             >
-                                <div className="flex items-center gap-3">
+                                <div className={`flex items-center gap-3 ${isRtl ? 'flex-row-reverse' : ''}`}>
                                     <CalendarCheck className={`w-4 h-4 ${activeSession ? 'text-[var(--primary)]' : 'text-[var(--text-muted)]'}`} />
-                                    <span>{activeSession ? `${activeSession.class}` : 'CHOISIR UN GROUPE'}</span>
+                                    <span>{activeSession ? `${activeSession.class}` : t('formateur.select_group')}</span>
                                 </div>
                                 <ChevronDown className={`w-4 h-4 text-[var(--text-muted)] transition-transform duration-300 ${isSelectOpen ? 'rotate-180' : ''}`} />
                             </button>
 
                             {isSelectOpen && (
                                 <div className="absolute top-[calc(100%+8px)] right-0 w-full bg-white border border-[var(--border)] z-50 shadow-xl rounded-xl py-2 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-                                    <div className="max-h-[250px] overflow-y-auto">
+                                    <div className="max-h-[250px] overflow-y-auto ista-scrollbar">
                                         {classes.map(c => (
                                             <div
                                                 key={c.id}
                                                 onClick={() => { selectClass(c.id); setIsSelectOpen(false); }}
-                                                className={`px-6 py-4 text-[10px] font-black tracking-widest uppercase cursor-pointer transition-all hover:bg-[var(--surface-hover)] hover:text-[var(--primary)] ${activeSession?.class === c.id ? 'text-[var(--primary)] bg-green-50' : 'text-[var(--text-muted)]'}`}
+                                                className={`px-6 py-4 text-[10px] font-black tracking-widest uppercase cursor-pointer transition-all hover:bg-[var(--surface-hover)] hover:text-[var(--primary)] ${activeSession?.class === c.id ? 'text-[var(--primary)] bg-green-50' : 'text-[var(--text-muted)]'} ${isRtl ? 'text-right' : ''}`}
                                             >
                                                 <span>{c.id} - {c.title}</span>
                                             </div>
@@ -290,18 +275,18 @@ const FormateurDashboard = () => {
                         </div>
 
                         {activeSession && (
-                            <div className="flex gap-3">
+                            <div className={`flex gap-3 w-full sm:w-auto ${isRtl ? 'flex-row-reverse' : ''}`}>
                                 <button
                                     onClick={() => setIsConfirming(true)}
-                                    className="btn-ista btn-ista-outline px-6 py-4 flex items-center gap-2"
+                                    className="flex-1 sm:flex-none btn-ista btn-ista-outline px-6 py-4 flex items-center justify-center gap-2"
                                 >
                                     <ClipboardCheck className="w-4 h-4" />
-                                    <span className="text-[10px]">Valider la présence</span>
+                                    <span className="text-[10px]">{t('formateur.validate_attendance')}</span>
                                 </button>
                                 <button
-                                    className="btn-ista px-6 py-4"
+                                    className="btn-ista px-6 py-4 flex items-center justify-center"
                                     onClick={() => navigate(`/scanner?classId=${activeSession.class}&mode=scann&subject=${encodeURIComponent(activeSession.subject)}&room=${encodeURIComponent(activeSession.room)}&formateurName=${encodeURIComponent(user?.name)}&time=${activeSession.time}`)}
-                                    title="Lancer le Scanner"
+                                    title={t('formateur.scanner_tooltip')}
                                 >
                                     <Scan className="w-5 h-5" />
                                 </button>
@@ -315,110 +300,112 @@ const FormateurDashboard = () => {
                     <div className="ista-card p-8 bg-white text-center shadow-sm">
                         <Users className="w-6 h-6 text-[var(--secondary)] mx-auto mb-3" />
                         <h2 className="text-4xl font-black text-[var(--secondary)]">{stats.total.toString().padStart(2, '0')}</h2>
-                        <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest mt-1">Stagiaires inscrits</p>
+                        <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest mt-1">{t('formateur.enrolled_students')}</p>
                     </div>
                     <div className="ista-card p-8 bg-white text-center shadow-sm border-b-4 border-b-[var(--primary)]">
                         <Activity className="w-6 h-6 text-[var(--primary)] mx-auto mb-3" />
                         <h2 className="text-4xl font-black text-[var(--primary)]">{stats.present.toString().padStart(2, '0')}</h2>
-                        <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest mt-1">Présents</p>
+                        <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest mt-1">{t('dashboard.present')}</p>
                     </div>
                     <div className="ista-card p-8 bg-white text-center shadow-sm border-b-4 border-b-red-500">
                         <AlertCircle className="w-6 h-6 text-red-500 mx-auto mb-3" />
                         <h2 className="text-4xl font-black text-red-500">{stats.absent.toString().padStart(2, '0')}</h2>
-                        <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest mt-1">Absents</p>
+                        <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest mt-1">{t('dashboard.absent')}</p>
                     </div>
                 </div>
 
                 {/* List Section */}
                 <div className="space-y-6">
-                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-                        <h3 className="text-xs font-black tracking-widest uppercase text-[var(--secondary)] flex items-center gap-3">
+                    <div className={`flex flex-col md:flex-row md:items-center justify-between gap-6 ${isRtl ? 'md:flex-row-reverse' : ''}`}>
+                        <h3 className={`text-xs font-black tracking-widest uppercase text-[var(--secondary)] flex items-center gap-3 ${isRtl ? 'flex-row-reverse' : ''}`}>
                             <div className="w-1.5 h-6 bg-[var(--primary)] rounded-full"></div>
-                            Liste des Stagiaires
+                            {t('formateur.list_title')}
                         </h3>
-                        <div className="flex items-center bg-white border border-[var(--border)] rounded-xl w-full md:w-80 px-4 group focus-within:border-[var(--primary)] focus-within:ring-4 focus-within:ring-green-500/5 transition-all shadow-sm">
+                        <div className={`flex items-center bg-white border border-[var(--border)] rounded-xl w-full md:w-80 px-4 group focus-within:border-[var(--primary)] focus-within:ring-4 focus-within:ring-green-500/5 transition-all shadow-sm ${isRtl ? 'flex-row-reverse' : ''}`}>
                             <Search className="w-4 h-4 text-[var(--text-muted)]" />
                             <input
                                 type="text"
-                                placeholder="Rechercher par nom..."
+                                placeholder={t('formateur.search_placeholder')}
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
-                                className="bg-transparent border-none text-[11px] py-4 px-4 w-full tracking-wider font-bold focus:ring-0 uppercase"
+                                className={`bg-transparent border-none text-[11px] py-4 px-4 w-full tracking-wider font-bold focus:ring-0 uppercase ${isRtl ? 'text-right' : ''}`}
                             />
                         </div>
                     </div>
 
                     <div className="ista-panel overflow-hidden bg-white">
-                        <table className="w-full text-left border-collapse">
-                            <thead>
-                                <tr className="bg-[var(--surface-hover)] text-[var(--secondary)] text-[10px] font-black uppercase tracking-widest">
-                                    <th className="p-6">Stagiaire</th>
-                                    <th className="p-6">Email / Identifiant</th>
-                                    <th className="p-6">Statut</th>
-                                    <th className="p-6 text-right">Actions Manuelles</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-[var(--border)]">
-                                {activeSession ? (
-                                    filteredStudents.length > 0 ? filteredStudents.map((student) => (
-                                        <tr key={student.id} className="hover:bg-slate-50 transition-colors group">
-                                            <td className="p-6">
-                                                <div className="flex items-center gap-4">
-                                                    <div className={`w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-[10px] font-black text-[var(--secondary)] group-hover:bg-[var(--primary)] group-hover:text-white transition-all shadow-sm ${student.status === 'ABSENT' ? 'opacity-50' : ''}`}>
-                                                        {student.name.split(' ').map(n => n[0]).join('')}
-                                                    </div>
-                                                    <div className="flex flex-col">
-                                                        <span className={`text-xs font-bold tracking-tight text-[var(--secondary)] uppercase ${student.status === 'ABSENT' ? 'opacity-40' : ''}`}>{student.name}</span>
-                                                        <span className="text-[9px] text-[var(--text-muted)] font-mono">#{student.id}</span>
-                                                    </div>
-                                                </div>
-                                            </td>
-                                            <td className="p-6 text-[var(--text-muted)] font-bold text-[10px] tracking-wider uppercase truncate max-w-[200px]">
-                                                {student.email}
-                                            </td>
-                                            <td className="p-6">
-                                                <span className={`badge ${student.status === 'PRESENT' ? 'badge-present' : 'badge-absent'}`}>
-                                                    {student.status === 'PRESENT' ? 'PRÉSENT' : 'ABSENT'}
-                                                </span>
-                                            </td>
-                                            <td className="p-6 text-right">
-                                                <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                    <button
-                                                        onClick={() => handleStatusChange(student.id, 'PRESENT')}
-                                                        className={`p-2 rounded-lg border transition-all ${student.status === 'PRESENT' ? 'bg-[var(--primary)] border-[var(--primary)] text-white' : 'border-[var(--border)] text-[var(--text-muted)] hover:border-[var(--primary)] hover:text-[var(--primary)]'}`}
-                                                    >
-                                                        <CheckCircle2 className="w-4 h-4" />
-                                                    </button>
-                                                    <button
-                                                        onClick={() => handleStatusChange(student.id, 'ABSENT')}
-                                                        className={`p-2 rounded-lg border transition-all ${student.status === 'ABSENT' ? 'bg-red-500 border-red-500 text-white' : 'border-[var(--border)] text-[var(--text-muted)] hover:border-red-500 hover:text-red-500'}`}
-                                                    >
-                                                        <XCircle className="w-4 h-4" />
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    )) : (
-                                        <tr>
-                                            <td colSpan="4" className="p-20 text-center opacity-30 italic text-xs tracking-widest font-black uppercase text-[var(--text-muted)]">
-                                                Aucun stagiaire trouvé dans ce groupe.
-                                            </td>
-                                        </tr>
-                                    )
-                                ) : (
-                                    <tr>
-                                        <td colSpan="4" className="p-32 text-center">
-                                            <div className="flex flex-col items-center gap-4">
-                                                <Activity className="w-12 h-12 text-[var(--border)] animate-bounce" />
-                                                <p className="text-[11px] font-black tracking-widest text-[var(--text-muted)] uppercase">
-                                                    En attente de démarrage de séance
-                                                </p>
-                                            </div>
-                                        </td>
+                        <div className="overflow-x-auto ista-scrollbar">
+                            <table className={`w-full text-left border-collapse min-w-[700px] ${isRtl ? 'text-right' : ''}`}>
+                                <thead>
+                                    <tr className="bg-[var(--surface-hover)] text-[var(--secondary)] text-[10px] font-black uppercase tracking-widest">
+                                        <th className="p-6">{t('accounts.student_name')}</th>
+                                        <th className="p-6">Email / ID</th>
+                                        <th className="p-6">{t('divisions.state')}</th>
+                                        <th className={`p-6 ${isRtl ? 'text-left' : 'text-right'}`}>{t('formateur.manual_actions')}</th>
                                     </tr>
-                                )}
-                            </tbody>
-                        </table>
+                                </thead>
+                                <tbody className="divide-y divide-[var(--border)]">
+                                    {activeSession ? (
+                                        filteredStudents.length > 0 ? filteredStudents.map((student) => (
+                                            <tr key={student.id} className="hover:bg-slate-50 transition-colors group">
+                                                <td className="p-6">
+                                                    <div className={`flex items-center gap-4 ${isRtl ? 'flex-row-reverse' : ''}`}>
+                                                        <div className={`w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-[10px] font-black text-[var(--secondary)] group-hover:bg-[var(--primary)] group-hover:text-white transition-all shadow-sm ${student.status === 'ABSENT' ? 'opacity-50' : ''}`}>
+                                                            {student.name.split(' ').map(n => n[0]).join('')}
+                                                        </div>
+                                                        <div className={`flex flex-col ${isRtl ? 'text-right' : ''}`}>
+                                                            <span className={`text-xs font-bold tracking-tight text-[var(--secondary)] uppercase ${student.status === 'ABSENT' ? 'opacity-40' : ''}`}>{student.name}</span>
+                                                            <span className="text-[9px] text-[var(--text-muted)] font-mono">#{student.id}</span>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td className={`p-6 text-[var(--text-muted)] font-bold text-[10px] tracking-wider uppercase truncate max-w-[200px] ${isRtl ? 'text-right font-mono' : ''}`}>
+                                                    {student.email}
+                                                </td>
+                                                <td className="p-6">
+                                                    <span className={`badge ${student.status === 'PRESENT' ? 'badge-present' : 'badge-absent'}`}>
+                                                        {student.status === 'PRESENT' ? t('dashboard.present') : t('dashboard.absent')}
+                                                    </span>
+                                                </td>
+                                                <td className={`p-6 ${isRtl ? 'text-left' : 'text-right'}`}>
+                                                    <div className={`flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity ${isRtl ? 'justify-start' : 'justify-end'}`}>
+                                                        <button
+                                                            onClick={() => handleStatusChange(student.id, 'PRESENT')}
+                                                            className={`p-2 rounded-lg border transition-all ${student.status === 'PRESENT' ? 'bg-[var(--primary)] border-[var(--primary)] text-white' : 'border-[var(--border)] text-[var(--text-muted)] hover:border-[var(--primary)] hover:text-[var(--primary)]'}`}
+                                                        >
+                                                            <CheckCircle2 className="w-4 h-4" />
+                                                        </button>
+                                                        <button
+                                                            onClick={() => handleStatusChange(student.id, 'ABSENT')}
+                                                            className={`p-2 rounded-lg border transition-all ${student.status === 'ABSENT' ? 'bg-red-500 border-red-500 text-white' : 'border-[var(--border)] text-[var(--text-muted)] hover:border-red-500 hover:text-red-500'}`}
+                                                        >
+                                                            <XCircle className="w-4 h-4" />
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        )) : (
+                                            <tr>
+                                                <td colSpan="4" className="p-20 text-center opacity-30 italic text-xs tracking-widest font-black uppercase text-[var(--text-muted)]">
+                                                    {t('formateur.no_students')}
+                                                </td>
+                                            </tr>
+                                        )
+                                    ) : (
+                                        <tr>
+                                            <td colSpan="4" className="p-32 text-center">
+                                                <div className="flex flex-col items-center gap-4">
+                                                    <Activity className="w-12 h-12 text-[var(--border)] animate-bounce" />
+                                                    <p className="text-[11px] font-black tracking-widest text-[var(--text-muted)] uppercase">
+                                                        {t('formateur.waiting_session')}
+                                                    </p>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -432,8 +419,12 @@ const FormateurDashboard = () => {
                 stats={stats}
                 onConfirm={handleSubmitReport}
                 submitting={submitting}
-                salles={salles}
             />
+            <style>{`
+                .ista-scrollbar::-webkit-scrollbar { width: 4px; height: 4px; }
+                .ista-scrollbar::-webkit-scrollbar-track { background: transparent; }
+                .ista-scrollbar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
+            `}</style>
         </div>
     );
 };

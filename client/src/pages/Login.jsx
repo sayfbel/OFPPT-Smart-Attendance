@@ -3,8 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { LogIn, Loader2, ShieldCheck } from 'lucide-react';
 import ofpptLogo from '../assets/OFPPT.png';
+import { useTranslation } from 'react-i18next';
 
 const Login = () => {
+    const { t } = useTranslation();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
@@ -20,7 +22,7 @@ const Login = () => {
             await login(email, password);
             navigate('/');
         } catch (err) {
-            setError(err.response?.data?.message || 'Identifiants invalides');
+            setError(err.response?.data?.message || t('login.invalid_credentials'));
         } finally {
             setLoading(false);
         }
@@ -43,15 +45,15 @@ const Login = () => {
                         className="h-24 mx-auto drop-shadow-sm"
                     />
                     <div className="space-y-1">
-                        <h1 className="text-2xl font-black tracking-tight text-[var(--secondary)]">PORTAIL ISTA</h1>
-                        <p className="text-[10px] uppercase tracking-[0.3em] text-[var(--primary)] font-bold">Système de Gestion des Présences</p>
+                        <h1 className="text-2xl font-black tracking-tight text-[var(--secondary)]">{t('login.portal_title')}</h1>
+                        <p className="text-[10px] uppercase tracking-[0.3em] text-[var(--primary)] font-bold">{t('login.attendance_system')}</p>
                     </div>
                 </div>
 
                 <div className="ista-panel p-8 space-y-8 bg-white/80 backdrop-blur-sm shadow-xl border-white/50">
                     <form onSubmit={handleSubmit} className="space-y-6">
                         <div className="space-y-2">
-                            <label className="text-[10px] uppercase tracking-widest text-[var(--text-muted)] font-bold">Adresse Email</label>
+                            <label className="text-[10px] uppercase tracking-widest text-[var(--text-muted)] font-bold">{t('login.email_address')}</label>
                             <input
                                 type="email"
                                 value={email}
@@ -63,7 +65,7 @@ const Login = () => {
                         </div>
 
                         <div className="space-y-2">
-                            <label className="text-[10px] uppercase tracking-widest text-[var(--text-muted)] font-bold">Mot de passe</label>
+                            <label className="text-[10px] uppercase tracking-widest text-[var(--text-muted)] font-bold">{t('login.password')}</label>
                             <input
                                 type="password"
                                 value={password}
@@ -89,7 +91,7 @@ const Login = () => {
                                 <Loader2 className="w-5 h-5 animate-spin" />
                             ) : (
                                 <div className="flex items-center gap-3">
-                                    <span>Se connecter</span>
+                                    <span>{t('login.login_button')}</span>
                                     <LogIn className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                                 </div>
                             )}
@@ -100,7 +102,7 @@ const Login = () => {
                 <div className="pt-8 text-center">
                     <div className="flex items-center justify-center gap-2 mb-4">
                         <ShieldCheck className="w-3 h-3 text-[var(--primary)]" />
-                        <p className="text-[9px] uppercase tracking-widest text-[var(--text-muted)] font-medium">Connexion sécurisée ISTA</p>
+                        <p className="text-[9px] uppercase tracking-widest text-[var(--text-muted)] font-medium">{t('login.secure_connection')}</p>
                     </div>
                 </div>
             </div>

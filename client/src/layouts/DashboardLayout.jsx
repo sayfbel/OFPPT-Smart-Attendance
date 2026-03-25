@@ -8,27 +8,34 @@ import {
     Calendar,
     LogOut,
     Bell,
-    Settings,
     Sun,
     Moon,
     FileText,
-    HardDrive,
     ChevronRight,
+    ChevronLeft,
     Menu,
-    X
+    X,
+    Languages,
+    Key,
+    Layers,
+    UserCheck,
+    Globe,
+    Settings
 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import axios from 'axios';
 import NotificationPanel from '../components/NotificationPanel';
 import ofpptLogo from '../assets/OFPPT.png';
 
 const DashboardLayout = ({ children }) => {
     const { user, logout } = useAuth();
+    const { t, i18n } = useTranslation();
+    const isRtl = i18n.language === 'ar';
     const navigate = useNavigate();
     const location = useLocation();
     const [isDark, setIsDark] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [isNotifOpen, setIsNotifOpen] = useState(false);
-
     const [notifications, setNotifications] = useState([]);
 
     const fetchNotifications = async () => {
@@ -39,7 +46,6 @@ const DashboardLayout = ({ children }) => {
                 headers: { Authorization: `Bearer ${token}` }
             });
 
-            // Format time for the UI
             const formatted = res.data.notifications.map(n => {
                 const date = new Date(n.created_at);
                 const now = new Date();
@@ -96,7 +102,6 @@ const DashboardLayout = ({ children }) => {
 
     useEffect(() => {
         fetchNotifications();
-        // Poll every 5 minutes
         const interval = setInterval(fetchNotifications, 300000);
         return () => clearInterval(interval);
     }, [location.pathname]);
@@ -109,11 +114,19 @@ const DashboardLayout = ({ children }) => {
         }
     }, [isDark]);
 
-    // Close mobile menu when route changes
     useEffect(() => {
         setIsMobileMenuOpen(false);
         setIsNotifOpen(false);
     }, [location.pathname]);
+
+    useEffect(() => {
+        document.dir = isRtl ? 'rtl' : 'ltr';
+    }, [isRtl]);
+
+    const toggleLanguage = () => {
+        const nextLng = i18n.language === 'fr' ? 'ar' : 'fr';
+        i18n.changeLanguage(nextLng);
+    };
 
     const handleLogout = () => {
         logout();
@@ -128,17 +141,17 @@ const DashboardLayout = ({ children }) => {
         switch (user?.role) {
             case 'admin':
                 return [
-                    { icon: LayoutDashboard, label: 'Tableau de bord', path: '/admin' },
-                    { icon: Users, label: 'Utilisateurs', path: '/admin/users' },
-                    { icon: BookOpen, label: 'Groupes', path: '/admin/classes' },
-                    { icon: Calendar, label: 'Emploi du temps', path: '/admin/timetable' },
-                    { icon: FileText, label: 'Rapports', path: '/admin/reports' },
+                    { icon: LayoutDashboard, label: t('nav.dashboard'), path: '/admin' },
+                    { icon: Key, label: t('nav.members'), path: '/admin/users' },
+                    { icon: Layers, label: t('nav.groups'), path: '/admin/classes' },
+                    { icon: Calendar, label: t('nav.timetable'), path: '/admin/timetable' },
+                    { icon: FileText, label: t('nav.reports'), path: '/admin/reports' },
                 ];
             case 'formateur':
                 return [
-                    { icon: LayoutDashboard, label: 'Tableau de bord', path: '/formateur' },
-                    { icon: BookOpen, label: 'Mes Groupes', path: '/formateur/classes' },
-                    { icon: Calendar, label: 'Emploi du temps', path: '/formateur/timetable' },
+                    { icon: LayoutDashboard, label: t('nav.dashboard'), path: '/formateur' },
+                    { icon: UserCheck, label: t('nav.my_groups'), path: '/formateur/classes' },
+                    { icon: Calendar, label: t('nav.timetable'), path: '/formateur/timetable' },
                 ];
             default:
                 return [];
@@ -148,8 +161,7 @@ const DashboardLayout = ({ children }) => {
     const links = getSidebarLinks();
 
     return (
-        <div className="flex bg-[var(--background)] min-h-screen text-[var(--text)] transition-all duration-300">
-            {/* Sidebar Overlay (Mobile) */}
+        <div className={`flex bg-[var(--background)] min-h-screen text-[var(--text)] transition-all duration-300 ${isRtl ? 'font-arabic' : ''}`} dir={isRtl ? 'rtl' : 'ltr'}>
             {isMobileMenuOpen && (
                 <div
                     className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 lg:hidden animate-in fade-in duration-300"
@@ -157,15 +169,15 @@ const DashboardLayout = ({ children }) => {
                 />
             )}
 
-            {/* Sidebar Container */}
             <aside className={`
-                fixed top-0 left-0 h-screen transition-all duration-300 z-50 bg-white dark:bg-[var(--surface)] border-r border-[var(--border)]
-                flex flex-col
-                ${isMobileMenuOpen ? 'w-64 translate-x-0 shadow-2xl' : 'w-0 -translate-x-full lg:translate-x-0 lg:w-20 xl:w-64'}
-                overflow-hidden
-            `}>
+                    fixed top-0 h-screen transition-all duration-300 z-50 bg-white dark:bg-[var(--surface)] border-[var(--border)]
+                    flex flex-col
+                    ${isRtl ? 'right-0 border-l' : 'left-0 border-r'}
+                    ${isMobileMenuOpen ? 'w-64 translate-x-0 shadow-2xl' : `w-0 ${isRtl ? 'translate-x-full' : '-translate-x-full'} lg:translate-x-0 lg:w-20 xl:w-64`}
+                    overflow-hidden
+                `}>
                 <div className="p-4 xl:p-8 flex flex-col items-center">
-                    <div className="flex items-center justify-between w-full lg:justify-center mb-8">
+                    <div className={`flex items-center justify-between w-full lg:justify-center mb-8 ${isRtl ? 'flex-row-reverse text-right' : ''}`}>
                         <img src={ofpptLogo} alt="OFPPT" className="h-10 xl:h-16" />
                         <button
                             onClick={() => setIsMobileMenuOpen(false)}
@@ -176,8 +188,8 @@ const DashboardLayout = ({ children }) => {
                     </div>
 
                     <div className="text-center hidden xl:block animate-in fade-in zoom-in duration-500">
-                        <h2 className="text-xl font-bold tracking-tight text-[var(--secondary)]">ISTA_PORTAL</h2>
-                        <p className="text-[9px] text-[var(--primary)] uppercase tracking-widest mt-1 font-black">Digital Campus</p>
+                        <h2 className="text-xl font-bold tracking-tight text-[var(--secondary)]">{t('nav.portal')}</h2>
+                        <p className="text-[9px] text-[var(--primary)] uppercase tracking-widest mt-1 font-black">{t('nav.digital_campus')}</p>
                     </div>
                 </div>
 
@@ -189,15 +201,15 @@ const DashboardLayout = ({ children }) => {
                                 <Link
                                     key={link.path}
                                     to={link.path}
-                                    className={`flex items-center gap-3 px-4 py-3.5 rounded-2xl transition-all group ${isActive
+                                    className={`flex items-center gap-3 px-4 py-3.5 rounded-2xl transition-all group ${isRtl ? 'flex-row-reverse' : ''} ${isActive
                                         ? 'bg-[var(--primary)] text-white shadow-lg shadow-green-900/10'
                                         : 'text-[var(--text-muted)] hover:bg-[var(--surface-hover)] hover:text-[var(--primary)]'
                                         }`}
                                     title={link.label}
                                 >
                                     <link.icon className={`w-5 h-5 flex-shrink-0 ${isActive ? 'text-white' : 'group-hover:text-[var(--primary)]'}`} />
-                                    <span className={`text-[11px] font-black uppercase tracking-widest flex-1 truncate ${isMobileMenuOpen ? 'block' : 'hidden xl:block'}`}>{link.label}</span>
-                                    {isActive && <ChevronRight className={`w-3 h-3 text-white/50 ${isMobileMenuOpen ? 'block' : 'hidden xl:block'}`} />}
+                                    <span className={`text-[11px] font-black uppercase tracking-widest flex-1 truncate ${isRtl ? 'text-right' : ''} ${isMobileMenuOpen ? 'block' : 'hidden xl:block'}`}>{link.label}</span>
+                                    {isActive && (isRtl ? <ChevronLeft className={`w-3 h-3 text-white/50 ${isMobileMenuOpen ? 'block' : 'hidden xl:block'}`} /> : <ChevronRight className={`w-3 h-3 text-white/50 ${isMobileMenuOpen ? 'block' : 'hidden xl:block'}`} />)}
                                 </Link>
                             );
                         })}
@@ -205,20 +217,18 @@ const DashboardLayout = ({ children }) => {
 
                     <button
                         onClick={handleLogout}
-                        className="w-full flex items-center gap-3 px-4 py-3.5 text-[var(--text-muted)] hover:bg-red-50 hover:text-red-500 rounded-2xl transition-all mt-auto mb-4"
-                        title="Déconnexion"
+                        className={`w-full flex items-center gap-3 px-4 py-3.5 text-[var(--text-muted)] hover:bg-red-50 hover:text-red-500 rounded-2xl transition-all mt-auto mb-4 ${isRtl ? 'flex-row-reverse' : ''}`}
+                        title={t('nav.logout')}
                     >
-                        <LogOut className="w-5 h-5 flex-shrink-0" />
-                        <span className={`text-[11px] font-black uppercase tracking-widest ${isMobileMenuOpen ? 'block' : 'hidden xl:block'}`}>Déconnexion</span>
+                        <LogOut className={`w-5 h-5 flex-shrink-0 ${isRtl ? 'rotate-180' : ''}`} />
+                        <span className={`text-[11px] font-black uppercase tracking-widest flex-1 truncate ${isRtl ? 'text-right' : ''} ${isMobileMenuOpen ? 'block' : 'hidden xl:block'}`}>{t('nav.logout')}</span>
                     </button>
                 </nav>
             </aside>
 
-            {/* Main Content */}
-            <main className="flex-1 min-h-screen relative min-w-0 transition-all duration-300 lg:ml-20 xl:ml-64">
-                {/* Header */}
-                <header className="h-20 flex items-center justify-between px-4 lg:px-10 bg-white/80 dark:bg-[var(--surface)]/80 backdrop-blur-md sticky top-0 z-40 border-b border-[var(--border)] transition-all duration-300">
-                    <div className="flex items-center gap-3">
+            <main className={`flex-1 min-h-screen relative min-w-0 transition-all duration-300 ${isRtl ? 'lg:mr-20 xl:mr-64' : 'lg:ml-20 xl:ml-64'}`}>
+                <header className={`h-20 flex items-center justify-between px-4 lg:px-10 bg-white/80 dark:bg-[var(--surface)]/80 backdrop-blur-md sticky top-0 z-40 border-b border-[var(--border)] transition-all duration-300 ${isRtl ? 'flex-row-reverse' : ''}`}>
+                    <div className={`flex items-center gap-3 ${isRtl ? 'flex-row-reverse' : ''}`}>
                         <button
                             onClick={() => setIsMobileMenuOpen(true)}
                             className="p-2.5 hover:bg-[var(--surface-hover)] rounded-xl lg:hidden text-[var(--secondary)]"
@@ -226,22 +236,22 @@ const DashboardLayout = ({ children }) => {
                             <Menu className="w-6 h-6" />
                         </button>
 
-                        <div className="flex items-center gap-3">
+                        <div className={`flex items-center gap-3 ${isRtl ? 'flex-row-reverse text-right' : ''}`}>
                             <div className="w-8 h-8 lg:w-10 lg:h-10 bg-gradient-to-br from-[var(--primary)] to-[var(--primary-dark)] rounded-xl flex items-center justify-center text-white font-bold text-xs lg:text-sm shadow-md">
                                 {user?.name?.charAt(0)}
                             </div>
                             <div className="hidden sm:block">
                                 <h3 className="text-[10px] lg:text-[11px] font-black tracking-widest text-[var(--secondary)] uppercase leading-none mb-1">{user?.name}</h3>
-                                <p className="text-[8px] lg:text-[9px] text-[var(--primary)] uppercase tracking-[0.2em] font-black opacity-70">{user?.role === 'admin' ? 'ADMIN ACCÈS' : 'FORMATEUR ACCÈS'}</p>
+                                <p className="text-[8px] lg:text-[9px] text-[var(--primary)] uppercase tracking-[0.2em] font-black opacity-70">{user?.role === 'admin' ? t('header.admin_access') : t('header.formateur_access')}</p>
                             </div>
                         </div>
                     </div>
 
-                    <div className="flex items-center gap-2 lg:gap-3 relative">
+                    <div className={`flex items-center gap-2 lg:gap-3 relative ${isRtl ? 'flex-row-reverse' : ''}`}>
                         <button
                             onClick={toggleTheme}
                             className="p-2 lg:p-2.5 rounded-xl bg-[var(--surface-hover)] text-[var(--text-muted)] hover:text-[var(--primary)] transition-all focus:outline-none"
-                            title="Changer le thème"
+                            title={t('header.theme_toggle')}
                         >
                             {isDark ? <Sun className="w-4 h-4 lg:w-5 lg:h-5" /> : <Moon className="w-4 h-4 lg:w-5 lg:h-5" />}
                         </button>
@@ -269,8 +279,13 @@ const DashboardLayout = ({ children }) => {
                             />
                         </div>
 
-                        <button className="p-2 lg:p-2.5 rounded-xl bg-[var(--surface-hover)] text-[var(--text-muted)] hover:text-[var(--primary)] transition-all">
+                        <button
+                            onClick={toggleLanguage}
+                            className="p-2 lg:p-2.5 rounded-xl bg-[var(--surface-hover)] text-[var(--text-muted)] hover:text-[var(--primary)] transition-all flex items-center gap-2"
+                            title={i18n.language === 'fr' ? 'العربية' : 'Français'}
+                        >
                             <Settings className="w-4 h-4 lg:w-5 lg:h-5" />
+                            <span className="text-[10px] font-black uppercase tracking-widest">{i18n.language === 'fr' ? 'AR' : 'FR'}</span>
                         </button>
                     </div>
                 </header>

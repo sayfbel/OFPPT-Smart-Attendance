@@ -16,20 +16,29 @@ exports.startExternalScanner = async (req, res) => {
 
         const scriptPath = path.join(__dirname, '../scaning_qr.py');
         const camIdx = process.env.QR_CAMERA_INDEX || '1';
+        // Spawn Python process with both cluster id and camera index
         const scannerProc = spawn('py', [scriptPath, classId, camIdx]);
 
         activeScanners.set(classId, scannerProc);
 
         scannerProc.stdout.on('data', async (data) => {
             const rawOutput = data.toString();
+            console.log(`[PYTHON_SCANNER_${classId}]: ${rawOutput}`);
+
+            // Neural Link: Parse scan notification marker
+            // Match format: NAME: {name} : present
             const match = rawOutput.match(/NAME:\s+(.*?)\s+:\s+present/);
             if (match) {
                 const studentName = match[1].trim();
+                console.log(`[BRIDGE_LOCK]: Synchronizing ${studentName} for Cluster ${classId}...`);
+
                 try {
-                    const [students] = await pool.query('SELECT NumInscription as id FROM stagiaires WHERE name = ? AND class_id = ?', [studentName, classId]);
+                    // Look up student by name in the specified class
+                    const [students] = await pool.query('SELECT id FROM stagiaires WHERE name = ? AND class_id = ?', [studentName, classId]);
                     if (students.length > 0) {
                         const studentId = students[0].id;
                         await pool.query('INSERT IGNORE INTO active_checkins (student_id, class_id) VALUES (?, ?)', [studentId, classId]);
+                        console.log(`[SYNC_COMPLETE]: ${studentName} registered.`);
                     }
                 } catch (dbErr) {
                     console.error("[SCAN_SYNC_FAILURE]:", dbErr);
@@ -37,71 +46,104 @@ exports.startExternalScanner = async (req, res) => {
             }
         });
 
-        scannerProc.stderr.on('data', (data) => console.error(`[PYTHON_SCANNER_ERROR_${classId}]: ${data}`));
-        scannerProc.on('close', (code) => activeScanners.delete(classId));
+        scannerProc.stderr.on('data', (data) => {
+            console.error(`[PYTHON_SCANNER_ERROR_${classId}]: ${data}`);
+        });
 
-        res.json({ message: `Scanner initialized for Cluster ${classId}.` });
+        scannerProc.on('close', (code) => {
+            console.log(`[SCANNER_DISCONNECTED]: Process for ${classId} exited with code ${code}.`);
+            activeScanners.delete(classId);
+        });
+
+        res.json({ message: `Neural Bridge established for Cluster ${classId}. Scanner initialized.` });
+
     } catch (err) {
         console.error("EXTERNAL_SCANNER_START_ERROR:", err);
-        res.status(500).json({ message: 'Internal Server Error' });
+        res.status(500).json({ message: 'Internal Server Error: Bridge initialization failed.' });
     }
 };
 
 exports.stopExternalScanner = async (req, res) => {
     try {
         const { classId } = req.body;
+        console.log(`[BRIDGE_CONTROL]: Shutdown request for Cluster ${classId}`);
+
         const proc = activeScanners.get(classId);
+
         if (proc) {
+            console.log(`[BRIDGE_CONTROL]: Terminating process tree for Cluster ${classId}...`);
+
             if (process.platform === 'win32') {
-                require('child_process').exec(`taskkill /pid ${proc.pid} /f /t`);
+                // Forcefully kill the process tree on Windows to ensure CV2 window closes
+                const { exec } = require('child_process');
+                exec(`taskkill /pid ${proc.pid} /f /t`, (err) => {
+                    if (err) console.error(`[BRIDGE_CONTROL]: Taskkill failed for ${proc.pid}:`, err);
+                });
             } else {
                 proc.kill('SIGTERM');
             }
+
             activeScanners.delete(classId);
-            return res.json({ message: `Scanner for Cluster ${classId} stopped.` });
+            console.log(`[BRIDGE_CONTROL]: Synchronized shutdown complete for Cluster ${classId}`);
+            return res.json({ message: `Neural Bridge for Cluster ${classId} disconnected.` });
         }
-        res.json({ message: `Scanner for Cluster ${classId} is already inactive.` });
+
+        // Return 200 even if not found to avoid noisy AxiosErrors in frontend cleanup
+        console.log(`[BRIDGE_CONTROL]: No active process found for ${classId}. Status: Idle.`);
+        res.json({ message: `Neural Bridge for Cluster ${classId} is already inactive.` });
     } catch (err) {
         console.error("EXTERNAL_SCANNER_STOP_ERROR:", err);
-        res.status(500).json({ message: 'Internal Server Error' });
+        res.status(500).json({ message: 'Internal Server Error: Bridge disconnect failed.' });
     }
 };
 
 exports.submitReport = async (req, res) => {
     try {
-        const { report_code, class_id, date, subject, salle, salleId, heure, stagiaires, signature } = req.body;
+        const { report_code, class_id, date, subject, salle, heure, stagiaires, signature } = req.body;
         const formateur_id = req.user.id;
 
+        if (!report_code || !class_id || !date || !subject) {
+            return res.status(400).json({ message: 'Required fields missing: report_code, class_id, date, subject' });
+        }
+
+        // 1. Create the report record
         const [reportRes] = await pool.query(
-            'INSERT INTO reports (report_code, formateur_id, class_id, date, subject, salle, salleId, heure, signature) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
-            [report_code, formateur_id, class_id, date, subject, salle, salleId || null, heure, signature]
+            'INSERT INTO reports (report_code, formateur_id, class_id, date, subject, salle, heure, signature) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+            [report_code, formateur_id, class_id, date, subject, salle, heure, signature]
         );
 
         const reportId = reportRes.insertId;
 
+        // 2. Save individual attendance records for this report
         if (stagiaires && stagiaires.length > 0) {
-            const values = stagiaires.map(s => [reportId, s.id, s.status, s.Justifier || false]);
-            await pool.query('INSERT INTO report_attendance (report_id, student_id, status, Justifier) VALUES ?', [values]);
-
-            // Update Active Status: True if PRESENT OR (ABSENT AND JUSTIFIED)
-            for (const s of stagiaires) {
-                const isActive = (s.status === 'PRESENT' || (s.status === 'ABSENT' && s.Justifier)) ? 1 : 0;
-                await pool.query('UPDATE stagiaires SET Active = ? WHERE NumInscription = ?', [isActive, s.id]);
-            }
+            const values = stagiaires.map(s => [reportId, s.id, s.status]);
+            await pool.query(
+                'INSERT INTO report_attendance (report_id, student_id, status) VALUES ?',
+                [values]
+            );
         }
 
-        // Notify Admins
-        const [admins] = await pool.query('SELECT id FROM admins');
+        // 3. Create notification for Admin(s)
+        const [admins] = await pool.query('SELECT id FROM users WHERE role = "admin"');
         for (const admin of admins) {
             await pool.query(
-                'INSERT INTO notifications (admin_id, type, category, title, message) VALUES (?, ?, ?, ?, ?)',
-                [admin.id, 'message', 'RAPPORT', `Nouveau rapport : ${class_id}`, `Le formateur ${req.user.name} a soumis le rapport.`]
+                'INSERT INTO notifications (user_id, type, category, title, message) VALUES (?, ?, ?, ?, ?)',
+                [
+                    admin.id,
+                    'message',
+                    'RAPPORT',
+                    `Nouveau rapport : ${class_id}`,
+                    `Le formateur ${req.user.name} a soumis le rapport de présence pour le module ${subject}.`
+                ]
             );
         }
 
         res.status(201).json({ message: 'Report submitted successfully', reportId });
     } catch (err) {
         console.error("SUBMIT REPORT ERROR:", err);
+        if (err.code === 'ER_DUP_ENTRY') {
+            return res.status(400).json({ message: 'Report code already exists' });
+        }
         res.status(500).json({ message: 'Server error submitting report' });
     }
 };
@@ -110,18 +152,49 @@ exports.getSchedule = async (req, res) => {
     try {
         const formateur_id = req.user.id;
 
+        // Get classes where this formateur is a supervisor
         const [classes] = await pool.query(`
             SELECT c.* FROM classes c
             JOIN class_supervisors cs ON c.id = cs.class_id
             WHERE cs.formateur_id = ?
         `, [formateur_id]);
 
+        // Get schedule for this formateur
         const [schedule] = await pool.query(`
-            SELECT t.id, t.day, t.time, t.class_id as class, f.name as formateur, t.subject, t.room 
+            SELECT t.id, t.day, t.time, t.class_id as class, u.name as formateur, t.subject, t.room 
             FROM timetable t 
-            LEFT JOIN formateurs f ON t.formateur_id = f.id
+            LEFT JOIN users u ON t.formateur_id = u.id
             WHERE t.formateur_id = ?
         `, [formateur_id]);
+
+        // Today's Reminder Logic
+        const days = ['DIMANCHE', 'LUNDI', 'MARDI', 'MERCREDI', 'JEUDI', 'VENDREDI', 'SAMEDI'];
+        const todayName = days[new Date().getDay()];
+        const todaySessions = schedule.filter(s => s.day.toUpperCase() === todayName);
+
+        if (todaySessions.length > 0) {
+            const todayStr = new Date().toISOString().split('T')[0];
+            for (const session of todaySessions) {
+                // Check if we already notified for this session today
+                const [existingNotif] = await pool.query(
+                    'SELECT id FROM notifications WHERE user_id = ? AND category = "RAPPEL" AND title LIKE ? AND DATE(created_at) = ?',
+                    [formateur_id, `%${session.class}%`, todayStr]
+                );
+
+                if (existingNotif.length === 0) {
+                    await pool.query(
+                        'INSERT INTO notifications (user_id, type, category, title, message) VALUES (?, ?, ?, ?, ?)',
+                        [
+                            formateur_id,
+                            'request',
+                            'RAPPEL',
+                            `Séance aujourd'hui : ${session.class}`,
+                            `Rappel : Vous avez une séance de ${session.subject} avec le groupe ${session.class} à ${session.time} (Salle ${session.room}).`
+                        ]
+                    );
+                }
+            }
+        }
 
         res.json({ classes, schedule });
     } catch (err) {
@@ -135,12 +208,23 @@ exports.getUsersByClass = async (req, res) => {
         const { classId } = req.params;
         const formateur_id = req.user.id;
 
+        // Verify access: Admin can access all, Formateurs must be supervisors
         if (req.user.role !== 'admin') {
-            const [supervisors] = await pool.query('SELECT * FROM class_supervisors WHERE class_id = ? AND formateur_id = ?', [classId, formateur_id]);
-            if (supervisors.length === 0) return res.status(403).json({ message: 'Access Denied' });
+            const [supervisors] = await pool.query(
+                'SELECT * FROM class_supervisors WHERE class_id = ? AND formateur_id = ?',
+                [classId, formateur_id]
+            );
+
+            if (supervisors.length === 0) {
+                return res.status(403).json({ message: 'Access Denied: You are not a supervisor for this squadron.' });
+            }
         }
 
-        const [users] = await pool.query('SELECT NumInscription as id, name, class_id FROM stagiaires WHERE class_id = ? AND Active = TRUE', [classId]);
+        const [users] = await pool.query(
+            'SELECT id, name, class_id FROM stagiaires WHERE class_id = ?',
+            [classId]
+        );
+
         res.json({ users: users.map(u => ({ ...u, status: 'ACTIVE', lastLogin: 'Connected' })) });
     } catch (err) {
         console.error("GET FORMATEUR USERS ERROR:", err);
@@ -148,39 +232,70 @@ exports.getUsersByClass = async (req, res) => {
     }
 };
 
+// Neural Portal: Process Check-in (QR or Face)
 exports.processCheckin = async (req, res) => {
     try {
         const { studentId, classId } = req.body;
+
+        // 1. Verify existence
         const [students] = await pool.query('SELECT id, name FROM stagiaires WHERE id = ? AND class_id = ?', [studentId, classId]);
-        if (students.length === 0) return res.status(404).json({ message: 'Not found' });
+        const student = students[0];
+        if (!student) {
+            return res.status(404).json({ message: 'Entity not found in this cluster.' });
+        }
+
+        // 2. Register check-in
         await pool.query('INSERT IGNORE INTO active_checkins (student_id, class_id) VALUES (?, ?)', [studentId, classId]);
-        res.json({ message: `Synchronized ${students[0].name}`, name: students[0].name });
+
+        res.json({ message: `Signal Locked: ${student.name} synchronized.`, name: student.name });
     } catch (err) {
         console.error("CHECKIN ERROR:", err);
-        res.status(500).json({ message: 'Error' });
+        res.status(500).json({ message: 'Neural link interrupted.' });
     }
 };
 
+// Neural Portal: Process Check-in by QR Content
 exports.processCheckinByQR = async (req, res) => {
     try {
         const { qrContent, classId } = req.body;
+
+        if (!qrContent) return res.status(400).json({ message: 'No QR signal received.' });
+
+        // Parse format: NAME:xxx|GROUP:yyy|...
         const parts = qrContent.split('|');
-        const name = parts.find(p => p.startsWith('NAME:'))?.split(':')[1];
-        const group = parts.find(p => p.startsWith('GROUP:'))?.split(':')[1];
-        
-        if (group !== classId) return res.status(403).json({ message: 'Cluster mismatch' });
-        
-        const [students] = await pool.query('SELECT NumInscription as id FROM stagiaires WHERE name = ? AND class_id = ?', [name, group]);
-        if (students.length === 0) return res.status(404).json({ message: 'Not found' });
-        
-        await pool.query('INSERT IGNORE INTO active_checkins (student_id, class_id) VALUES (?, ?)', [students[0].id, classId]);
-        res.json({ message: 'Success', name });
+        const namePart = parts.find(p => p.startsWith('NAME:'));
+        const groupPart = parts.find(p => p.startsWith('GROUP:'));
+
+        if (!namePart || !groupPart) {
+            return res.status(400).json({ message: 'Invalid signal format. Cluster mismatch.' });
+        }
+
+        const name = namePart.split(':')[1];
+        const group = groupPart.split(':')[1];
+
+        if (group !== classId) {
+            return res.status(403).json({ message: `Access Denied: Node ${name} belongs to Cluster ${group}.` });
+        }
+
+        // Look up student id from name and group
+        const [students] = await pool.query('SELECT id FROM stagiaires WHERE name = ? AND class_id = ?', [name, group]);
+        if (students.length === 0) {
+            return res.status(404).json({ message: 'Entity not found in the manifest.' });
+        }
+
+        const studentId = students[0].id;
+
+        // Register in active_checkins
+        await pool.query('INSERT IGNORE INTO active_checkins (student_id, class_id) VALUES (?, ?)', [studentId, classId]);
+
+        res.json({ message: 'Signal Captured: Syncing node...', name });
     } catch (err) {
         console.error("QR CHECKIN ERROR:", err);
-        res.status(500).json({ message: 'Error' });
+        res.status(500).json({ message: 'Neural link interrupted.' });
     }
 };
 
+// Neural Portal: Get Active Check-ins for a class
 exports.getActiveCheckins = async (req, res) => {
     try {
         const { classId } = req.params;
@@ -188,54 +303,73 @@ exports.getActiveCheckins = async (req, res) => {
         res.json({ checkins: checkins.map(c => c.student_id) });
     } catch (err) {
         console.error("GET CHECKINS ERROR:", err);
-        res.status(500).json({ message: 'Error' });
+        res.status(500).json({ message: 'Telemetry fetch failure.' });
     }
 };
 
+// Neural Portal: Clear Check-ins
 exports.clearCheckins = async (req, res) => {
     try {
         const { classId } = req.body;
         await pool.query('DELETE FROM active_checkins WHERE class_id = ?', [classId]);
-        res.json({ message: 'Cleared' });
+        res.json({ message: 'Active matrix reset.' });
     } catch (err) {
         console.error("CLEAR CHECKINS ERROR:", err);
-        res.status(500).json({ message: 'Error' });
+        res.status(500).json({ message: 'Reset protocol failed.' });
     }
 };
 
+// Neural Portal: Manual Status Override
 exports.updateCheckinStatus = async (req, res) => {
     try {
         const { studentId, classId, status } = req.body;
+
         if (status === 'PRESENT') {
             await pool.query('INSERT IGNORE INTO active_checkins (student_id, class_id) VALUES (?, ?)', [studentId, classId]);
-        } else {
+        } else if (status === 'ABSENT') {
             await pool.query('DELETE FROM active_checkins WHERE student_id = ? AND class_id = ?', [studentId, classId]);
         }
-        res.json({ message: 'Updated' });
+
+        res.json({ message: `Status synchronized for entity ${studentId}.` });
     } catch (err) {
         console.error("UPDATE CHECKIN ERROR:", err);
-        res.status(500).json({ message: 'Error' });
+        res.status(500).json({ message: 'Neural link interrupted during sync override.' });
     }
 };
 
+// Get FORMATEUR profile
 exports.getProfile = async (req, res) => {
     try {
-        const [profiles] = await pool.query('SELECT id, name, email FROM formateurs WHERE id = ?', [req.user.id]);
-        if (profiles.length === 0) return res.status(404).json({ message: 'Not found' });
-        res.json({ profile: { ...profiles[0], role: 'formateur' } });
+        const formateur_id = req.user.id;
+        const [profiles] = await pool.query(`
+            SELECT u.id, u.name, u.email, u.role, u.image 
+            FROM users u
+            WHERE u.id = ?
+        `, [formateur_id]);
+
+        if (profiles.length === 0) {
+            return res.status(404).json({ message: 'Neural Node not found.' });
+        }
+
+        res.json({ profile: profiles[0] });
     } catch (err) {
-        console.error("GET PROFILE ERROR:", err);
-        res.status(500).json({ message: 'Error' });
+        console.error("GET FORMATEUR PROFILE ERROR:", err);
+        res.status(500).json({ message: 'Internal Server Error: Neural disconnect.' });
     }
 };
 
+// Update FORMATEUR profile (specifically image)
 exports.updateProfile = async (req, res) => {
     try {
-        // Feature disabled: image column removed
-        res.json({ message: 'Profile update feature is currently limited (image removed)' });
+        const formateur_id = req.user.id;
+        const { image } = req.body;
+
+        await pool.query('UPDATE users SET image = ? WHERE id = ?', [image, formateur_id]);
+
+        res.json({ message: 'Neural Identity updated.' });
     } catch (err) {
-        console.error("UPDATE PROFILE ERROR:", err);
-        res.status(500).json({ message: 'Error' });
+        console.error("UPDATE FORMATEUR PROFILE ERROR:", err);
+        res.status(500).json({ message: 'Internal Server Error: Identity rewrite failed.' });
     }
 };
 

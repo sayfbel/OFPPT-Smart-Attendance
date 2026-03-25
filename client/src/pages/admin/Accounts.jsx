@@ -1,349 +1,262 @@
 import React, { useState, useEffect } from 'react';
-import ReactDOM from 'react-dom';
-import { Search, Plus, Filter, UserCheck, UserX, ChevronDown, Edit3, Trash2, AlertTriangle, X, User } from 'lucide-react';
+import {
+    Users,
+    Search,
+    UserPlus,
+    X,
+    Trash2,
+    Shield,
+    GraduationCap,
+    Lock,
+    Pencil,
+    ChevronDown,
+    LayoutDashboard,
+    Key,
+    Activity,
+    AlertCircle,
+    Info
+} from 'lucide-react';
 import axios from 'axios';
+import { useNotification } from '../../context/NotificationContext';
 import IdentityModal from '../../components/IdentityModal';
 import ConfirmationModal from '../../components/ConfirmationModal';
-import { useNotification } from '../../context/NotificationContext';
+import { useTranslation } from 'react-i18next';
 
 const Accounts = () => {
+    const { t } = useTranslation();
     const { addNotification } = useNotification();
-    const [availableClasses, setAvailableClasses] = useState([]);
-    const [selectedClass, setSelectedClass] = useState(null);
     const [users, setUsers] = useState([]);
-    const [formateurs, setFormateurs] = useState([]);
+    const [availableClasses, setAvailableClasses] = useState([]);
+    const [selectedClass, setSelectedClass] = useState('all');
+    const [loading, setLoading] = useState(true);
+    const [searchQuery, setSearchQuery] = useState('');
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
-    const [newUser, setNewUser] = useState({ name: '', email: '', role: 'stagiaire', class_ids: [] });
-    const [searchQuery, setSearchQuery] = useState('');
-    const [optionFilter, setOptionFilter] = useState('ALL');
-    const [filieres, setFilieres] = useState([]);
-    const [options, setOptions] = useState([]);
-    const [salles, setSalles] = useState([]);
-    const [isFilterDropdownOpen, setIsFilterDropdownOpen] = useState(false);
-
-    // Delete Confirmation State
+    const [isConfirmOpen, setIsConfirmOpen] = useState(false);
     const [userToDelete, setUserToDelete] = useState(null);
 
-    const uniqueOptions = ['ALL', ...new Set(availableClasses.map(cls => cls.option).filter(Boolean))];
+    const [newUser, setNewUser] = useState({
+        name: '',
+        email: '',
+        role: 'stagiaire',
+        class_id: '',
+        class_ids: []
+    });
 
-    const displayedClasses = availableClasses.filter(cls =>
-        optionFilter === 'ALL' || cls.option === optionFilter
-    );
-
-    const displayedUsers = users.filter(user =>
-        user.role === 'stagiaire' &&
-        (user.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            user.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            user.id?.toString().toLowerCase().includes(searchQuery.toLowerCase()))
-    );
+    const streams = [
+        { id: 'all', label: t('accounts.all_streams') },
+        { id: 'DD', label: 'DÉVELOPPEMENT DIGITAL' },
+        { id: 'ID', label: 'INFRASTRUCTURE DIGITALE' }
+    ];
 
     useEffect(() => {
-        const fetchInitialData = async () => {
+        const fetchData = async () => {
             try {
                 const token = localStorage.getItem('token');
-                if (!token) return;
-                const config = { headers: { Authorization: `Bearer ${token}` } };
-
-                const res = await axios.get('/api/admin/schedule', config);
-                const classes = res.data.classes || [];
-                setAvailableClasses(classes);
-
-                // Auto-select the first class if none is selected
-                if (classes.length > 0 && !selectedClass) {
-                    setSelectedClass(classes[0].id);
-                }
-
-                const fRes = await axios.get('/api/admin/formateurs', config);
-                setFormateurs(fRes.data.formateurs || []);
-
-                // Fetch Infrastructure
-                const filRes = await axios.get('/api/admin/filieres', config);
-                setFilieres(filRes.data.filieres || []);
-
-                const optRes = await axios.get('/api/admin/options', config);
-                setOptions(optRes.data.options || []);
-
-                const salRes = await axios.get('/api/admin/salles', config);
-                setSalles(salRes.data.salles || []);
-            } catch (error) {
-                console.error('Error fetching initial data', error);
+                const [usersRes, classesRes] = await Promise.all([
+                    axios.get('/api/admin/users', { headers: { Authorization: `Bearer ${token}` } }),
+                    axios.get('/api/admin/classes', { headers: { Authorization: `Bearer ${token}` } })
+                ]);
+                setUsers(usersRes.data.users || []);
+                setAvailableClasses(classesRes.data.classes || []);
+            } catch (err) {
+                console.error('Error fetching data:', err);
+            } finally {
+                setLoading(false);
             }
         };
-        fetchInitialData();
+        fetchData();
     }, []);
-
-    useEffect(() => {
-        const fetchUsers = async () => {
-            if (!selectedClass) return;
-            try {
-                const token = localStorage.getItem('token');
-                const config = { headers: { Authorization: `Bearer ${token}` } };
-                const res = await axios.get(`/api/admin/users/by-class/${selectedClass}`, config);
-                setUsers(res.data.users || []);
-            } catch (error) {
-                console.error('Error fetching users', error);
-                setUsers([]);
-            }
-        };
-        fetchUsers();
-    }, [selectedClass]);
 
     const handleAddUser = async (e) => {
         e.preventDefault();
         try {
-            const targetClass = newUser.role === 'stagiaire' ? (newUser.class_id || selectedClass) : null;
-
-            if (newUser.role === 'stagiaire' && !targetClass) {
-                addNotification('Veuillez sélectionner un groupe.', 'error');
-                return;
-            }
-            if (newUser.role === 'formateur' && (!newUser.class_ids || newUser.class_ids.length === 0)) {
-                addNotification('Veuillez sélectionner au moins un groupe pour le formateur.', 'error');
-                return;
-            }
-
             const token = localStorage.getItem('token');
-            const config = { headers: { Authorization: `Bearer ${token}` } };
-            const payload = {
-                ...newUser,
-                class_id: newUser.role === 'formateur'
-                    ? newUser.class_ids.join(', ')
-                    : (newUser.class_id || selectedClass)
-            };
-
-            const res = await axios.post('/api/admin/users', payload, config);
-
-            if (newUser.role === 'formateur') {
-                const fRes = await axios.get('/api/admin/formateurs', config);
-                setFormateurs(fRes.data.formateurs || []);
-            } else if (payload.class_id === selectedClass) {
-                setUsers([...users, res.data.user]);
+            const userToSubmit = { ...newUser };
+            if (newUser.role !== 'stagiaire' && newUser.class_ids?.length > 0) {
+                userToSubmit.class_id = newUser.class_ids.join(',');
             }
-
+            const res = await axios.post('/api/admin/users', userToSubmit, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            setUsers([...users, res.data.user]);
             setIsModalOpen(false);
-            setNewUser({ name: '', email: '', role: 'stagiaire', class_ids: [], Année: '1er', Active: true });
-            addNotification('Compte créé avec succès.', 'success');
-        } catch (error) {
-            console.error('Error adding user', error);
-            addNotification(error.response?.data?.message || 'Erreur lors de la création du compte', 'error');
+            addNotification(t('accounts.create_success'), 'success');
+            setNewUser({ name: '', email: '', role: 'stagiaire', class_id: '', class_ids: [] });
+        } catch (err) {
+            addNotification(err.response?.data?.message || 'Error adding user', 'error');
         }
-    };
-
-    const handleEditClick = (user, role) => {
-        const assignedClasses = availableClasses
-            .filter(cls => cls.lead && cls.lead.includes(user.name))
-            .map(cls => cls.id);
-
-        setNewUser({
-            ...user,
-            role: (role || user.role || 'stagiaire').toLowerCase().trim(),
-            class_ids: assignedClasses,
-            class_id: user.class_id || ''
-        });
-        setIsEditing(true);
-        setIsModalOpen(true);
     };
 
     const handleUpdateUser = async (e) => {
         e.preventDefault();
         try {
             const token = localStorage.getItem('token');
-            const config = { headers: { Authorization: `Bearer ${token}` } };
-            const payload = {
-                ...newUser,
-                class_id: newUser.role === 'formateur' ? newUser.class_ids.join(', ') : newUser.class_id
-            };
-
-            await axios.put(`/api/admin/users/${newUser.id}`, payload, config);
-
-            // Refresh data
-            if (newUser.role === 'formateur') {
-                const fRes = await axios.get('/api/admin/formateurs', config);
-                setFormateurs(fRes.data.formateurs || []);
-            } else {
-                setUsers(prev => prev.map(u => u.id === newUser.id ? { ...u, ...newUser } : u));
+            const userToSubmit = { ...newUser };
+            if (newUser.role !== 'stagiaire' && newUser.class_ids?.length > 0) {
+                userToSubmit.class_id = newUser.class_ids.join(',');
             }
-
+            const res = await axios.put(`/api/admin/users/${newUser.id}`, userToSubmit, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            setUsers(users.map(u => u.id === res.data.user.id ? res.data.user : u));
             setIsModalOpen(false);
             setIsEditing(false);
-            addNotification('Informations mises à jour.', 'success');
-        } catch (error) {
-            console.error('Error updating user', error);
-            addNotification(error.response?.data?.message || 'Erreur lors de la mise à jour', 'error');
+            addNotification(t('accounts.update_success'), 'success');
+        } catch (err) {
+            addNotification(err.response?.data?.message || 'Error updating user', 'error');
         }
     };
 
-    const handleDeleteUser = async () => {
-        if (!userToDelete) return;
+    const handleDeleteUser = async (id) => {
         try {
             const token = localStorage.getItem('token');
-            const config = { headers: { Authorization: `Bearer ${token}` } };
-            await axios.delete(`/api/admin/users/${userToDelete.id}?role=${userToDelete.role}`, config);
-
-            if (userToDelete.role === 'formateur') {
-                setFormateurs(prev => prev.filter(f => f.id !== userToDelete.id));
-            } else {
-                setUsers(prev => prev.filter(u => u.id !== userToDelete.id));
-            }
-
-            setUserToDelete(null);
-            addNotification('Utilisateur supprimé du système.', 'success');
-        } catch (error) {
-            console.error('Error deleting user', error);
-            addNotification('Échec de la suppression: Erreur serveur.', 'error');
+            await axios.delete(`/api/admin/users/${id}`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            setUsers(users.filter(u => u.id !== id));
+            setIsConfirmOpen(false);
+            addNotification(t('accounts.delete_success'), 'success');
+        } catch (err) {
+            addNotification('Error deleting user', 'error');
         }
     };
 
-    return (
-        <div className="space-y-12 fade-up transition-all duration-500">
-            <div className="flex flex-col md:flex-row items-start md:items-end justify-between border-b border-[var(--border)] pb-8 lg:pb-12 gap-6 lg:gap-8">
-                <div className="space-y-4">
-                    <h1 className="text-4xl md:text-5xl lg:text-7xl font-black tracking-tighter text-[var(--secondary)] uppercase italic leading-[0.9]">Comptes</h1>
-                    <p className="text-[var(--text-muted)] text-[10px] lg:text-xs tracking-[0.4em] uppercase font-black">Gestion des Utilisateurs ISTA</p>
-                </div>
-                <div className="flex flex-wrap gap-4 justify-end">
-                    <div className="relative">
-                        <button
-                            onClick={() => setIsFilterDropdownOpen(!isFilterDropdownOpen)}
-                            className="bg-white border border-[var(--border)] px-6 py-4 rounded-xl flex items-center gap-4 hover:border-[var(--primary)] transition-all shadow-sm"
-                        >
-                            <Filter className="w-4 h-4 text-[var(--primary)]" />
-                            <span className="text-[10px] font-black tracking-widest uppercase text-[var(--secondary)]">{optionFilter === 'ALL' ? 'TOUTES LES OPTIONS' : optionFilter}</span>
-                            <ChevronDown className={`w-4 h-4 text-[var(--primary)] transition-transform ${isFilterDropdownOpen ? 'rotate-180' : ''}`} />
-                        </button>
+    const filteredUsers = users.filter(user => {
+        const matchesSearch = user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            user.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            user.id.toString().includes(searchQuery);
 
-                        {isFilterDropdownOpen && (
-                            <div className="absolute top-full left-0 mt-3 bg-white border border-[var(--border)] rounded-2xl z-50 shadow-2xl min-w-[200px] overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-                                {uniqueOptions.map(option => (
-                                    <div
-                                        key={option}
-                                        className={`px-6 py-4 cursor-pointer text-[10px] font-black tracking-widest uppercase transition-colors ${optionFilter === option ? 'bg-[var(--primary)] text-white' : 'text-[var(--secondary)] hover:bg-slate-50'}`}
-                                        onClick={() => {
-                                            setOptionFilter(option);
-                                            setIsFilterDropdownOpen(false);
-                                        }}
-                                    >
-                                        {option === 'ALL' ? 'TOUTES LES OPTIONS' : option}
-                                    </div>
-                                ))}
-                            </div>
-                        )}
+        const matchesClass = selectedClass === 'all' || user.class_id === selectedClass || (user.class_ids && user.class_ids.includes(selectedClass));
+
+        return matchesSearch && matchesClass;
+    });
+
+    const students = filteredUsers.filter(u => u.role === 'stagiaire');
+    const formateurs = users.filter(u => u.role === 'formateur' || u.role === 'admin');
+
+    return (
+        <div className="space-y-12 fade-up">
+            {/* Header section */}
+            <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 border-b border-[var(--border)] pb-12 transition-all duration-500">
+                <div className="space-y-4">
+                    <h1 className="text-4xl lg:text-7xl font-black tracking-tight text-[var(--secondary)] uppercase italic leading-[0.9]">
+                        {t('accounts.title')}
+                    </h1>
+                    <p className="text-[var(--text-muted)] text-[11px] font-bold tracking-[0.4em] uppercase opacity-60">
+                        {t('accounts.subtitle')}
+                    </p>
+                </div>
+
+                <div className="flex flex-col sm:flex-row items-center gap-4">
+                    <div className="flex bg-white border border-[var(--border)] rounded-2xl p-1.5 shadow-sm overflow-x-auto max-w-full">
+                        {streams.map((stream) => (
+                            <button
+                                key={stream.id}
+                                onClick={() => setSelectedClass(stream.id)}
+                                className={`px-4 lg:px-6 py-3 rounded-xl text-[9px] font-black tracking-widest uppercase transition-all whitespace-nowrap ${selectedClass === stream.id
+                                    ? 'bg-[var(--secondary)] text-white shadow-lg'
+                                    : 'text-[var(--text-muted)] hover:bg-[var(--surface-hover)]'
+                                    }`}
+                            >
+                                {stream.label}
+                            </button>
+                        ))}
                     </div>
-                    <button onClick={() => {
-                        setNewUser({ name: '', email: '', role: 'stagiaire', class_ids: [], Année: '1er', Active: true });
-                        setIsEditing(false);
-                        setIsModalOpen(true);
-                    }} className="btn-ista px-8 py-4 flex items-center gap-3">
-                        <Plus className="w-5 h-5" />
-                        <span>AJOUTER UN UTILISATEUR</span>
+
+                    <button
+                        onClick={() => { setIsEditing(false); setIsModalOpen(true); }}
+                        className="w-full sm:w-auto btn-ista px-8 py-4 flex items-center justify-center gap-3 shadow-xl"
+                    >
+                        <UserPlus className="w-4 h-4" />
+                        <span className="text-[10px] uppercase font-black tracking-widest">{t('accounts.add_member')}</span>
                     </button>
                 </div>
             </div>
 
-            {/* STAGIAIRE SECTION */}
-            <div className="flex gap-6 border-t border-slate-50 pb-8 overflow-x-auto no-scrollbar transition-all duration-500 pt-8">
-                {displayedClasses.map((cls, index) => (
-                    <div
-                        key={index}
-                        onClick={() => setSelectedClass(cls.id)}
-                        className={`min-w-[280px] flex-shrink-0 p-8 rounded-3xl border transition-all duration-500 group cursor-pointer ${selectedClass === cls.id
-                            ? 'border-[var(--primary)] bg-green-50/30 ring-4 ring-green-500/5'
-                            : 'border-[var(--border)] bg-white hover:border-[var(--primary)]/30'
-                            }`}
-                    >
-                        <div className="flex items-center justify-between mb-6">
-                            <span className="text-[10px] font-black tracking-widest text-[var(--primary)] uppercase">{cls.id}</span>
-                            <div className={`w-3 h-3 rounded-full ${selectedClass === cls.id ? 'bg-[var(--primary)] animate-pulse' : 'bg-slate-200'}`}></div>
+            {/* Dashboard Content */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
+
+                {/* Left side: Main users list */}
+                <div className="lg:col-span-8 space-y-8 overflow-x-auto md:overflow-visible">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div className="flex items-center gap-3">
+                            <div className="w-1.5 h-6 bg-[var(--primary)] rounded-full"></div>
+                            <h3 className="text-xs font-black tracking-widest uppercase text-[var(--secondary)]">{t('accounts.list_title')}</h3>
                         </div>
-                        <h3 className="text-xl font-black italic text-[var(--secondary)] tracking-tight mb-2 truncate group-hover:text-[var(--primary)] transition-colors">{cls.filiere}</h3>
-                        <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mt-4 border-t border-slate-50 pt-4">
-                            Option: <span className="text-[var(--secondary)]">{cls.option}</span>
+                        <div className="flex items-center bg-white border border-[var(--border)] rounded-2xl w-full max-w-sm px-5 group focus-within:border-[var(--primary)] transition-all shadow-sm">
+                            <Search className="w-4 h-4 text-slate-300 group-focus-within:text-[var(--primary)] transition-colors" />
+                            <input
+                                type="text"
+                                placeholder={t('accounts.search_placeholder')}
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                className="bg-transparent border-none text-[11px] font-bold py-4 px-4 w-full tracking-widest focus:ring-0 text-[var(--secondary)] placeholder-slate-300 uppercase"
+                            />
+                        </div>
+                    </div>
+
+                    <div className="bg-amber-50 border border-amber-200 p-4 rounded-2xl flex items-center gap-4 text-amber-800 animate-in fade-in slide-in-from-top-4 duration-500">
+                        <Info className="w-6 h-6 flex-shrink-0" />
+                        <p className="text-[10px] font-black uppercase tracking-wider italic">
+                            {t('accounts.reset_password_warning')}
                         </p>
                     </div>
-                ))}
-            </div>
 
-            <div className="flex items-center pt-8 mb-4 gap-6">
-                <h2 className="text-4xl font-black italic tracking-tighter text-[var(--secondary)] uppercase">Stagiaires</h2>
-                <div className="flex-1 border-b border-slate-100"></div>
-            </div>
-
-            <div className="space-y-8 bg-white p-8 rounded-[32px] border border-slate-100 shadow-sm transition-all duration-500">
-                <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-                    <h3 className="text-[10px] font-black tracking-[0.3em] uppercase text-slate-400">Liste des Stagiaires</h3>
-                    <div className="flex items-center bg-slate-50 border border-slate-100 rounded-2xl w-full md:w-80 group focus-within:border-[var(--primary)] transition-all px-5">
-                        <Search className="w-4 h-4 text-slate-300 group-focus-within:text-[var(--primary)] transition-colors" />
-                        <input
-                            type="text"
-                            placeholder="RECHERCHER UN NOM OU ID..."
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            className="bg-transparent border-none text-[11px] font-bold py-4 px-4 w-full tracking-widest focus:ring-0 text-[var(--secondary)] placeholder-slate-300 uppercase"
-                        />
-                    </div>
-                </div>
-
-                {!selectedClass ? (
-                    <div className="border-2 border-dashed border-slate-100 rounded-3xl py-24 flex flex-col items-center justify-center text-center">
-                        <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mb-6">
-                            <Filter className="w-6 h-6 text-slate-200" />
-                        </div>
-                        <span className="text-xs font-black tracking-widest uppercase text-[var(--primary)] mb-2">SÉLECTIONNEZ UN GROUPE</span>
-                        <p className="text-[10px] font-bold tracking-widest text-slate-400 uppercase">Veuillez choisir un groupe ci-dessus pour voir les stagiaires.</p>
-                    </div>
-                ) : (
-                    <div className="overflow-x-auto ista-scrollbar">
-                        <table className="w-full text-left border-collapse min-w-[800px]">
+                    <div className="ista-panel overflow-x-auto ista-scrollbar bg-white shadow-sm">
+                        <table className="w-full text-left border-collapse min-w-[700px]">
                             <thead>
-                                <tr className="text-slate-400 text-[9px] font-black uppercase tracking-widest border-b border-slate-50">
-                                    <th className="pb-6 px-4">ID</th>
-                                    <th className="pb-6 px-4">Nom Complet</th>
-                                    <th className="pb-6 px-4">Rôle</th>
-                                    <th className="pb-6 px-4">État</th>
-                                    <th className="pb-6 px-4">Dernière Connexion</th>
-                                    <th className="pb-6 px-4 text-right">Actions</th>
+                                <tr className="bg-slate-50 text-slate-400 text-[9px] font-black uppercase tracking-widest border-b border-slate-100">
+                                    <th className="p-6">{t('accounts.student_name')}</th>
+                                    <th className="p-6">{t('accounts.email_id')}</th>
+                                    <th className="p-6">{t('accounts.group')}</th>
+                                    <th className="p-6 text-right">{t('accounts.actions')}</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-50">
-                                {displayedUsers.length === 0 ? (
-                                    <tr>
-                                        <td colSpan="6" className="py-20 text-center text-[10px] font-black tracking-widest uppercase text-slate-300">Aucun stagiaire trouvé</td>
-                                    </tr>
-                                ) : (
-                                    displayedUsers.map((user) => (
-                                        <tr key={user.id} className="hover:bg-slate-50/50 transition-colors group">
-                                            <td className="py-6 px-4 text-[10px] font-black text-slate-400">{user.id}</td>
-                                            <td className="py-6 px-4">
-                                                <span className="text-sm font-black italic text-[var(--secondary)] uppercase transition-colors group-hover:text-[var(--primary)]">{user.name}</span>
+                                {students.length > 0 ? (
+                                    students.map((user) => (
+                                        <tr key={user.id} className="hover:bg-slate-50 transition-colors group">
+                                            <td className="p-6">
+                                                <div className="flex items-center gap-4">
+                                                    <div className="w-12 h-12 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center text-[11px] font-black text-[var(--secondary)] group-hover:bg-[var(--primary)] group-hover:text-white transition-all shadow-sm">
+                                                        {user.name.split(' ').map(n => n[0]).join('')}
+                                                    </div>
+                                                    <div className="flex flex-col">
+                                                        <span className="text-sm font-black italic text-[var(--secondary)] uppercase tracking-tight group-hover:text-[var(--primary)] transition-colors">{user.name}</span>
+                                                        <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1 opacity-60">ID: #{user.id}</span>
+                                                    </div>
+                                                </div>
                                             </td>
-                                            <td className="py-6 px-4">
-                                                <span className="text-[9px] uppercase tracking-widest text-slate-400 font-black bg-slate-100 px-3 py-1 rounded-full">
-                                                    {user.role}
+                                            <td className="p-6">
+                                                <div className="flex flex-col">
+                                                    <span className="text-[10px] font-bold text-[var(--secondary)] tracking-widest uppercase">{user.email}</span>
+                                                    <span className="text-[9px] text-slate-300 font-mono mt-1">{t('accounts.portal_link')}</span>
+                                                </div>
+                                            </td>
+                                            <td className="p-6">
+                                                <span className="px-3 py-1 bg-slate-100 text-[9px] font-black text-[var(--secondary)] rounded-lg uppercase tracking-widest">
+                                                    {user.class_id || 'NA'}
                                                 </span>
                                             </td>
-                                            <td className="py-6 px-4">
-                                                <span className={`text-[9px] font-black tracking-widest px-3 py-1 rounded-full border ${user.status === 'ACTIVE'
-                                                    ? 'border-[var(--primary)] text-[var(--primary)] bg-green-50/50'
-                                                    : 'border-slate-200 text-slate-400 bg-slate-50'
-                                                    }`}>
-                                                    {user.status || 'ACTIF'}
-                                                </span>
-                                            </td>
-                                            <td className="py-6 px-4 text-[10px] font-bold text-slate-400 uppercase italic">
-                                                {user.lastLogin || 'Récent'}
-                                            </td>
-                                            <td className="py-6 px-4 text-right">
-                                                <div className="flex justify-end gap-2">
+                                            <td className="p-6 text-right">
+                                                <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                                                     <button
-                                                        onClick={() => handleEditClick(user, 'stagiaire')}
-                                                        className="p-3 rounded-xl border border-slate-100 hover:border-[var(--primary)] hover:text-[var(--primary)] text-slate-400 transition-all bg-white shadow-sm"
+                                                        onClick={() => {
+                                                            setNewUser(user);
+                                                            setIsEditing(true);
+                                                            setIsModalOpen(true);
+                                                        }}
+                                                        className="p-3 hover:bg-white rounded-xl text-slate-400 hover:text-[var(--primary)] transition-all shadow-sm border border-transparent hover:border-slate-100"
                                                     >
-                                                        <Edit3 className="w-4 h-4" />
+                                                        <Pencil className="w-4 h-4" />
                                                     </button>
                                                     <button
-                                                        onClick={() => setUserToDelete(user)}
-                                                        className="p-3 rounded-xl border border-slate-100 hover:border-red-500 hover:text-red-500 text-slate-400 transition-all bg-white shadow-sm"
+                                                        onClick={() => {
+                                                            setUserToDelete(user.id);
+                                                            setIsConfirmOpen(true);
+                                                        }}
+                                                        className="p-3 hover:bg-white rounded-xl text-slate-400 hover:text-red-500 transition-all shadow-sm border border-transparent hover:border-slate-100"
                                                     >
                                                         <Trash2 className="w-4 h-4" />
                                                     </button>
@@ -351,126 +264,82 @@ const Accounts = () => {
                                             </td>
                                         </tr>
                                     ))
+                                ) : (
+                                    <tr>
+                                        <td colSpan="4" className="p-24 text-center">
+                                            <div className="flex flex-col items-center gap-4 opacity-30">
+                                                <Activity className="w-12 h-12 text-slate-300 animate-pulse" />
+                                                <p className="text-[10px] font-black uppercase tracking-[0.4em] italic text-slate-400">{t('accounts.no_data')}</p>
+                                            </div>
+                                        </td>
+                                    </tr>
                                 )}
                             </tbody>
                         </table>
                     </div>
-                )}
-            </div>
+                </div>
 
-            {/* FORMATEUR SECTION */}
-            <div className="flex items-center pt-16 mb-4 gap-6">
-                <h2 className="text-4xl font-black italic tracking-tighter text-[var(--secondary)] uppercase">Formateurs</h2>
-                <div className="flex-1 border-b border-slate-100"></div>
-            </div>
+                {/* Right side: Sidebar Info */}
+                <div className="lg:col-span-4 space-y-10">
+                    <div className="ista-panel p-10 bg-[var(--secondary)] text-white relative overflow-hidden group">
+                        <div className="absolute top-0 right-0 p-8 text-white/5 group-hover:scale-110 transition-transform duration-700">
+                            <GraduationCap className="w-32 h-32 -rotate-12" />
+                        </div>
+                        <div className="relative z-10 space-y-12">
+                            <div className="space-y-4">
+                                <h3 className="text-3xl font-black italic tracking-tighter leading-none">{t('accounts.formateurs_title')}</h3>
+                                <p className="text-[9px] font-bold text-white/40 tracking-[0.2em] uppercase">{t('accounts.formateurs_subtitle')}</p>
+                            </div>
 
-            <div className="bg-white p-8 rounded-[32px] border border-slate-100 shadow-sm transition-all duration-500 mb-12">
-                <div className="overflow-x-auto ista-scrollbar">
-                    <table className="w-full text-left border-collapse min-w-[800px]">
-                        <thead>
-                            <tr className="text-slate-400 text-[9px] font-black uppercase tracking-widest border-b border-slate-50">
-                                <th className="pb-6 px-4">ID</th>
-                                <th className="pb-6 px-4">Nom Complet</th>
-                                <th className="pb-6 px-4">Groupes Assignés</th>
-                                <th className="pb-6 px-4">État</th>
-                                <th className="pb-6 px-4 text-right">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-50">
-                            {formateurs.length === 0 ? (
-                                <tr>
-                                    <td colSpan="5" className="py-20 text-center text-[10px] font-black tracking-widest uppercase text-slate-300">Aucun formateur trouvé</td>
-                                </tr>
-                            ) : (
-                                formateurs.map((formateur) => {
-                                    const assignedClasses = availableClasses
-                                        .filter(cls => cls.lead && cls.lead.includes(formateur.name))
-                                        .map(cls => cls.id);
+                            <div className="space-y-4">
+                                {formateurs.map((f) => (
+                                    <div key={f.id} className="flex items-center justify-between p-4 bg-white/5 rounded-2xl border border-white/5 backdrop-blur-sm group/card hover:bg-[var(--primary)] transition-all">
+                                        <div className="flex items-center gap-4">
+                                            <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center text-[10px] font-black group-hover/card:bg-white group-hover/card:text-[var(--primary)] transition-all">
+                                                {f.name.split(' ').map(n => n[0]).join('')}
+                                            </div>
+                                            <div className="flex flex-col">
+                                                <span className="text-[11px] font-black tracking-tight uppercase">{f.name}</span>
+                                                <span className="text-[9px] font-bold text-white/40 tracking-widest uppercase">{t(`roles.${f.role}`)}</span>
+                                            </div>
+                                        </div>
+                                        <Shield className={`w-4 h-4 ${f.role === 'admin' ? 'text-amber-400' : 'text-white/20'}`} />
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
 
-                                    return (
-                                        <tr key={formateur.id} className="hover:bg-slate-50/50 transition-colors group">
-                                            <td className="py-6 px-4 text-[10px] font-black text-slate-400">{formateur.id}</td>
-                                            <td className="py-6 px-4">
-                                                <span className="text-sm font-black italic text-[var(--secondary)] uppercase group-hover:text-[var(--primary)] transition-colors">{formateur.name}</span>
-                                            </td>
-                                            <td className="py-6 px-4">
-                                                <div className="flex flex-wrap gap-2">
-                                                    {assignedClasses.length > 0 ? (
-                                                        assignedClasses.map(clsId => (
-                                                            <span key={clsId} className="px-3 py-1 bg-slate-50 text-[9px] font-black text-[var(--primary)] border border-green-500/10 rounded-lg">
-                                                                {clsId}
-                                                            </span>
-                                                        ))
-                                                    ) : (
-                                                        <span className="text-[9px] font-bold text-slate-300 uppercase italic">NON ASSIGNÉ</span>
-                                                    )}
-                                                </div>
-                                            </td>
-                                            <td className="py-6 px-4">
-                                                <div className="flex items-center gap-2">
-                                                    <span className="text-[9px] font-black tracking-widest px-3 py-1 rounded-full border border-[var(--primary)] text-[var(--primary)] bg-green-50/50">
-                                                        ACTIF
-                                                    </span>
-                                                    {formateur.type === 'Vacataire' && (
-                                                        <span className="text-[9px] font-black tracking-widest px-3 py-1 rounded-full border border-orange-500 text-orange-500 bg-orange-50/50 uppercase">
-                                                            Vacataire
-                                                        </span>
-                                                    )}
-                                                    {formateur.type === 'Parrain' && (
-                                                        <span className="text-[9px] font-black tracking-widest px-3 py-1 rounded-full border border-blue-500 text-blue-500 bg-blue-50/50 uppercase">
-                                                            Parrain
-                                                        </span>
-                                                    )}
-                                                </div>
-                                            </td>
-                                            <td className="py-6 px-4 text-right">
-                                                <div className="flex justify-end gap-2">
-                                                    <button
-                                                        onClick={() => handleEditClick(formateur, 'formateur')}
-                                                        className="p-3 rounded-xl border border-slate-100 hover:border-[var(--primary)] hover:text-[var(--primary)] text-slate-400 transition-all bg-white shadow-sm"
-                                                    >
-                                                        <Edit3 className="w-4 h-4" />
-                                                    </button>
-                                                    <button
-                                                        onClick={() => setUserToDelete(formateur)}
-                                                        className="p-3 rounded-xl border border-slate-100 hover:border-red-500 hover:text-red-500 text-slate-400 transition-all bg-white shadow-sm"
-                                                    >
-                                                        <Trash2 className="w-4 h-4" />
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    );
-                                })
-                            )}
-                        </tbody>
-                    </table>
+                    <div className="ista-panel p-10 bg-white shadow-xl flex flex-col items-center text-center gap-6">
+                        <div className="w-20 h-20 bg-green-50 rounded-[32px] flex items-center justify-center text-[var(--primary)] shadow-lg shadow-green-500/10">
+                            <Users className="w-8 h-8" />
+                        </div>
+                        <div>
+                            <h4 className="text-3xl font-black italic text-[var(--secondary)] tracking-tighter">{students.length.toString().padStart(2, '0')}</h4>
+                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">{t('accounts.total_students')}</p>
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            <ConfirmationModal 
-                isOpen={!!userToDelete}
-                onClose={() => setUserToDelete(null)}
-                onConfirm={handleDeleteUser}
-                title="ACTION CRITIQUE"
-                message={userToDelete ? `Êtes-vous sûr de vouloir supprimer ${userToDelete.name} ? Cette action est irréversible et révoquera tous les accès.` : ''}
-            />
-
             <IdentityModal
                 isOpen={isModalOpen}
-                onClose={() => {
-                    setIsModalOpen(false);
-                    setIsEditing(false);
-                }}
-                isEditing={isEditing}
+                onClose={() => setIsModalOpen(false)}
                 newUser={newUser}
                 setNewUser={setNewUser}
                 handleAddUser={handleAddUser}
                 handleUpdateUser={handleUpdateUser}
                 selectedClass={selectedClass}
                 availableClasses={availableClasses}
-                filieres={filieres}
-                options={options}
+                isEditing={isEditing}
+            />
+
+            <ConfirmationModal
+                isOpen={isConfirmOpen}
+                onClose={() => setIsConfirmOpen(false)}
+                onConfirm={() => handleDeleteUser(userToDelete)}
+                title={t('accounts.delete_confirm_title')}
+                message={t('accounts.delete_confirm_message')}
             />
             <style>{`
                 .ista-scrollbar::-webkit-scrollbar { width: 4px; height: 4px; }

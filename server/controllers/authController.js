@@ -7,13 +7,7 @@ const login = async (req, res) => {
     console.log(`[AUTH] Login attempt for: ${email}`);
 
     try {
-        // Check admins table first
-        let [users] = await db.execute('SELECT *, "admin" as role FROM admins WHERE email = ?', [email]);
-        
-        // If not found in admins, check formateurs
-        if (users.length === 0) {
-            [users] = await db.execute('SELECT *, "formateur" as role FROM formateurs WHERE email = ?', [email]);
-        }
+        const [users] = await db.execute('SELECT * FROM users WHERE email = ?', [email]);
 
         if (users.length === 0) {
             console.log(`[AUTH] User not found: ${email}`);
@@ -26,7 +20,7 @@ const login = async (req, res) => {
         console.log(`[AUTH] Password match result for ${email}:`, isMatch);
 
         if (!isMatch) {
-            return res.status(401).json({ message: `Password incorrect.` });
+            return res.status(401).json({ message: `Password incorrect. Hash prefix: ${user.password.substring(0, 10)}` });
         }
 
         const token = jwt.sign(
@@ -41,20 +35,23 @@ const login = async (req, res) => {
                 id: user.id,
                 name: user.name,
                 email: user.email,
-                role: user.role
+                role: user.role,
+                class_id: user.class_id
             }
         });
     } catch (error) {
-        console.error('Login error:', error);
+        const fs = require('fs');
+        const path = require('path');
+        const logMessage = `[${new Date().toISOString()}] Login error: ${error.stack}\n`;
+        fs.appendFileSync(path.join(__dirname, '../error.log'), logMessage);
         res.status(500).json({ message: 'Server error', error: error.message });
     }
+
 };
 
 const getMe = async (req, res) => {
     try {
-        const table = req.user.role === 'admin' ? 'admins' : 'formateurs';
-        const [users] = await db.execute(`SELECT id, name, email, "${req.user.role}" as role FROM ${table} WHERE id = ?`, [req.user.id]);
-        
+        const [users] = await db.execute('SELECT id, name, email, role, class_id FROM users WHERE id = ?', [req.user.id]);
         if (users.length === 0) {
             return res.status(404).json({ message: 'User not found' });
         }

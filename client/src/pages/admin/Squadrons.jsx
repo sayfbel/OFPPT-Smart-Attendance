@@ -4,9 +4,12 @@ import axios from 'axios';
 import GroupModal from '../../components/GroupModal';
 import ConfirmationModal from '../../components/ConfirmationModal';
 import { useNotification } from '../../context/NotificationContext';
+import { useTranslation } from 'react-i18next';
 
 
 const Squadrons = () => {
+    const { t, i18n } = useTranslation();
+    const isRtl = i18n.language === 'ar';
     const { addNotification } = useNotification();
     const [classes, setClasses] = useState([]);
     const [formateurs, setFormateurs] = useState([]);
@@ -206,13 +209,15 @@ const Squadrons = () => {
     });
 
     return (
-        <div className="space-y-12 fade-up transition-all duration-500">
-            <div className="flex flex-col md:flex-row items-start md:items-end justify-between border-b border-[var(--border)] pb-8 lg:pb-12 gap-6 lg:gap-8">
+        <div className={`space-y-12 fade-up transition-all duration-500 ${isRtl ? 'text-right' : ''}`}>
+            <div className={`flex flex-col md:flex-row items-start md:items-end justify-between border-b border-[var(--border)] pb-8 lg:pb-12 gap-6 lg:gap-8 ${isRtl ? 'md:flex-row-reverse' : ''}`}>
                 <div className="space-y-4">
-                    <h1 className="text-4xl md:text-5xl lg:text-7xl font-black tracking-tighter text-[var(--secondary)] uppercase italic leading-[0.9]">Groupes</h1>
-                    <div className="flex items-center gap-3 text-[var(--primary)] text-[9px] lg:text-xs tracking-[0.4em] uppercase font-black">
+                    <h1 className="text-4xl md:text-5xl lg:text-7xl font-black tracking-tighter text-[var(--secondary)] uppercase italic leading-[0.9]">
+                        {t('groups.title')}
+                    </h1>
+                    <div className={`flex items-center gap-3 text-[var(--primary)] text-[9px] lg:text-xs tracking-[0.4em] uppercase font-black ${isRtl ? 'flex-row-reverse' : ''}`}>
                         <div className="w-2 h-2 bg-[var(--primary)] rounded-full animate-pulse"></div>
-                        Filières et Divisions ISTA
+                        {t('groups.subtitle')}
                     </div>
                 </div>
 
