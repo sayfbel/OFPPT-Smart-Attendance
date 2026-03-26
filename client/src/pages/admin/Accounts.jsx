@@ -27,6 +27,8 @@ const Accounts = () => {
     const { addNotification } = useNotification();
     const [users, setUsers] = useState([]);
     const [availableClasses, setAvailableClasses] = useState([]);
+    const [availableFilieres, setAvailableFilieres] = useState([]);
+    const [availableOptions, setAvailableOptions] = useState([]);
     const [selectedClass, setSelectedClass] = useState('all');
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
@@ -40,7 +42,10 @@ const Accounts = () => {
         email: '',
         role: 'stagiaire',
         class_id: '',
-        class_ids: []
+        class_ids: [],
+        filiereId: '',
+        optionId: '',
+        annee: '1er'
     });
 
     const streams = [
@@ -53,12 +58,16 @@ const Accounts = () => {
         const fetchData = async () => {
             try {
                 const token = localStorage.getItem('token');
-                const [usersRes, classesRes] = await Promise.all([
+                const [usersRes, classesRes, filieresRes, optionsRes] = await Promise.all([
                     axios.get('/api/admin/users', { headers: { Authorization: `Bearer ${token}` } }),
-                    axios.get('/api/admin/classes', { headers: { Authorization: `Bearer ${token}` } })
+                    axios.get('/api/admin/classes', { headers: { Authorization: `Bearer ${token}` } }),
+                    axios.get('/api/admin/filieres', { headers: { Authorization: `Bearer ${token}` } }),
+                    axios.get('/api/admin/options', { headers: { Authorization: `Bearer ${token}` } })
                 ]);
                 setUsers(usersRes.data.users || []);
                 setAvailableClasses(classesRes.data.classes || []);
+                setAvailableFilieres(filieresRes.data.filieres || []);
+                setAvailableOptions(optionsRes.data.options || []);
             } catch (err) {
                 console.error('Error fetching data:', err);
             } finally {
@@ -82,7 +91,7 @@ const Accounts = () => {
             setUsers([...users, res.data.user]);
             setIsModalOpen(false);
             addNotification(t('accounts.create_success'), 'success');
-            setNewUser({ name: '', email: '', role: 'stagiaire', class_id: '', class_ids: [] });
+            setNewUser({ name: '', email: '', role: 'stagiaire', class_id: '', class_ids: [], filiereId: '', optionId: '', annee: '1er' });
         } catch (err) {
             addNotification(err.response?.data?.message || 'Error adding user', 'error');
         }
@@ -136,118 +145,147 @@ const Accounts = () => {
     const formateurs = users.filter(u => u.role === 'formateur' || u.role === 'admin');
 
     return (
-        <div className="space-y-12 fade-up">
+        <div className="space-y-12 fade-up max-w-[1600px] mx-auto">
             {/* Header section */}
-            <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 border-b border-[var(--border)] pb-12 transition-all duration-500">
-                <div className="space-y-4">
-                    <h1 className="text-4xl lg:text-7xl font-black tracking-tight text-[var(--secondary)] uppercase italic leading-[0.9]">
-                        {t('accounts.title')}
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-8 transition-all duration-500">
+                <div className="space-y-2">
+                    <h1 className="text-5xl md:text-[64px] font-black tracking-tighter text-[var(--secondary)] uppercase italic leading-none">
+                        COMPTES
                     </h1>
-                    <p className="text-[var(--text-muted)] text-[11px] font-bold tracking-[0.4em] uppercase opacity-60">
-                        {t('accounts.subtitle')}
+                    <p className="text-[10px] text-slate-400 font-bold tracking-[0.3em] uppercase">
+                        GESTION DES UTILISATEURS ISTA
                     </p>
                 </div>
 
-                <div className="flex flex-col sm:flex-row items-center gap-4">
-                    <div className="flex bg-white border border-[var(--border)] rounded-2xl p-1.5 shadow-sm overflow-x-auto max-w-full">
-                        {streams.map((stream) => (
-                            <button
-                                key={stream.id}
-                                onClick={() => setSelectedClass(stream.id)}
-                                className={`px-4 lg:px-6 py-3 rounded-xl text-[9px] font-black tracking-widest uppercase transition-all whitespace-nowrap ${selectedClass === stream.id
-                                    ? 'bg-[var(--secondary)] text-white shadow-lg'
-                                    : 'text-[var(--text-muted)] hover:bg-[var(--surface-hover)]'
-                                    }`}
-                            >
-                                {stream.label}
-                            </button>
-                        ))}
-                    </div>
+                <div className="flex items-center gap-4">
+                    <button className="flex items-center gap-3 px-6 py-4 bg-white border border-slate-200 rounded-2xl hover:border-slate-300 transition-all text-[10px] font-black tracking-widest text-[var(--secondary)] uppercase">
+                        <svg className="w-4 h-4 text-[var(--primary)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                        </svg>
+                        TOUTES LES FILIÈRES
+                        <ChevronDown className="w-4 h-4 text-slate-400 ml-2" />
+                    </button>
 
                     <button
                         onClick={() => { setIsEditing(false); setIsModalOpen(true); }}
-                        className="w-full sm:w-auto btn-ista px-8 py-4 flex items-center justify-center gap-3 shadow-xl"
+                        className="flex items-center justify-center gap-3 px-8 py-4 bg-[var(--primary)] hover:bg-[var(--primary-dark)] text-white rounded-2xl shadow-xl shadow-[var(--primary)]/20 transition-all group"
                     >
-                        <UserPlus className="w-4 h-4" />
-                        <span className="text-[10px] uppercase font-black tracking-widest">{t('accounts.add_member')}</span>
+                        <UserPlus className="w-4 h-4 group-hover:scale-110 transition-transform" />
+                        <span className="text-[10px] uppercase font-black tracking-widest">AJOUTER UN UTILISATEUR</span>
                     </button>
                 </div>
             </div>
 
-            {/* Dashboard Content */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
-
-                {/* Left side: Main users list */}
-                <div className="lg:col-span-8 space-y-8 overflow-x-auto md:overflow-visible">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                        <div className="flex items-center gap-3">
-                            <div className="w-1.5 h-6 bg-[var(--primary)] rounded-full"></div>
-                            <h3 className="text-xs font-black tracking-widest uppercase text-[var(--secondary)]">{t('accounts.list_title')}</h3>
+            {/* Class Cards */}
+            <div className="flex gap-6 overflow-x-auto pb-6 ista-scrollbar">
+                {availableClasses.length > 0 ? (
+                    availableClasses.map((cls) => (
+                        <div
+                            key={cls.id}
+                            onClick={() => setSelectedClass(cls.id)}
+                            className={`min-w-[320px] p-8 rounded-[24px] cursor-pointer transition-all duration-300 border ${
+                                selectedClass === cls.id 
+                                    ? 'bg-white border-[var(--primary)] shadow-lg shadow-[var(--primary)]/5' 
+                                    : 'bg-white border-slate-100 hover:border-slate-300 opacity-60 hover:opacity-100'
+                            }`}
+                        >
+                            <div className="flex justify-between items-center mb-6">
+                                <span className={`text-[12px] font-black uppercase tracking-widest ${
+                                    selectedClass === cls.id ? 'text-[var(--primary)]' : 'text-[var(--secondary)]'
+                                }`}>
+                                    {(cls.title || cls.id || '').split('-')[0].trim()}
+                                </span>
+                                <div className={`w-2.5 h-2.5 rounded-full outline outline-4 outline-offset-2 ${
+                                    selectedClass === cls.id ? 'bg-[var(--primary)] outline-[var(--primary)]/20' : 'bg-slate-200 outline-slate-100'
+                                }`}></div>
+                            </div>
+                            <h3 className="text-2xl font-black italic text-[var(--secondary)] uppercase tracking-tight mb-8">
+                                {cls.title || cls.id} {(cls.title && (cls.title.includes('SQUADRON') || cls.title.includes('CLUSTER'))) ? '' : '- SQUADRON'}
+                            </h3>
+                            <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">
+                                FILIÈRE: <span className="text-[var(--secondary)] ml-1">
+                                    {cls.stream || 'GESTION DES ENTREPRISES'}
+                                </span>
+                            </p>
                         </div>
-                        <div className="flex items-center bg-white border border-[var(--border)] rounded-2xl w-full max-w-sm px-5 group focus-within:border-[var(--primary)] transition-all shadow-sm">
-                            <Search className="w-4 h-4 text-slate-300 group-focus-within:text-[var(--primary)] transition-colors" />
+                    ))
+                ) : (
+                    <div className="min-w-[320px] p-8 rounded-[24px] bg-white border border-slate-100 opacity-60 flex items-center justify-center">
+                        <p className="text-[10px] font-black text-slate-400 tracking-widest uppercase">AUCUNE CLASSE DISPONIBLE</p>
+                    </div>
+                )}
+            </div>
+
+            {/* Students Section */}
+            <div className="space-y-6">
+                <h2 className="text-3xl font-black italic tracking-tighter text-[var(--secondary)] uppercase">
+                    STAGIAIRES
+                </h2>
+
+                <div className="bg-white border border-slate-100 rounded-[32px] p-8 shadow-sm">
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
+                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">LISTE DES STAGIAIRES</span>
+                        
+                        <div className="flex items-center bg-slate-50 border border-transparent focus-within:border-slate-200 hover:border-slate-200 rounded-2xl w-full max-w-[400px] px-5 py-4 transition-all">
+                            <Search className="w-4 h-4 text-slate-400 mr-3" />
                             <input
                                 type="text"
-                                placeholder={t('accounts.search_placeholder')}
+                                placeholder="RECHERCHER UN NOM OU ID..."
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
-                                className="bg-transparent border-none text-[11px] font-bold py-4 px-4 w-full tracking-widest focus:ring-0 text-[var(--secondary)] placeholder-slate-300 uppercase"
+                                className="bg-transparent border-none text-[10px] font-bold w-full tracking-widest focus:ring-0 text-[var(--secondary)] placeholder-slate-300 p-0 uppercase"
                             />
                         </div>
                     </div>
 
-                    <div className="bg-amber-50 border border-amber-200 p-4 rounded-2xl flex items-center gap-4 text-amber-800 animate-in fade-in slide-in-from-top-4 duration-500">
-                        <Info className="w-6 h-6 flex-shrink-0" />
-                        <p className="text-[10px] font-black uppercase tracking-wider italic">
-                            {t('accounts.reset_password_warning')}
-                        </p>
-                    </div>
-
-                    <div className="ista-panel overflow-x-auto ista-scrollbar bg-white shadow-sm">
-                        <table className="w-full text-left border-collapse min-w-[700px]">
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-left min-w-[800px]">
                             <thead>
-                                <tr className="bg-slate-50 text-slate-400 text-[9px] font-black uppercase tracking-widest border-b border-slate-100">
-                                    <th className="p-6">{t('accounts.student_name')}</th>
-                                    <th className="p-6">{t('accounts.email_id')}</th>
-                                    <th className="p-6">{t('accounts.group')}</th>
-                                    <th className="p-6 text-right">{t('accounts.actions')}</th>
+                                <tr className="border-b border-slate-100">
+                                    <th className="pb-6 text-[9px] font-black text-slate-300 uppercase tracking-widest w-16">ID</th>
+                                    <th className="pb-6 text-[9px] font-black text-slate-300 uppercase tracking-widest">NOM COMPLET</th>
+                                    <th className="pb-6 text-[9px] font-black text-slate-300 uppercase tracking-widest text-center">RÔLE</th>
+                                    <th className="pb-6 text-[9px] font-black text-slate-300 uppercase tracking-widest text-center">ÉTAT</th>
+                                    <th className="pb-6 text-[9px] font-black text-slate-300 uppercase tracking-widest text-center">DERNIÈRE CONNEXION</th>
+                                    <th className="pb-6 text-[9px] font-black text-slate-300 uppercase tracking-widest text-right">ACTIONS</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-50">
                                 {students.length > 0 ? (
                                     students.map((user) => (
                                         <tr key={user.id} className="hover:bg-slate-50 transition-colors group">
-                                            <td className="p-6">
-                                                <div className="flex items-center gap-4">
-                                                    <div className="w-12 h-12 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center text-[11px] font-black text-[var(--secondary)] group-hover:bg-[var(--primary)] group-hover:text-white transition-all shadow-sm">
-                                                        {user.name.split(' ').map(n => n[0]).join('')}
-                                                    </div>
-                                                    <div className="flex flex-col">
-                                                        <span className="text-sm font-black italic text-[var(--secondary)] uppercase tracking-tight group-hover:text-[var(--primary)] transition-colors">{user.name}</span>
-                                                        <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1 opacity-60">ID: #{user.id}</span>
-                                                    </div>
-                                                </div>
+                                            <td className="py-6 text-[11px] font-black text-slate-400">
+                                                {user.id}
                                             </td>
-                                            <td className="p-6">
-                                                <div className="flex flex-col">
-                                                    <span className="text-[10px] font-bold text-[var(--secondary)] tracking-widest uppercase">{user.email}</span>
-                                                    <span className="text-[9px] text-slate-300 font-mono mt-1">{t('accounts.portal_link')}</span>
-                                                </div>
-                                            </td>
-                                            <td className="p-6">
-                                                <span className="px-3 py-1 bg-slate-100 text-[9px] font-black text-[var(--secondary)] rounded-lg uppercase tracking-widest">
-                                                    {user.class_id || 'NA'}
+                                            <td className="py-6">
+                                                <span className="text-sm font-black italic text-[var(--secondary)] uppercase tracking-tight">
+                                                    {user.name}
                                                 </span>
                                             </td>
-                                            <td className="p-6 text-right">
-                                                <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <td className="py-6 text-center">
+                                                <span className="inline-block px-4 py-1.5 bg-slate-100 text-slate-500 text-[9px] font-black rounded-full uppercase tracking-widest">
+                                                    STAGIAIRE
+                                                </span>
+                                            </td>
+                                            <td className="py-6 text-center">
+                                                <span className="inline-block px-4 py-1.5 border border-[var(--primary)] text-[var(--primary)] text-[9px] font-black rounded-full uppercase tracking-widest bg-[var(--primary)]/5">
+                                                    ACTIVE
+                                                </span>
+                                            </td>
+                                            <td className="py-6 text-center">
+                                                <span className="text-[10px] font-bold text-slate-400 italic uppercase">
+                                                    NO LOGIN
+                                                </span>
+                                            </td>
+                                            <td className="py-6 text-right">
+                                                <div className="flex justify-end gap-2 opacity-50 group-hover:opacity-100 transition-opacity">
                                                     <button
                                                         onClick={() => {
                                                             setNewUser(user);
                                                             setIsEditing(true);
                                                             setIsModalOpen(true);
                                                         }}
-                                                        className="p-3 hover:bg-white rounded-xl text-slate-400 hover:text-[var(--primary)] transition-all shadow-sm border border-transparent hover:border-slate-100"
+                                                        className="w-10 h-10 rounded-xl border border-slate-200 flex items-center justify-center text-slate-400 hover:text-[var(--primary)] hover:border-[var(--primary)] hover:bg-[var(--primary)]/5 transition-all"
                                                     >
                                                         <Pencil className="w-4 h-4" />
                                                     </button>
@@ -256,7 +294,7 @@ const Accounts = () => {
                                                             setUserToDelete(user.id);
                                                             setIsConfirmOpen(true);
                                                         }}
-                                                        className="p-3 hover:bg-white rounded-xl text-slate-400 hover:text-red-500 transition-all shadow-sm border border-transparent hover:border-slate-100"
+                                                        className="w-10 h-10 rounded-xl border border-slate-200 flex items-center justify-center text-slate-400 hover:text-red-500 hover:border-red-500 hover:bg-red-50 transition-all"
                                                     >
                                                         <Trash2 className="w-4 h-4" />
                                                     </button>
@@ -266,58 +304,16 @@ const Accounts = () => {
                                     ))
                                 ) : (
                                     <tr>
-                                        <td colSpan="4" className="p-24 text-center">
+                                        <td colSpan="6" className="py-24 text-center">
                                             <div className="flex flex-col items-center gap-4 opacity-30">
-                                                <Activity className="w-12 h-12 text-slate-300 animate-pulse" />
-                                                <p className="text-[10px] font-black uppercase tracking-[0.4em] italic text-slate-400">{t('accounts.no_data')}</p>
+                                                <Users className="w-12 h-12 text-slate-300" />
+                                                <p className="text-[10px] font-black uppercase tracking-[0.4em] italic text-slate-400">AUCUN STAGIAIRE TROUVÉ</p>
                                             </div>
                                         </td>
                                     </tr>
                                 )}
                             </tbody>
                         </table>
-                    </div>
-                </div>
-
-                {/* Right side: Sidebar Info */}
-                <div className="lg:col-span-4 space-y-10">
-                    <div className="ista-panel p-10 bg-[var(--secondary)] text-white relative overflow-hidden group">
-                        <div className="absolute top-0 right-0 p-8 text-white/5 group-hover:scale-110 transition-transform duration-700">
-                            <GraduationCap className="w-32 h-32 -rotate-12" />
-                        </div>
-                        <div className="relative z-10 space-y-12">
-                            <div className="space-y-4">
-                                <h3 className="text-3xl font-black italic tracking-tighter leading-none">{t('accounts.formateurs_title')}</h3>
-                                <p className="text-[9px] font-bold text-white/40 tracking-[0.2em] uppercase">{t('accounts.formateurs_subtitle')}</p>
-                            </div>
-
-                            <div className="space-y-4">
-                                {formateurs.map((f) => (
-                                    <div key={f.id} className="flex items-center justify-between p-4 bg-white/5 rounded-2xl border border-white/5 backdrop-blur-sm group/card hover:bg-[var(--primary)] transition-all">
-                                        <div className="flex items-center gap-4">
-                                            <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center text-[10px] font-black group-hover/card:bg-white group-hover/card:text-[var(--primary)] transition-all">
-                                                {f.name.split(' ').map(n => n[0]).join('')}
-                                            </div>
-                                            <div className="flex flex-col">
-                                                <span className="text-[11px] font-black tracking-tight uppercase">{f.name}</span>
-                                                <span className="text-[9px] font-bold text-white/40 tracking-widest uppercase">{t(`roles.${f.role}`)}</span>
-                                            </div>
-                                        </div>
-                                        <Shield className={`w-4 h-4 ${f.role === 'admin' ? 'text-amber-400' : 'text-white/20'}`} />
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="ista-panel p-10 bg-white shadow-xl flex flex-col items-center text-center gap-6">
-                        <div className="w-20 h-20 bg-green-50 rounded-[32px] flex items-center justify-center text-[var(--primary)] shadow-lg shadow-green-500/10">
-                            <Users className="w-8 h-8" />
-                        </div>
-                        <div>
-                            <h4 className="text-3xl font-black italic text-[var(--secondary)] tracking-tighter">{students.length.toString().padStart(2, '0')}</h4>
-                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">{t('accounts.total_students')}</p>
-                        </div>
                     </div>
                 </div>
             </div>
@@ -331,6 +327,8 @@ const Accounts = () => {
                 handleUpdateUser={handleUpdateUser}
                 selectedClass={selectedClass}
                 availableClasses={availableClasses}
+                availableFilieres={availableFilieres}
+                availableOptions={availableOptions}
                 isEditing={isEditing}
             />
 
@@ -341,11 +339,6 @@ const Accounts = () => {
                 title={t('accounts.delete_confirm_title')}
                 message={t('accounts.delete_confirm_message')}
             />
-            <style>{`
-                .ista-scrollbar::-webkit-scrollbar { width: 4px; height: 4px; }
-                .ista-scrollbar::-webkit-scrollbar-track { background: transparent; }
-                .ista-scrollbar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
-            `}</style>
         </div>
     );
 };

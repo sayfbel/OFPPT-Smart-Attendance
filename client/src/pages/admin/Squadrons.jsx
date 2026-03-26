@@ -28,6 +28,9 @@ const Squadrons = () => {
     const [isOptionEditDropdownOpen, setIsOptionEditDropdownOpen] = useState(false);
     const [isFiliereEditAutre, setIsFiliereEditAutre] = useState(false);
     const [isOptionEditAutre, setIsOptionEditAutre] = useState(false);
+    const [isAnneeEditDropdownOpen, setIsAnneeEditDropdownOpen] = useState(false);
+
+    const anneesScolaires = ['2023/2024', '2024/2025', '2025/2026', '2026/2027', '2027/2028'];
     const [availableFilieres, setAvailableFilieres] = useState([]);
     const [availableOptions, setAvailableOptions] = useState([]);
     const [customFiliere, setCustomFiliere] = useState({ nom: '', niveau: 'TS' });
@@ -195,6 +198,7 @@ const Squadrons = () => {
             setIsFiliereEditDropdownOpen(false);
             setIsOptionEditDropdownOpen(false);
             setIsLevelEditDropdownOpen(false);
+            setIsAnneeEditDropdownOpen(false);
 
         }
     };
@@ -476,14 +480,40 @@ const Squadrons = () => {
 
                                     </div>
 
-                                    <div>
+                                    <div className="relative">
                                         <label className="block text-[9px] font-black tracking-widest text-slate-400 uppercase mb-2">Année Scolaire</label>
-                                        <input
-                                            type="text"
-                                            value={editData.année_scolaire}
-                                            onChange={(e) => setEditData({ ...editData, année_scolaire: e.target.value })}
-                                            className="w-full text-xs font-bold bg-white border border-[var(--border)] rounded-xl px-4 py-3 text-[var(--secondary)] focus:border-[var(--primary)] focus:ring-4 focus:ring-green-500/10 outline-none transition-all"
-                                        />
+                                        <div
+                                            onClick={() => setIsAnneeEditDropdownOpen(!isAnneeEditDropdownOpen)}
+                                            className="w-full bg-white border border-[var(--border)] rounded-xl px-4 py-3 flex justify-between items-center cursor-pointer hover:border-[var(--primary)] transition-all"
+                                        >
+                                            <div className="flex items-center gap-3">
+                                                <BookOpen className="w-4 h-4 text-[var(--primary)]" />
+                                                <span className="text-[10px] font-bold text-[var(--secondary)] uppercase tracking-tight">
+                                                    {editData.année_scolaire || 'SÉLECTIONNER...'}
+                                                </span>
+                                            </div>
+                                            <ChevronDown className={`w-4 h-4 text-[var(--primary)] transition-transform ${isAnneeEditDropdownOpen ? 'rotate-180' : ''}`} />
+                                        </div>
+
+                                        {isAnneeEditDropdownOpen && (
+                                            <div className="absolute top-full left-0 w-full mt-2 bg-white border border-slate-100 rounded-xl shadow-2xl z-[60] overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                                                {anneesScolaires.map((annee) => (
+                                                    <div
+                                                        key={annee}
+                                                        className={`px-4 py-3 cursor-pointer flex items-center justify-between hover:bg-slate-50 transition-colors ${editData.année_scolaire === annee ? 'bg-green-50' : ''}`}
+                                                        onClick={() => {
+                                                            setEditData({ ...editData, année_scolaire: annee });
+                                                            setIsAnneeEditDropdownOpen(false);
+                                                        }}
+                                                    >
+                                                        <span className={`text-[10px] font-bold uppercase ${editData.année_scolaire === annee ? 'text-[var(--primary)]' : 'text-[var(--secondary)]'}`}>
+                                                            {annee}
+                                                        </span>
+                                                        {editData.année_scolaire === annee && <div className="w-1 h-1 bg-[var(--primary)] rounded-full"></div>}
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
                                     </div>
                                     {/* Option Selector (Previous Niveau Position) */}
                                     <div className="relative">

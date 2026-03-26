@@ -7,7 +7,12 @@ const login = async (req, res) => {
     console.log(`[AUTH] Login attempt for: ${email}`);
 
     try {
-        const [users] = await db.execute('SELECT * FROM users WHERE email = ?', [email]);
+        let [users] = await db.execute('SELECT *, "admin" as role FROM admins WHERE email = ?', [email]);
+        
+        if (users.length === 0) {
+            // Check formateurs
+            [users] = await db.execute('SELECT *, "formateur" as role FROM formateurs WHERE email = ?', [email]);
+        }
 
         if (users.length === 0) {
             console.log(`[AUTH] User not found: ${email}`);
@@ -36,7 +41,8 @@ const login = async (req, res) => {
                 name: user.name,
                 email: user.email,
                 role: user.role,
-                class_id: user.class_id
+                type: user.role === 'formateur' ? user.type : null,
+                class_id: null
             }
         });
     } catch (error) {
@@ -51,11 +57,12 @@ const login = async (req, res) => {
 
 const getMe = async (req, res) => {
     try {
-        const [users] = await db.execute('SELECT id, name, email, role, class_id FROM users WHERE id = ?', [req.user.id]);
+        const table = req.user.role === 'admin' ? 'admins' : 'formateurs';
+        const [users] = await db.execute(`SELECT id, name, email FROM ${table} WHERE id = ?`, [req.user.id]);
         if (users.length === 0) {
             return res.status(404).json({ message: 'User not found' });
         }
-        res.json(users[0]);
+        res.json({ ...users[0], role: req.user.role, class_id: null });
     } catch (error) {
         res.status(500).json({ message: 'Server error', error: error.message });
     }

@@ -13,15 +13,15 @@
 ### 2. Formateur Management
 - [x] **3. Formateur Type**:
     - [x] Add `type` (Parrain or Vacataire)
-    - [x] Logic for Vacataire: manually enter email address
-    - [x] Email suggestion: `(name)@ofppt-edu.ma` for vacataire
+    - [ ] Logic for Vacataire: manually enter email address
+    - [ ] Email suggestion: `(name)@ofppt-edu.ma` for vacataire
 
 ### 3. Classes Management
 - [x] **4. Classes table**:
     - [x] replace `stream` by option 
     - [x] Add `année_scolaire`
     - [x] Add `level` (1er, 2eme, 3eme formation)
-    - [x] Logic: recreate classes list each year (default no stagiaires, updated year)
+    - [ ] Logic: recreate classes list each year (default no stagiaires, updated year)
 
 ### 4. Stagiaire (Student) Updates
 - [x] **5. Stagiaire Refactor**:
@@ -31,7 +31,7 @@
     - [x] Add `filiéreId` (FK)
     - [x] Add `optionId` (FK to `options` table) - *only if year is 2ème or 3ème*
     - [x] Add `Active` (boolean):
-        - *Logic: True if present last session OR absent and justified*
+        - [ ] *Logic: True if present last session OR absent and justified*
 
 ### 5. New Infrastructure Tables
 - [x] **6. New Tables**:

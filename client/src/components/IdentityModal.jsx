@@ -1,13 +1,22 @@
 import React, { useState } from 'react';
 import ReactDOM from 'react-dom';
-import { ChevronRight, X, ChevronDown, CheckSquare, Square, UserPlus, Save, Mail, Shield, GraduationCap, Briefcase, Settings, User } from 'lucide-react';
+import { ChevronRight, X, ChevronDown, CheckSquare, Square, UserPlus, Save, Mail, Shield, GraduationCap, Briefcase, Settings, User, BookOpen, Hash, Layers } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
-const IdentityModal = ({ isOpen, onClose, newUser, setNewUser, handleAddUser, handleUpdateUser, selectedClass, availableClasses = [], isEditing = false }) => {
+const IdentityModal = ({ isOpen, onClose, newUser, setNewUser, handleAddUser, handleUpdateUser, selectedClass, availableClasses = [], availableFilieres = [], availableOptions = [], isEditing = false }) => {
     const { t, i18n } = useTranslation();
     const isRtl = i18n.language === 'ar';
     const [isRoleDropdownOpen, setIsRoleDropdownOpen] = useState(false);
     const [isClassDropdownOpen, setIsClassDropdownOpen] = useState(false);
+    const [isFiliereDropdownOpen, setIsFiliereDropdownOpen] = useState(false);
+    const [isOptionDropdownOpen, setIsOptionDropdownOpen] = useState(false);
+    const [isAnneeDropdownOpen, setIsAnneeDropdownOpen] = useState(false);
+
+    const niveaux = [
+        { value: '1er', label: '1ER ANNÉE' },
+        { value: '2eme', label: '2ÈME ANNÉE' },
+        { value: '3eme', label: '3ÈME ANNÉE' }
+    ];
 
     if (!isOpen) return null;
 
@@ -214,6 +223,68 @@ const IdentityModal = ({ isOpen, onClose, newUser, setNewUser, handleAddUser, ha
                             </div>
 
                             <div className="mt-auto pt-12">
+                                {/* Extra info for Stagiaire */}
+                                {newUser.role === 'stagiaire' && (
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-10 pb-4 border-b border-slate-50">
+                                        <div className="space-y-3 relative">
+                                            <label className="text-[9px] font-black tracking-widest text-slate-400 uppercase flex items-center gap-2"><BookOpen className="w-3 h-3"/> Filière</label>
+                                            <div onClick={() => setIsFiliereDropdownOpen(!isFiliereDropdownOpen)} className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-4 py-3 flex justify-between items-center cursor-pointer hover:border-[var(--primary)] transition-all">
+                                                <span className={`text-xs font-bold truncate ${newUser.filiereId ? 'text-[var(--secondary)]' : 'text-slate-400'}`}>
+                                                    {availableFilieres?.find(f => f.id === newUser.filiereId)?.nom || 'SÉLECTIONNER...'}
+                                                </span>
+                                                <ChevronDown className={`w-4 h-4 text-[var(--primary)] transition-transform ${isFiliereDropdownOpen ? 'rotate-180' : ''}`} />
+                                            </div>
+                                            {isFiliereDropdownOpen && (
+                                                <div className="absolute bottom-full left-0 w-full mb-2 bg-white border border-slate-100 rounded-2xl shadow-2xl z-50 max-h-40 overflow-y-auto ista-scrollbar animate-in fade-in zoom-in-95 duration-200">
+                                                    {(availableFilieres || []).map(f => (
+                                                        <div key={f.id} className={`px-4 py-3 cursor-pointer flex items-center justify-between hover:bg-slate-50 transition-colors ${newUser.filiereId === f.id ? 'bg-green-50' : ''}`}
+                                                            onClick={() => { setNewUser({ ...newUser, filiereId: f.id, optionId: '' }); setIsFiliereDropdownOpen(false); }}>
+                                                            <span className={`text-[10px] font-bold uppercase ${newUser.filiereId === f.id ? 'text-[var(--primary)]' : 'text-[var(--secondary)]'}`}>{f.nom}</span>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </div>
+                                        <div className="space-y-3 relative">
+                                            <label className="text-[9px] font-black tracking-widest text-slate-400 uppercase flex items-center gap-2"><Hash className="w-3 h-3"/> Option</label>
+                                            <div onClick={() => setIsOptionDropdownOpen(!isOptionDropdownOpen)} className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-4 py-3 flex justify-between items-center cursor-pointer hover:border-[var(--primary)] transition-all">
+                                                <span className={`text-xs font-bold truncate ${newUser.optionId ? 'text-[var(--secondary)]' : 'text-slate-400'}`}>
+                                                    {availableOptions?.find(o => o.id === newUser.optionId)?.nom || 'SÉLECTIONNER...'}
+                                                </span>
+                                                <ChevronDown className={`w-4 h-4 text-[var(--primary)] transition-transform ${isOptionDropdownOpen ? 'rotate-180' : ''}`} />
+                                            </div>
+                                            {isOptionDropdownOpen && (
+                                                <div className="absolute bottom-full left-0 w-full mb-2 bg-white border border-slate-100 rounded-2xl shadow-2xl z-[51] max-h-40 overflow-y-auto ista-scrollbar animate-in fade-in zoom-in-95 duration-200">
+                                                    {(availableOptions || []).filter(o => !newUser.filiereId || o.filiereId === newUser.filiereId).map(opt => (
+                                                        <div key={opt.id} className={`px-4 py-3 cursor-pointer flex items-center justify-between hover:bg-slate-50 transition-colors ${newUser.optionId === opt.id ? 'bg-green-50' : ''}`}
+                                                            onClick={() => { setNewUser({ ...newUser, optionId: opt.id }); setIsOptionDropdownOpen(false); }}>
+                                                            <span className={`text-[10px] font-bold uppercase ${newUser.optionId === opt.id ? 'text-[var(--primary)]' : 'text-[var(--secondary)]'}`}>{opt.nom}</span>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </div>
+                                        <div className="space-y-3 relative">
+                                            <label className="text-[9px] font-black tracking-widest text-slate-400 uppercase flex items-center gap-2"><Layers className="w-3 h-3"/> Niveau</label>
+                                            <div onClick={() => setIsAnneeDropdownOpen(!isAnneeDropdownOpen)} className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-4 py-3 flex justify-between items-center cursor-pointer hover:border-[var(--primary)] transition-all">
+                                                <span className={`text-xs font-bold truncate ${newUser.annee ? 'text-[var(--secondary)]' : 'text-slate-400'}`}>
+                                                    {niveaux.find(n => n.value === (newUser.annee || '1er'))?.label}
+                                                </span>
+                                                <ChevronDown className={`w-4 h-4 text-[var(--primary)] transition-transform ${isAnneeDropdownOpen ? 'rotate-180' : ''}`} />
+                                            </div>
+                                            {isAnneeDropdownOpen && (
+                                                <div className="absolute bottom-full left-0 w-full mb-2 bg-white border border-slate-100 rounded-2xl shadow-2xl z-[52] overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                                                    {niveaux.map((niv) => (
+                                                        <div key={niv.value} className={`px-4 py-3 cursor-pointer flex items-center justify-between hover:bg-slate-50 transition-colors ${newUser.annee === niv.value ? 'bg-green-50' : ''}`}
+                                                            onClick={() => { setNewUser({ ...newUser, annee: niv.value }); setIsAnneeDropdownOpen(false); }}>
+                                                            <span className={`text-[10px] font-bold uppercase ${newUser.annee === niv.value ? 'text-[var(--primary)]' : 'text-[var(--secondary)]'}`}>{niv.label}</span>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
                                 <button
                                     type="submit"
                                     className="w-full btn-ista py-5 rounded-2xl font-black uppercase tracking-widest shadow-xl flex items-center justify-center gap-3 hover:scale-[1.01] active:scale-[0.99] transition-all"

@@ -4,12 +4,14 @@ import { X, CheckSquare, Square, ChevronDown, BookOpen, UserCheck, Hash, Layers,
 import axios from 'axios';
 import { useNotification } from '../context/NotificationContext';
 import { useTranslation } from 'react-i18next';
+import ConfirmationModal from './ConfirmationModal';
 
 const GroupModal = ({ isOpen, onClose, newClass, setNewClass, handleAddClass, formateurs = [], classes = [], isEditing = false }) => {
     const { t, i18n } = useTranslation();
     const isRtl = i18n.language === 'ar';
 
     const [isLevelDropdownOpen, setIsLevelDropdownOpen] = useState(false);
+    const [isAnneeDropdownOpen, setIsAnneeDropdownOpen] = useState(false);
     const [isFiliereDropdownOpen, setIsFiliereDropdownOpen] = useState(false);
     const [isOptionDropdownOpen, setIsOptionDropdownOpen] = useState(false);
     const [isFormateurDropdownOpen, setIsFormateurDropdownOpen] = useState(false);
@@ -26,6 +28,8 @@ const GroupModal = ({ isOpen, onClose, newClass, setNewClass, handleAddClass, fo
     const [isOptionAutre, setIsOptionAutre] = useState(false);
     const [customFiliere, setCustomFiliere] = useState({ nom: '', niveau: 'TS' });
     const [customOption, setCustomOption] = useState({ nom: '', niveau: 'TS' });
+
+    const anneesScolaires = ['2023/2024', '2024/2025', '2025/2026', '2026/2027', '2027/2028'];
 
     const levels = [
         { value: '1er', label: '1ER ANNÉE' },
@@ -401,16 +405,40 @@ const GroupModal = ({ isOpen, onClose, newClass, setNewClass, handleAddClass, fo
 
                     <div className="space-y-6">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div className="space-y-2">
+                            <div className="space-y-2 relative">
                                 <label className="text-[10px] font-black tracking-widest text-[var(--text-muted)] uppercase">ANNÉE SCOLAIRE</label>
-                                <input
-                                    type="text"
-                                    required
-                                    value={newClass.année_scolaire}
-                                    onChange={e => setNewClass({ ...newClass, année_scolaire: e.target.value })}
-                                    placeholder="EX: 2025/2026"
-                                    className="w-full bg-slate-50 border border-[var(--border)] rounded-xl p-4 text-sm font-bold text-[var(--secondary)] focus:ring-4 focus:ring-green-500/10 focus:border-[var(--primary)] outline-none transition-all"
-                                />
+                                <div
+                                    onClick={() => setIsAnneeDropdownOpen(!isAnneeDropdownOpen)}
+                                    className="w-full bg-slate-50 border border-[var(--border)] rounded-xl p-4 flex justify-between items-center cursor-pointer hover:border-[var(--primary)] transition-all"
+                                >
+                                    <div className="flex items-center gap-3">
+                                        <BookOpen className="w-4 h-4 text-[var(--primary)]" />
+                                        <span className="text-sm font-bold text-[var(--secondary)] uppercase tracking-tight">
+                                            {newClass.année_scolaire || 'SÉLECTIONNER...'}
+                                        </span>
+                                    </div>
+                                    <ChevronDown className={`w-5 h-5 text-[var(--primary)] transition-transform ${isAnneeDropdownOpen ? 'rotate-180' : ''}`} />
+                                </div>
+
+                                {isAnneeDropdownOpen && (
+                                    <div className="absolute top-full left-0 w-full mt-2 bg-white border border-slate-100 rounded-2xl shadow-2xl z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                                        {anneesScolaires.map((annee) => (
+                                            <div
+                                                key={annee}
+                                                className={`px-6 py-4 cursor-pointer flex items-center justify-between hover:bg-slate-50 transition-colors ${newClass.année_scolaire === annee ? 'bg-green-50' : ''}`}
+                                                onClick={() => {
+                                                    setNewClass({ ...newClass, année_scolaire: annee });
+                                                    setIsAnneeDropdownOpen(false);
+                                                }}
+                                            >
+                                                <span className={`text-xs font-bold uppercase ${newClass.année_scolaire === annee ? 'text-[var(--primary)]' : 'text-[var(--secondary)]'}`}>
+                                                    {annee}
+                                                </span>
+                                                {newClass.année_scolaire === annee && <div className="w-1.5 h-1.5 bg-[var(--primary)] rounded-full"></div>}
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
                             </div>
                             <div className="space-y-2 relative">
                                 <label className="text-[10px] font-black tracking-widest text-[var(--text-muted)] uppercase">FORMATEURS / RESPONSABLES</label>

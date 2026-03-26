@@ -269,7 +269,7 @@ const initScheduleData = async () => {
     }
 };
 
-initScheduleData();
+// initScheduleData();
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {

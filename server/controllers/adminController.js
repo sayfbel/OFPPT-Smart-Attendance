@@ -5,7 +5,7 @@ const { spawn } = require('child_process');
 
 exports.getFormateurs = async (req, res) => {
     try {
-        const [formateurs] = await pool.query('SELECT id, name, email, role FROM users WHERE role = ?', ['formateur']);
+        const [formateurs] = await pool.query("SELECT id, name, email, 'formateur' as role FROM formateurs");
         res.json({ formateurs });
     } catch (err) {
         console.error("GET FORMATEURS ERROR:", err);
@@ -15,8 +15,8 @@ exports.getFormateurs = async (req, res) => {
 
 exports.getDashboardSummary = async (req, res) => {
     try {
-        const [[{ total_students }]] = await pool.query("SELECT COUNT(*) as total_students FROM users WHERE role = 'stagiaire'");
-        const [[{ total_formateurs }]] = await pool.query("SELECT COUNT(*) as total_formateurs FROM users WHERE role = 'formateur'");
+        const [[{ total_students }]] = await pool.query("SELECT COUNT(*) as total_students FROM stagiaires");
+        const [[{ total_formateurs }]] = await pool.query("SELECT COUNT(*) as total_formateurs FROM formateurs");
         const [[{ total_classes }]] = await pool.query("SELECT COUNT(*) as total_classes FROM classes");
         const [[{ total_reports }]] = await pool.query("SELECT COUNT(*) as total_reports FROM reports");
 
@@ -41,18 +41,19 @@ exports.getClassesAndSchedule = async (req, res) => {
         try {
             [classes] = await pool.query(`
                 SELECT 
-                    c.*, 
-                    (SELECT COUNT(*) FROM users u WHERE u.class_id = c.id AND u.role = 'stagiaire') as student_count,
+                    c.*, f.nom as stream,
+                    (SELECT COUNT(*) FROM stagiaires s WHERE s.class_id = c.id) as student_count,
                     GROUP_CONCAT(u_lead.name SEPARATOR ', ') as lead_formateurs
                 FROM classes c
+                LEFT JOIN filiere f ON c.filiereId = f.id
                 LEFT JOIN class_supervisors cs ON c.id = cs.class_id
-                LEFT JOIN users u_lead ON cs.formateur_id = u_lead.id
+                LEFT JOIN formateurs u_lead ON cs.formateur_id = u_lead.id
                 GROUP BY c.id
             `);
             [schedule] = await pool.query(`
                 SELECT t.id, t.day, t.time, t.class_id as class, u.name as formateur, t.subject, t.room 
                 FROM timetable t
-                LEFT JOIN users u ON t.formateur_id = u.id
+                LEFT JOIN formateurs u ON t.formateur_id = u.id
             `);
         } catch (dbErr) {
             console.error("DB Error. Tables might not exist:", dbErr.message);
@@ -76,33 +77,36 @@ exports.getClassesAndSchedule = async (req, res) => {
 
 exports.createClass = async (req, res) => {
     try {
-        const { id, title, stream, lead } = req.body;
+        const { id, filiereId, optionId, lead, année_scolaire, level } = req.body;
 
-        if (!id || !title || !stream || !lead) {
-            return res.status(400).json({ message: 'All fields are required.' });
+        if (!id || !filiereId) {
+            return res.status(400).json({ message: 'L\'ID du groupe et la filière sont obligatoires.' });
         }
 
         await pool.query(
-            'INSERT INTO classes (id, title, stream) VALUES (?, ?, ?)',
-            [id, title, stream]
+            'INSERT INTO classes (id, filiereId, optionId, annee_scolaire, level) VALUES (?, ?, ?, ?, ?)',
+            [id, filiereId, optionId || null, année_scolaire || '2025/2026', level || '1er']
         );
 
         // Sync supervisors
         const leads = Array.isArray(lead) ? lead : (lead ? lead.split(',').map(s => s.trim()) : []);
         for (const leadName of leads) {
-            const [[user]] = await pool.query('SELECT id FROM users WHERE name = ? AND role = "formateur"', [leadName]);
+            const [[user]] = await pool.query('SELECT id FROM formateurs WHERE name = ?', [leadName]);
             if (user) {
                 await pool.query('INSERT IGNORE INTO class_supervisors (class_id, formateur_id) VALUES (?, ?)', [id, user.id]);
-                await pool.query(
-                    'INSERT INTO notifications (user_id, type, category, title, message) VALUES (?, ?, ?, ?, ?)',
-                    [user.id, 'message', 'PLANNING', 'Nouveau Groupe Assigné', `Vous avez été assigné comme superviseur pour le groupe ${id}.`]
-                );
+                // Ensure notification only if admin users table exists or handle formateur notification safely
+                try {
+                    await pool.query(
+                        'INSERT INTO notifications (user_id, type, category, title, message) VALUES (?, ?, ?, ?, ?)',
+                        [user.id, 'message', 'PLANNING', 'Nouveau Groupe Assigné', `Vous avez été assigné comme superviseur pour le groupe ${id}.`]
+                    );
+                } catch(err) { }
             }
         }
 
         res.status(201).json({
             message: 'Class created successfully',
-            class: { id, title, stream, lead: leads.join(', '), students: 0 }
+            class: { id, filiereId, optionId, annee_scolaire: année_scolaire, level, lead: leads.join(', '), students: 0 }
         });
     } catch (err) {
         console.error(err);
@@ -116,22 +120,22 @@ exports.createClass = async (req, res) => {
 exports.updateClass = async (req, res) => {
     try {
         const { id } = req.params;
-        const { title, stream, lead } = req.body;
+        const { filiereId, optionId, lead, année_scolaire, level } = req.body;
 
-        if (!title || !stream || !lead) {
-            return res.status(400).json({ message: 'All fields are required.' });
+        if (!filiereId) {
+            return res.status(400).json({ message: 'La filière est obligatoire.' });
         }
 
         await pool.query(
-            'UPDATE classes SET title = ?, stream = ? WHERE id = ?',
-            [title, stream, id]
+            'UPDATE classes SET filiereId = ?, optionId = ?, annee_scolaire = ?, level = ? WHERE id = ?',
+            [filiereId, optionId || null, année_scolaire || '2025/2026', level || '1er', id]
         );
 
         // Sync supervisors
         await pool.query('DELETE FROM class_supervisors WHERE class_id = ?', [id]);
         const leads = Array.isArray(lead) ? lead : (lead ? lead.split(',').map(s => s.trim()) : []);
         for (const leadName of leads) {
-            const [[user]] = await pool.query('SELECT id FROM users WHERE name = ? AND role = "formateur"', [leadName]);
+            const [[user]] = await pool.query('SELECT id FROM formateurs WHERE name = ?', [leadName]);
             if (user) {
                 await pool.query('INSERT IGNORE INTO class_supervisors (class_id, formateur_id) VALUES (?, ?)', [id, user.id]);
             }
@@ -140,18 +144,25 @@ exports.updateClass = async (req, res) => {
         // Fetch updated object with count and leads
         const [[updatedClass]] = await pool.query(`
             SELECT 
-                c.*, 
-                (SELECT COUNT(*) FROM users u WHERE u.class_id = c.id AND u.role = 'stagiaire') as student_count,
-                (SELECT GROUP_CONCAT(u_lead.name SEPARATOR ', ') FROM class_supervisors cs JOIN users u_lead ON cs.formateur_id = u_lead.id WHERE cs.class_id = c.id) as lead_formateurs
-            FROM classes c WHERE c.id = ?
+                c.*, f.nom as stream, o.nom as optionText,
+                (SELECT COUNT(*) FROM stagiaires s WHERE s.class_id = c.id) as student_count,
+                (SELECT GROUP_CONCAT(u_lead.name SEPARATOR ', ') FROM class_supervisors cs JOIN formateurs u_lead ON cs.formateur_id = u_lead.id WHERE cs.class_id = c.id) as lead_formateurs
+            FROM classes c 
+            LEFT JOIN filiere f ON c.filiereId = f.id
+            LEFT JOIN options o ON c.optionId = o.id
+            WHERE c.id = ?
         `, [id]);
 
         res.json({
             message: 'Class updated successfully',
             class: {
                 id: updatedClass.id,
-                title: updatedClass.title,
                 stream: updatedClass.stream,
+                option: updatedClass.optionText,
+                filiereId: updatedClass.filiereId,
+                optionId: updatedClass.optionId,
+                annee_scolaire: updatedClass.annee_scolaire,
+                level: updatedClass.level,
                 lead: updatedClass.lead_formateurs || '',
                 students: updatedClass.student_count
             }
@@ -169,7 +180,7 @@ exports.deleteClass = async (req, res) => {
         // Use a transaction or sequential deletes to handle constraints
         await pool.query('DELETE FROM timetable WHERE class_id = ?', [id]);
         await pool.query('DELETE FROM class_supervisors WHERE class_id = ?', [id]);
-        await pool.query('UPDATE users SET class_id = NULL WHERE class_id = ?', [id]);
+        await pool.query('UPDATE stagiaires SET class_id = NULL WHERE class_id = ?', [id]);
 
         const [result] = await pool.query('DELETE FROM classes WHERE id = ?', [id]);
 
@@ -303,16 +314,18 @@ exports.getUsersByClass = async (req, res) => {
     try {
         const { classId } = req.params;
 
-        // Fetch Admin/Formateurs from users table assigned to this class
-        const [users] = await pool.query('SELECT id, name, email, role, class_id FROM users WHERE class_id = ?', [classId]);
+        const [supervisors] = await pool.query(`
+            SELECT f.id, f.name, f.email, 'formateur' as role, c.class_id 
+            FROM formateurs f 
+            JOIN class_supervisors c ON f.id = c.formateur_id 
+            WHERE c.class_id = ?
+        `, [classId]);
 
-        // Fetch Stagiaires from the new stagiaires table
-        const [stagiaires] = await pool.query('SELECT id, name, class_id, institute, year, profession, qr_path FROM stagiaires WHERE class_id = ?', [classId]);
+        const [stagiaires] = await pool.query("SELECT NumInscription as id, name, class_id, annee as year, 'stagiaire' as profession, qr_path, Active FROM stagiaires WHERE class_id = ?", [classId]);
 
-        // Combine them for the UI
         const combined = [
-            ...users.map(u => ({ ...u, status: 'ACTIVE', lastLogin: 'Staff' })),
-            ...stagiaires.map(s => ({ ...s, role: 'stagiaire', status: 'ACTIVE', lastLogin: 'No Login' }))
+            ...supervisors.map(u => ({ ...u, status: 'ACTIVE', lastLogin: 'Staff' })),
+            ...stagiaires.map(s => ({ ...s, role: 'stagiaire', status: s.Active ? 'ACTIVE' : 'INACTIVE', lastLogin: 'No Login' }))
         ];
 
         res.json({ users: combined });
@@ -324,27 +337,27 @@ exports.getUsersByClass = async (req, res) => {
 
 exports.createUser = async (req, res) => {
     try {
-        const { name, role, class_id } = req.body;
+        const { name, role, class_id, filiereId, optionId, annee } = req.body;
         if (!name || !role) {
             return res.status(400).json({ message: 'Name and Role are mandatory.' });
         }
 
         if (role === 'stagiaire') {
-            if (!class_id) return res.status(400).json({ message: 'Squadron ID is required for Stagiaires.' });
+            const numInsc = 'STG' + Math.floor(Math.random() * 90000) + Date.now().toString().slice(-4);
 
             // 1. Create Stagiaire in new table
-            const [result] = await pool.query(
-                'INSERT INTO stagiaires (name, class_id) VALUES (?, ?)',
-                [name, class_id]
+            await pool.query(
+                'INSERT INTO stagiaires (NumInscription, name, class_id, filiereId, optionId, annee) VALUES (?, ?, ?, ?, ?, ?)',
+                [numInsc, name, class_id || null, filiereId || null, optionId || null, annee || '1er']
             );
-            const stagiaireId = result.insertId;
+            const stagiaireId = numInsc;
 
             // 2. Generate QR Code via Python
             const qrData = {
                 Name: name,
-                Group: class_id,
-                Institute: "OFPPT ISTA Mirleft",
-                Year: "2025/2026",
+                Group: class_id || "Unassigned",
+                Institute: "OFPPT ISTA",
+                Year: annee || "1er",
                 Profession: "stagiaire"
             };
 
@@ -368,10 +381,10 @@ exports.createUser = async (req, res) => {
             });
 
             if (newQrPath) {
-                await pool.query('UPDATE stagiaires SET qr_path = ? WHERE id = ?', [newQrPath, stagiaireId]);
+                await pool.query('UPDATE stagiaires SET qr_path = ? WHERE NumInscription = ?', [newQrPath, stagiaireId]);
             }
 
-            const [[newStagiaire]] = await pool.query('SELECT * FROM stagiaires WHERE id = ?', [stagiaireId]);
+            const [[newStagiaire]] = await pool.query('SELECT NumInscription as id, name, class_id, annee, filiereId, optionId, qr_path FROM stagiaires WHERE NumInscription = ?', [stagiaireId]);
 
             // Notify Formateurs of the class
             const [supervisors] = await pool.query('SELECT formateur_id FROM class_supervisors WHERE class_id = ?', [class_id]);
@@ -437,7 +450,7 @@ exports.createUser = async (req, res) => {
 exports.updateUser = async (req, res) => {
     try {
         const { id } = req.params;
-        const { name, role, class_id } = req.body;
+        const { name, role, class_id, filiereId, optionId, annee } = req.body;
 
         if (!name || !role) {
             return res.status(400).json({ message: 'Name and Role are mandatory.' });
@@ -445,7 +458,7 @@ exports.updateUser = async (req, res) => {
 
         if (role === 'stagiaire') {
             // 1. Get old QR path to delete it
-            const [[oldRecord]] = await pool.query('SELECT qr_path, institute, year, profession FROM stagiaires WHERE id = ?', [id]);
+            const [[oldRecord]] = await pool.query('SELECT qr_path, annee FROM stagiaires WHERE NumInscription = ?', [id]);
 
             if (oldRecord && oldRecord.qr_path) {
                 const absoluteOldPath = path.join(__dirname, '..', oldRecord.qr_path);
@@ -456,17 +469,17 @@ exports.updateUser = async (req, res) => {
 
             // 2. Update basic info
             await pool.query(
-                'UPDATE stagiaires SET name = ?, class_id = ? WHERE id = ?',
-                [name, class_id, id]
+                'UPDATE stagiaires SET name = ?, class_id = ?, filiereId = ?, optionId = ?, annee = ? WHERE NumInscription = ?',
+                [name, class_id || null, filiereId || null, optionId || null, annee || '1er', id]
             );
 
             // 3. Generate New QR Code
             const qrData = {
                 Name: name,
-                Group: class_id,
-                Institute: oldRecord ? oldRecord.institute : "OFPPT ISTA Mirleft",
-                Year: oldRecord ? oldRecord.year : "2025/2026",
-                Profession: oldRecord ? oldRecord.profession : "stagiaire"
+                Group: class_id || "Unassigned",
+                Institute: "OFPPT ISTA",
+                Year: annee || (oldRecord ? oldRecord.annee : "1er"),
+                Profession: "stagiaire"
             };
 
             const pythonProcess = spawn('py', [
@@ -489,10 +502,10 @@ exports.updateUser = async (req, res) => {
             });
 
             if (newQrPath) {
-                await pool.query('UPDATE stagiaires SET qr_path = ? WHERE id = ?', [newQrPath, id]);
+                await pool.query('UPDATE stagiaires SET qr_path = ? WHERE NumInscription = ?', [newQrPath, id]);
             }
 
-            const [[updated]] = await pool.query('SELECT * FROM stagiaires WHERE id = ?', [id]);
+            const [[updated]] = await pool.query('SELECT NumInscription as id, name, class_id, annee, filiereId, optionId, qr_path FROM stagiaires WHERE NumInscription = ?', [id]);
             res.json({ message: 'Stagiaire updated. New QR generated.', user: { ...updated, role: 'stagiaire' } });
         } else {
             const email = name.trim().toLowerCase().replace(/\s+/g, '.') + '@ofppt.ma';
@@ -586,5 +599,114 @@ exports.getReports = async (req, res) => {
     } catch (err) {
         console.error("GET REPORTS ERROR:", err);
         res.status(500).json({ message: 'Server Error getting reports' });
+    }
+};
+
+exports.getUsers = async (req, res) => {
+    try {
+        const [admins] = await pool.query("SELECT id, name, email, 'admin' as role, NULL as class_id FROM admins");
+        const [formateurs] = await pool.query("SELECT id, name, email, 'formateur' as role, type FROM formateurs");
+        const [stagiaires] = await pool.query("SELECT NumInscription as id, name, class_id, annee as year, 'stagiaire' as profession, qr_path, Active FROM stagiaires");
+        
+        const combined = [
+            ...admins.map(a => ({ ...a, status: 'ACTIVE', lastLogin: 'Staff' })),
+            ...formateurs.map(f => ({ ...f, status: 'ACTIVE', lastLogin: 'Staff' })),
+            ...stagiaires.map(s => ({ ...s, email: s.name.replace(/\s/g, '').toLowerCase() + '@ofppt.ma', role: 'stagiaire', status: s.Active ? 'ACTIVE' : 'INACTIVE', lastLogin: 'No Login' }))
+        ];
+
+        res.json({ users: combined });
+    } catch (err) {
+        console.error("GET USERS ERROR:", err);
+        res.status(500).json({ message: 'Server Error getting users' });
+    }
+};
+
+exports.getClasses = async (req, res) => {
+    try {
+        const [classes] = await pool.query(`
+            SELECT c.*, f.nom as stream, o.nom as optionText,
+                (SELECT COUNT(*) FROM stagiaires s WHERE s.class_id = c.id) as student_count
+            FROM classes c
+            LEFT JOIN filiere f ON c.filiereId = f.id
+            LEFT JOIN options o ON c.optionId = o.id
+        `);
+        res.json({ classes: classes.map(c => ({...c, students: c.student_count, option: c.optionText})) });
+    } catch (err) {
+        console.error("GET CLASSES ERROR:", err);
+        res.status(500).json({ message: 'Server Error getting classes' });
+    }
+};
+
+exports.getTimetable = async (req, res) => {
+    try {
+        const [schedule] = await pool.query(`
+            SELECT t.id, t.day, t.time, t.class_id as class, u.name as formateur, t.subject, t.room 
+            FROM timetable t
+            LEFT JOIN formateurs u ON t.formateur_id = u.id
+        `);
+        res.json({ schedule: schedule });
+    } catch (err) {
+        console.error("GET TIMETABLE ERROR:", err);
+        res.status(500).json({ message: 'Server Error getting timetable' });
+    }
+};
+
+exports.getFilieres = async (req, res) => {
+    try {
+        const [filieres] = await pool.query('SELECT * FROM filiere');
+        res.json({ filieres });
+    } catch (err) {
+        res.status(500).json({ message: 'Server Error getting filieres' });
+    }
+};
+
+exports.getOptions = async (req, res) => {
+    try {
+        const [options] = await pool.query('SELECT * FROM options');
+        res.json({ options });
+    } catch (err) {
+        res.status(500).json({ message: 'Server Error getting options' });
+    }
+};
+
+exports.createFiliere = async (req, res) => {
+    try {
+        const { nom, niveau } = req.body;
+        const [result] = await pool.query('INSERT INTO filiere (nom, niveau) VALUES (?, ?)', [nom, niveau || 'TS']);
+        res.json({ id: result.insertId, nom, niveau });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: 'Server Error creating filiere' });
+    }
+};
+
+exports.deleteFiliere = async (req, res) => {
+    try {
+        await pool.query('DELETE FROM filiere WHERE id = ?', [req.params.id]);
+        res.json({ message: 'Filiere deleted' });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: 'Server Error deleting filiere' });
+    }
+};
+
+exports.createOption = async (req, res) => {
+    try {
+        const { filiereId, nom, niveau } = req.body;
+        const [result] = await pool.query('INSERT INTO options (filiereId, nom, niveau) VALUES (?, ?, ?)', [filiereId, nom, niveau || 'TS']);
+        res.json({ id: result.insertId, filiereId, nom, niveau });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: 'Server Error creating option' });
+    }
+};
+
+exports.deleteOption = async (req, res) => {
+    try {
+        await pool.query('DELETE FROM options WHERE id = ?', [req.params.id]);
+        res.json({ message: 'Option deleted' });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: 'Server Error deleting option' });
     }
 };

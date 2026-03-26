@@ -1,4 +1,5 @@
 -- OFPPT Attendance System - Updated Schema with Filiere and Option Support
+DROP DATABASE IF EXISTS ofppt_attendance;
 CREATE DATABASE IF NOT EXISTS ofppt_attendance;
 USE ofppt_attendance;
 
@@ -27,7 +28,7 @@ CREATE TABLE IF NOT EXISTS salles (
 -- 2. Classes Registry
 CREATE TABLE IF NOT EXISTS classes (
     id VARCHAR(50) PRIMARY KEY,
-    année_scolaire VARCHAR(50) DEFAULT '2025/2026',
+    annee_scolaire VARCHAR(50) DEFAULT '2025/2026',
     level VARCHAR(50) DEFAULT '1er',
     filiereId INT,
     optionId INT,
@@ -42,7 +43,6 @@ CREATE TABLE IF NOT EXISTS admins (
     name VARCHAR(255) NOT NULL,
     email VARCHAR(255) UNIQUE NOT NULL,
     password VARCHAR(255) NOT NULL,
-    image LONGTEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -52,7 +52,6 @@ CREATE TABLE IF NOT EXISTS formateurs (
     email VARCHAR(255) UNIQUE NOT NULL,
     password VARCHAR(255) NOT NULL,
     type ENUM('Parrain', 'Vacataire') DEFAULT 'Parrain',
-    image LONGTEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -61,7 +60,7 @@ CREATE TABLE IF NOT EXISTS stagiaires (
     NumInscription VARCHAR(50) PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     class_id VARCHAR(50),
-    Année VARCHAR(50) DEFAULT '1er',
+    annee VARCHAR(50) DEFAULT '1er',
     filiereId INT,
     optionId INT,
     Active BOOLEAN DEFAULT TRUE,
