@@ -1,6 +1,10 @@
 import React, { useRef, useState, useEffect } from 'react';
 import ReactDOM from 'react-dom';
+<<<<<<< HEAD
 import { X, CheckCircle2, AlertTriangle, ArrowRight, PenTool, Hash, Users, Activity, XCircle, ShieldCheck, ClipboardCheck, Clock, ChevronDown } from 'lucide-react';
+=======
+import { X, CheckCircle2, AlertTriangle, ArrowRight, PenTool, Hash, Users, Activity, XCircle, ShieldCheck, ClipboardCheck, Clock } from 'lucide-react';
+>>>>>>> 6a6ba9556e523366f663093f32ea6fa7de4f575e
 import { useTranslation } from 'react-i18next';
 
 const ClassDossierModal = ({ isOpen, onClose, activeSession, students, stats, onConfirm, submitting }) => {
@@ -11,6 +15,7 @@ const ClassDossierModal = ({ isOpen, onClose, activeSession, students, stats, on
     const [hasSignature, setHasSignature] = useState(false);
     const [startTime, setStartTime] = useState('');
     const [endTime, setEndTime] = useState('');
+<<<<<<< HEAD
     const [isStartOpen, setIsStartOpen] = useState(false);
     const [isEndOpen, setIsEndOpen] = useState(false);
 
@@ -19,6 +24,8 @@ const ClassDossierModal = ({ isOpen, onClose, activeSession, students, stats, on
         '12:00', '12:30', '13:00', '13:30', '14:00', '14:30', '15:00',
         '15:30', '16:00', '16:30', '17:00', '17:30', '18:00', '18:30'
     ];
+=======
+>>>>>>> 6a6ba9556e523366f663093f32ea6fa7de4f575e
 
     useEffect(() => {
         if (isOpen && activeSession?.time) {
@@ -158,11 +165,17 @@ const ClassDossierModal = ({ isOpen, onClose, activeSession, students, stats, on
                                         </div>
                                         <div className={`px-4 py-2 rounded-xl text-[9px] font-black tracking-widest uppercase border ${student.status === 'PRESENT'
                                             ? 'bg-green-50 text-[var(--primary)] border-green-100'
+<<<<<<< HEAD
                                             : student.status === 'LATE'
                                                 ? 'bg-amber-50 text-amber-500 border-amber-100'
                                                 : 'bg-red-50 text-red-500 border-red-100'
                                             }`}>
                                             {student.status === 'PRESENT' ? t('dashboard.present') : student.status === 'LATE' ? 'RETARD' : t('dashboard.absent')}
+=======
+                                            : 'bg-red-50 text-red-500 border-red-100'
+                                            }`}>
+                                            {student.status === 'PRESENT' ? t('dashboard.present') : t('dashboard.absent')}
+>>>>>>> 6a6ba9556e523366f663093f32ea6fa7de4f575e
                                         </div>
                                     </div>
                                 )) : (
@@ -213,6 +226,7 @@ const ClassDossierModal = ({ isOpen, onClose, activeSession, students, stats, on
                             </div>
 
                             <div className={`p-8 bg-slate-50 rounded-[32px] border border-slate-100 grid grid-cols-2 gap-8 ${isRtl ? 'direction-rtl' : ''}`}>
+<<<<<<< HEAD
                                 <div className="space-y-4 relative">
                                     <label className={`text-[10px] font-black tracking-widest text-slate-400 uppercase flex items-center gap-2 ${isRtl ? 'flex-row-reverse' : ''}`}>
                                         <Clock className="w-3 h-3" /> {t('modals.dossier.start_time')}
@@ -262,6 +276,29 @@ const ClassDossierModal = ({ isOpen, onClose, activeSession, students, stats, on
                                             ))}
                                         </div>
                                     )}
+=======
+                                <div className="space-y-4">
+                                    <label className={`text-[10px] font-black tracking-widest text-slate-400 uppercase flex items-center gap-2 ${isRtl ? 'flex-row-reverse' : ''}`}>
+                                        <Clock className="w-3 h-3" /> {t('modals.dossier.start_time')}
+                                    </label>
+                                    <input
+                                        type="time"
+                                        value={startTime}
+                                        onChange={(e) => setStartTime(e.target.value)}
+                                        className={`w-full bg-white border border-slate-100 rounded-2xl p-5 text-sm font-black text-[var(--primary)] focus:ring-4 focus:ring-green-500/5 focus:border-[var(--primary)] outline-none transition-all ${isRtl ? 'text-right' : ''}`}
+                                    />
+                                </div>
+                                <div className="space-y-4">
+                                    <label className={`text-[10px] font-black tracking-widest text-slate-400 uppercase flex items-center gap-2 ${isRtl ? 'flex-row-reverse' : ''}`}>
+                                        <Clock className="w-3 h-3" /> {t('modals.dossier.end_time')}
+                                    </label>
+                                    <input
+                                        type="time"
+                                        value={endTime}
+                                        onChange={(e) => setEndTime(e.target.value)}
+                                        className={`w-full bg-white border border-slate-100 rounded-2xl p-5 text-sm font-black text-[var(--primary)] focus:ring-4 focus:ring-green-500/5 focus:border-[var(--primary)] outline-none transition-all ${isRtl ? 'text-right' : ''}`}
+                                    />
+>>>>>>> 6a6ba9556e523366f663093f32ea6fa7de4f575e
                                 </div>
                             </div>
                         </div>

@@ -9,6 +9,10 @@ const resources = {
                 dashboard: 'Tableau de bord',
                 members: 'Membres',
                 groups: 'Groupes',
+<<<<<<< HEAD
+=======
+                timetable: 'Emploi du temps',
+>>>>>>> 6a6ba9556e523366f663093f32ea6fa7de4f575e
                 reports: 'Rapports',
                 my_groups: 'Mes Groupes',
                 logout: 'Déconnexion',
@@ -101,6 +105,48 @@ const resources = {
                 create_success: 'Groupe créé avec succès.',
                 delete_success: 'Groupe supprimé avec succès.'
             },
+<<<<<<< HEAD
+=======
+            timetable: {
+                title: 'Emploi du Temps',
+                subtitle: 'Gestion administrative du planning',
+                add_seance: 'AJOUTER UNE SÉANCE',
+                initializing: 'INITIALISATION DU PLANNING...',
+                days_header: 'JOURS',
+                free_slot: 'LIBRE / VIDE',
+                days: {
+                    monday: 'LUNDI',
+                    tuesday: 'MARDI',
+                    wednesday: 'MERCREDI',
+                    thursday: 'JEUDI',
+                    friday: 'VENDREDI',
+                    saturday: 'SAMEDI'
+                },
+                update_success: 'Séance mise à jour avec succès.',
+                create_success: 'Nouvelle séance ajoutée au planning.',
+                delete_success: 'Séance supprimée avec succès.',
+                list_title: 'PLANIFICATION HEBDOMADAIRE',
+                col_session: 'SÉANCE / GROUPE',
+                col_time: 'HORAIRES',
+                col_formateur: 'FORMATEUR',
+                col_actions: 'ACTIONS',
+                qualified_formateur: 'FORMATEUR QUALIFIÉ',
+                no_sessions: 'PAS DE SÉANCES PROGRAMMÉES',
+                delete_confirm_title: 'SUPPRESSION DE SÉANCE',
+                delete_confirm_message: 'Êtes-vous sûr de vouloir supprimer cette séance de l\'emploi du temps ?',
+                add_session: 'AJOUTER UNE SÉANCE',
+                class_select: 'GROUPE',
+                formateur_select: 'FORMATEUR',
+                day_select: 'JOUR',
+                start_time: 'DÉBUT',
+                end_time: 'FIN',
+                room_label: 'SALLE',
+                add_button: 'AJOUTER AU PLANNING',
+                select_group_placeholder: 'SÉLECTIONNER UN GROUPE',
+                select_formateur_placeholder: 'SÉLECTIONNER UN FORMATEUR',
+                room_placeholder: 'EX: SALLE 101'
+            },
+>>>>>>> 6a6ba9556e523366f663093f32ea6fa7de4f575e
             reports: {
                 title: 'Rapports',
                 subtitle: 'Gérez et exportez vos rapports de présence.',
@@ -249,6 +295,18 @@ const resources = {
                 loading: 'Chargement du Registre...',
                 error_fetch: 'Échec de la récupération des groupes.'
             },
+<<<<<<< HEAD
+=======
+            formateur_timetable: {
+                title: 'Emploi du Temps',
+                subtitle: 'VOTRE EMPLOI DU TEMPS PERSONNEL',
+                no_assignment: 'AUCUNE AFFECTATION',
+                no_assignment_msg: 'VOUS N\'AVEZ PAS ENCORE DE GROUPES AFFECTÉS.',
+                active_session: 'PROCHAINEMENT',
+                loading: 'SYNCHRONISATION DU PLANNING...',
+                error_fetch: 'ERREUR LORS DE LA RÉCUPÉRATION DU PLANNING'
+            },
+>>>>>>> 6a6ba9556e523366f663093f32ea6fa7de4f575e
             datepicker: {
                 months: ["JANVIER", "FÉVRIER", "MARS", "AVRIL", "MAI", "JUIN", "JUILLET", "AOÛT", "SEPTEMBRE", "OCTOBRE", "NOVEMBRE", "DÉCEMBRE"],
                 days: ["DIM", "LUN", "MAR", "MER", "JEU", "VEN", "SAM"],
@@ -263,6 +321,10 @@ const resources = {
                 dashboard: 'لوحة القيادة',
                 members: 'الأعضاء',
                 groups: 'المجموعات',
+<<<<<<< HEAD
+=======
+                timetable: 'الجدول الزمني',
+>>>>>>> 6a6ba9556e523366f663093f32ea6fa7de4f575e
                 reports: 'التقارير',
                 my_groups: 'مجموعاتي',
                 logout: 'تسجيل الخروج',
@@ -359,6 +421,48 @@ const resources = {
                 create_success: 'تم إنشاء المجموعة بنجاح.',
                 delete_success: 'تم حذف المجموعة بنجاح.'
             },
+<<<<<<< HEAD
+=======
+            timetable: {
+                title: 'الجدول الزمني',
+                subtitle: 'الإدارة الإدارية للتخطيط',
+                add_seance: 'إضافة حصة',
+                initializing: 'تهيئة الجدول الزمني...',
+                days_header: 'الأيام',
+                free_slot: 'فارغ',
+                days: {
+                    monday: 'الاثنين',
+                    tuesday: 'الثلاثاء',
+                    wednesday: 'الأربعاء',
+                    thursday: 'الخميس',
+                    friday: 'الجمعة',
+                    saturday: 'السبت'
+                },
+                update_success: 'تم تحديث الحصة بنجاح.',
+                create_success: 'تمت إضافة حصة جديدة إلى الجدول.',
+                delete_success: 'تم حذف الحصة بنجاح.',
+                list_title: 'التخطيط الأسبوعي',
+                col_session: 'الحصة / المجموعة',
+                col_time: 'المواعيد',
+                col_formateur: 'المكون',
+                col_actions: 'عمليات',
+                qualified_formateur: 'مكون مؤهل',
+                no_sessions: 'لا توجد حصص مبرمجة',
+                delete_confirm_title: 'حذف الحصة',
+                delete_confirm_message: 'هل أنت متأكد من رغبتك في حذف هذه الحصة من الجدول الزمني؟',
+                add_session: 'إضافة حصة',
+                class_select: 'المجموعة',
+                formateur_select: 'المكون',
+                day_select: 'اليوم',
+                start_time: 'البداية',
+                end_time: 'النهاية',
+                room_label: 'القاعة',
+                add_button: 'إضافة إلى الجدول',
+                select_group_placeholder: 'اختر مجموعة',
+                select_formateur_placeholder: 'اختر مكوناً',
+                room_placeholder: 'مثال: القاعة 101'
+            },
+>>>>>>> 6a6ba9556e523366f663093f32ea6fa7de4f575e
             reports: {
                 title: 'التقارير',
                 subtitle: 'إدارة وتصدير تقارير الحضور الخاصة بك.',
@@ -507,6 +611,18 @@ const resources = {
                 loading: 'جاري تحميل السجل...',
                 error_fetch: 'فشل استرجاع المجموعات.'
             },
+<<<<<<< HEAD
+=======
+            formateur_timetable: {
+                title: 'الجدول الزمني',
+                subtitle: 'جدول النشر الشخصي الخاص بي',
+                no_assignment: 'لا يوجد تكليف نشط',
+                no_assignment_msg: 'أنت غير معين حالياً لأي مجموعة عملياتية.',
+                active_session: 'حصة نشطة',
+                loading: 'جاري تحميل الجدول...',
+                error_fetch: 'فشل استرجاع الجدول الزمني الشخصي.'
+            },
+>>>>>>> 6a6ba9556e523366f663093f32ea6fa7de4f575e
             datepicker: {
                 months: ["يناير", "فبراير", "مارس", "أبريل", "مايو", "يونيو", "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر"],
                 days: ["أحد", "اثنين", "ثلاثاء", "أربعاء", "خميس", "جمعة", "سبت"],

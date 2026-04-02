@@ -34,7 +34,11 @@ exports.startExternalScanner = async (req, res) => {
 
                 try {
                     // Look up student by name in the specified class
+<<<<<<< HEAD
                     const [students] = await pool.query('SELECT NumInscription as id FROM stagiaires WHERE name = ? AND class_id = ?', [studentName, classId]);
+=======
+                    const [students] = await pool.query('SELECT id FROM stagiaires WHERE name = ? AND class_id = ?', [studentName, classId]);
+>>>>>>> 6a6ba9556e523366f663093f32ea6fa7de4f575e
                     if (students.length > 0) {
                         const studentId = students[0].id;
                         await pool.query('INSERT IGNORE INTO active_checkins (student_id, class_id) VALUES (?, ?)', [studentId, classId]);
@@ -114,6 +118,7 @@ exports.submitReport = async (req, res) => {
 
         const reportId = reportRes.insertId;
 
+<<<<<<< HEAD
         // 2. Save individual attendance records for this report (optimized: only non-present)
         if (stagiaires && stagiaires.length > 0) {
             const nonPresentStagiaires = stagiaires.filter(s => s.status !== 'PRESENT');
@@ -128,6 +133,19 @@ exports.submitReport = async (req, res) => {
 
         // 3. Create notification for Admin(s)
         const [admins] = await pool.query('SELECT id FROM admins');
+=======
+        // 2. Save individual attendance records for this report
+        if (stagiaires && stagiaires.length > 0) {
+            const values = stagiaires.map(s => [reportId, s.id, s.status]);
+            await pool.query(
+                'INSERT INTO report_attendance (report_id, student_id, status) VALUES ?',
+                [values]
+            );
+        }
+
+        // 3. Create notification for Admin(s)
+        const [admins] = await pool.query('SELECT id FROM users WHERE role = "admin"');
+>>>>>>> 6a6ba9556e523366f663093f32ea6fa7de4f575e
         for (const admin of admins) {
             await pool.query(
                 'INSERT INTO notifications (user_id, type, category, title, message) VALUES (?, ?, ?, ?, ?)',
@@ -162,10 +180,54 @@ exports.getSchedule = async (req, res) => {
             WHERE cs.formateur_id = ?
         `, [formateur_id]);
 
+<<<<<<< HEAD
         res.json({ classes, schedule: [] });
     } catch (err) {
         console.error("GET FORMATEUR CLASSES ERROR:", err);
         res.status(500).json({ message: 'Server error fetching classes' });
+=======
+        // Get schedule for this formateur
+        const [schedule] = await pool.query(`
+            SELECT t.id, t.day, t.time, t.class_id as class, u.name as formateur, t.subject, t.room 
+            FROM timetable t 
+            LEFT JOIN users u ON t.formateur_id = u.id
+            WHERE t.formateur_id = ?
+        `, [formateur_id]);
+
+        // Today's Reminder Logic
+        const days = ['DIMANCHE', 'LUNDI', 'MARDI', 'MERCREDI', 'JEUDI', 'VENDREDI', 'SAMEDI'];
+        const todayName = days[new Date().getDay()];
+        const todaySessions = schedule.filter(s => s.day.toUpperCase() === todayName);
+
+        if (todaySessions.length > 0) {
+            const todayStr = new Date().toISOString().split('T')[0];
+            for (const session of todaySessions) {
+                // Check if we already notified for this session today
+                const [existingNotif] = await pool.query(
+                    'SELECT id FROM notifications WHERE user_id = ? AND category = "RAPPEL" AND title LIKE ? AND DATE(created_at) = ?',
+                    [formateur_id, `%${session.class}%`, todayStr]
+                );
+
+                if (existingNotif.length === 0) {
+                    await pool.query(
+                        'INSERT INTO notifications (user_id, type, category, title, message) VALUES (?, ?, ?, ?, ?)',
+                        [
+                            formateur_id,
+                            'request',
+                            'RAPPEL',
+                            `Séance aujourd'hui : ${session.class}`,
+                            `Rappel : Vous avez une séance de ${session.subject} avec le groupe ${session.class} à ${session.time} (Salle ${session.room}).`
+                        ]
+                    );
+                }
+            }
+        }
+
+        res.json({ classes, schedule });
+    } catch (err) {
+        console.error("GET FORMATEUR SCHEDULE ERROR:", err);
+        res.status(500).json({ message: 'Server error fetching schedule' });
+>>>>>>> 6a6ba9556e523366f663093f32ea6fa7de4f575e
     }
 };
 
@@ -187,7 +249,11 @@ exports.getUsersByClass = async (req, res) => {
         }
 
         const [users] = await pool.query(
+<<<<<<< HEAD
             'SELECT NumInscription as id, name, class_id FROM stagiaires WHERE class_id = ?',
+=======
+            'SELECT id, name, class_id FROM stagiaires WHERE class_id = ?',
+>>>>>>> 6a6ba9556e523366f663093f32ea6fa7de4f575e
             [classId]
         );
 
@@ -204,7 +270,11 @@ exports.processCheckin = async (req, res) => {
         const { studentId, classId } = req.body;
 
         // 1. Verify existence
+<<<<<<< HEAD
         const [students] = await pool.query('SELECT NumInscription as id, name FROM stagiaires WHERE NumInscription = ? AND class_id = ?', [studentId, classId]);
+=======
+        const [students] = await pool.query('SELECT id, name FROM stagiaires WHERE id = ? AND class_id = ?', [studentId, classId]);
+>>>>>>> 6a6ba9556e523366f663093f32ea6fa7de4f575e
         const student = students[0];
         if (!student) {
             return res.status(404).json({ message: 'Entity not found in this cluster.' });
@@ -244,7 +314,11 @@ exports.processCheckinByQR = async (req, res) => {
         }
 
         // Look up student id from name and group
+<<<<<<< HEAD
         const [students] = await pool.query('SELECT NumInscription as id FROM stagiaires WHERE name = ? AND class_id = ?', [name, group]);
+=======
+        const [students] = await pool.query('SELECT id FROM stagiaires WHERE name = ? AND class_id = ?', [name, group]);
+>>>>>>> 6a6ba9556e523366f663093f32ea6fa7de4f575e
         if (students.length === 0) {
             return res.status(404).json({ message: 'Entity not found in the manifest.' });
         }
@@ -265,6 +339,7 @@ exports.processCheckinByQR = async (req, res) => {
 exports.getActiveCheckins = async (req, res) => {
     try {
         const { classId } = req.params;
+<<<<<<< HEAD
         const [checkins] = await pool.query(`
             SELECT ra.student_id, ra.status, 1 as priority
             FROM report_attendance ra 
@@ -277,6 +352,10 @@ exports.getActiveCheckins = async (req, res) => {
             ORDER BY priority ASC
         `, [classId, classId]);
         res.json({ checkins: checkins.map(c => ({ student_id: c.student_id, status: c.status })) });
+=======
+        const [checkins] = await pool.query('SELECT student_id FROM active_checkins WHERE class_id = ?', [classId]);
+        res.json({ checkins: checkins.map(c => c.student_id) });
+>>>>>>> 6a6ba9556e523366f663093f32ea6fa7de4f575e
     } catch (err) {
         console.error("GET CHECKINS ERROR:", err);
         res.status(500).json({ message: 'Telemetry fetch failure.' });
@@ -300,11 +379,19 @@ exports.updateCheckinStatus = async (req, res) => {
     try {
         const { studentId, classId, status } = req.body;
 
+<<<<<<< HEAD
             await pool.query('DELETE FROM active_checkins WHERE student_id = ? AND class_id = ?', [studentId, classId]);
             await pool.query(
                 'INSERT INTO active_checkins (student_id, class_id, status) VALUES (?, ?, ?)',
                 [studentId, classId, status]
             );
+=======
+        if (status === 'PRESENT') {
+            await pool.query('INSERT IGNORE INTO active_checkins (student_id, class_id) VALUES (?, ?)', [studentId, classId]);
+        } else if (status === 'ABSENT') {
+            await pool.query('DELETE FROM active_checkins WHERE student_id = ? AND class_id = ?', [studentId, classId]);
+        }
+>>>>>>> 6a6ba9556e523366f663093f32ea6fa7de4f575e
 
         res.json({ message: `Status synchronized for entity ${studentId}.` });
     } catch (err) {
@@ -318,8 +405,13 @@ exports.getProfile = async (req, res) => {
     try {
         const formateur_id = req.user.id;
         const [profiles] = await pool.query(`
+<<<<<<< HEAD
             SELECT u.id, u.name, u.email, 'formateur' as role, u.image 
             FROM formateurs u
+=======
+            SELECT u.id, u.name, u.email, u.role, u.image 
+            FROM users u
+>>>>>>> 6a6ba9556e523366f663093f32ea6fa7de4f575e
             WHERE u.id = ?
         `, [formateur_id]);
 
@@ -340,7 +432,11 @@ exports.updateProfile = async (req, res) => {
         const formateur_id = req.user.id;
         const { image } = req.body;
 
+<<<<<<< HEAD
         await pool.query('UPDATE formateurs SET image = ? WHERE id = ?', [image, formateur_id]);
+=======
+        await pool.query('UPDATE users SET image = ? WHERE id = ?', [image, formateur_id]);
+>>>>>>> 6a6ba9556e523366f663093f32ea6fa7de4f575e
 
         res.json({ message: 'Neural Identity updated.' });
     } catch (err) {
@@ -349,6 +445,7 @@ exports.updateProfile = async (req, res) => {
     }
 };
 
+<<<<<<< HEAD
 // Update FORMATEUR profile (specifically name/email)
 exports.updateFormateurProfile = async (req, res) => {
     try {
@@ -411,3 +508,5 @@ exports.forceUpdatePassword = async (req, res) => {
         res.status(500).json({ message: 'Internal Server Error' });
     }
 };
+=======
+>>>>>>> 6a6ba9556e523366f663093f32ea6fa7de4f575e

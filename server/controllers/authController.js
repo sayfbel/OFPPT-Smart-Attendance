@@ -42,8 +42,12 @@ const login = async (req, res) => {
                 email: user.email,
                 role: user.role,
                 type: user.role === 'formateur' ? user.type : null,
+<<<<<<< HEAD
                 class_id: null,
                 first_login: user.role === 'formateur' ? !!user.first_login : false
+=======
+                class_id: null
+>>>>>>> 6a6ba9556e523366f663093f32ea6fa7de4f575e
             }
         });
     } catch (error) {
@@ -59,11 +63,19 @@ const login = async (req, res) => {
 const getMe = async (req, res) => {
     try {
         const table = req.user.role === 'admin' ? 'admins' : 'formateurs';
+<<<<<<< HEAD
         const [users] = await db.execute(`SELECT *, id, name, email FROM ${table} WHERE id = ?`, [req.user.id]);
         if (users.length === 0) {
             return res.status(404).json({ message: 'User not found' });
         }
         res.json({ ...users[0], role: req.user.role, class_id: null, first_login: req.user.role === 'formateur' ? !!users[0].first_login : false });
+=======
+        const [users] = await db.execute(`SELECT id, name, email FROM ${table} WHERE id = ?`, [req.user.id]);
+        if (users.length === 0) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+        res.json({ ...users[0], role: req.user.role, class_id: null });
+>>>>>>> 6a6ba9556e523366f663093f32ea6fa7de4f575e
     } catch (error) {
         res.status(500).json({ message: 'Server error', error: error.message });
     }

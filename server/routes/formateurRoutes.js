@@ -35,10 +35,13 @@ router.post('/update-checkin-status', protect, authorize('formateur'), updateChe
 router.post('/start-external-scanner', protect, authorize('formateur'), startExternalScanner);
 router.post('/stop-external-scanner', protect, authorize('formateur'), stopExternalScanner);
 
+<<<<<<< HEAD
 // Profile and Security
 const { updateFormateurProfile, updatePassword, forceUpdatePassword } = require('../controllers/formateurController');
 router.put('/update-profile', protect, authorize('formateur'), updateFormateurProfile);
 router.put('/update-password', protect, authorize('formateur'), updatePassword);
 router.put('/force-update-password', protect, authorize('formateur'), forceUpdatePassword);
 
+=======
+>>>>>>> 6a6ba9556e523366f663093f32ea6fa7de4f575e
 module.exports = router;

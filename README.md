@@ -13,11 +13,21 @@ The primary purpose of this project is to replace traditional paper-based attend
 
 ### 2. User & Identity Management
 - **Stagiaires (Students):** Detailed registry of students. When a student is created, a unique QR code is automatically generated via a Python script integration for fast physical scanning.
+<<<<<<< HEAD
 - **Formateurs (Instructors):** Instructors have their own profiles and specific classes they supervise.
 - **Admin Management:** Total control over the network's user base.
 
 ### 3. Squadron Management
 - **Clusters (Classes):** Groups of students are organized into classes (e.g., DEV101).
+=======
+- **Formateurs (Instructors):** Instructors have their own profiles, schedules, and specific classes they supervise.
+- **Admin Management:** Total control over the network's user base.
+
+### 3. Timetable & Squadron Management
+- **Clusters (Classes):** Groups of students are organized into classes (e.g., DEV101).
+- **The Matrix (Timetable):** An intelligent scheduling system where admins can allocate rooms, subjects, and instructors to specific time slots.
+- **Automatic Reminders:** Instructors receive automated system notifications reminding them of their sessions for the day.
+>>>>>>> 6a6ba9556e523366f663093f32ea6fa7de4f575e
 
 ### 4. Smart Check-in System (Neural Gateway)
 - **QR Code Scanning:** Fast, secure check-ins via generated QR codes using integrated Python scripts.

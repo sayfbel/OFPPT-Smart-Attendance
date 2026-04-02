@@ -286,6 +286,7 @@ textarea:focus {
   color: #ef4444;
 }
 
+<<<<<<< HEAD
 /* Global Text Protection */
 .truncate-text {
   overflow: hidden;
@@ -311,6 +312,8 @@ textarea:focus {
   overflow: hidden;
 }
 
+=======
+>>>>>>> 6a6ba9556e523366f663093f32ea6fa7de4f575e
 /* Utility to hide scrollbar but keep functional scrolling */
 .no-scrollbar::-webkit-scrollbar {
   display: none;

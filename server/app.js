@@ -6,7 +6,10 @@ const authRoutes = require('./routes/authRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const formateurRoutes = require('./routes/formateurRoutes');
 const notificationRoutes = require('./routes/notificationRoutes');
+<<<<<<< HEAD
 const errorMiddleware = require('./middlewares/errorMiddleware');
+=======
+>>>>>>> 6a6ba9556e523366f663093f32ea6fa7de4f575e
 
 
 dotenv.config();
@@ -28,8 +31,19 @@ app.use('/api/formateur', formateurRoutes);
 app.use('/api/notifications', notificationRoutes);
 
 
+<<<<<<< HEAD
 // Central Error Response Node
 app.use(errorMiddleware);
+=======
+// Error Handling Middleware
+const fs = require('fs');
+app.use((err, req, res, next) => {
+    const logMessage = `[${new Date().toISOString()}] ${err.stack}\n`;
+    fs.appendFileSync(path.join(__dirname, 'error.log'), logMessage);
+    console.error(err.stack);
+    res.status(500).json({ message: 'Something went wrong!', error: err.message });
+});
+>>>>>>> 6a6ba9556e523366f663093f32ea6fa7de4f575e
 
 
 const pool = require('./config/db');
@@ -58,6 +72,22 @@ const initScheduleData = async () => {
             )
         `);
 
+<<<<<<< HEAD
+=======
+        // 3. Timetable Matrix
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS timetable (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                day VARCHAR(20) NOT NULL,
+                time VARCHAR(50) NOT NULL,
+                class_id VARCHAR(50) NOT NULL,
+                formateur_id INT,
+                subject VARCHAR(255) NOT NULL,
+                room VARCHAR(100) NOT NULL,
+                FOREIGN KEY (class_id) REFERENCES classes(id) ON DELETE CASCADE
+            )
+        `);
+>>>>>>> 6a6ba9556e523366f663093f32ea6fa7de4f575e
 
         // 4. Reports Matrix
         await pool.query(`
@@ -156,6 +186,18 @@ const initScheduleData = async () => {
                 ('ID101', 'ID101', 'Infrastructure Digitale')
             `);
 
+<<<<<<< HEAD
+=======
+            // Seed initial timetable
+            const timetableData = [
+                { day: 'LUNDI', time: '16:30 - 18:30', class: 'DEV101', subject: 'Présentiel', room: 'CFACE' },
+                { day: 'MARDI', time: '08:30 - 13:30', class: 'DEV101', subject: 'Présentiel', room: 'Salle TDI' }
+            ];
+
+            for (let s of timetableData) {
+                await pool.query(`INSERT INTO timetable (day, time, class_id, subject, room) VALUES (?, ?, ?, ?, ?)`, [s.day, s.time, s.class, s.subject, s.room]);
+            }
+>>>>>>> 6a6ba9556e523366f663093f32ea6fa7de4f575e
 
             // Seed specific users requested by user
             const bcrypt = require('bcryptjs');
@@ -180,6 +222,21 @@ const initScheduleData = async () => {
                 ON DUPLICATE KEY UPDATE password = '${adminHash}'
             `);
 
+<<<<<<< HEAD
+=======
+            // Seed a "Working" session for THURSDAY (Current Time simulation)
+            // Current is ~05:13. Let's set 04:30 - 06:30
+            const [[formateur]] = await pool.query('SELECT id FROM users WHERE role = "formateur" LIMIT 1');
+            const [[squadron]] = await pool.query('SELECT id FROM classes LIMIT 1');
+            if (formateur && squadron) {
+                await pool.query('INSERT IGNORE INTO class_supervisors (class_id, formateur_id) VALUES (?, ?)', [squadron.id, formateur.id]);
+                await pool.query('DELETE FROM timetable WHERE day = "THURSDAY" AND time = "04:30 - 06:30"');
+                await pool.query(
+                    'INSERT INTO timetable (day, time, class_id, formateur_id, subject, room) VALUES (?, ?, ?, ?, ?, ?)',
+                    ['THURSDAY', '04:30 - 06:30', squadron.id, formateur.id, 'NEURAL INTERFACE LAB', 'ROOM_B101']
+                );
+            }
+>>>>>>> 6a6ba9556e523366f663093f32ea6fa7de4f575e
 
             console.log('✅ Base registry synchronized with requested users and test session.');
         }
@@ -194,6 +251,25 @@ const initScheduleData = async () => {
         `);
         console.log('✅ Admin credentials synchronized.');
 
+<<<<<<< HEAD
+=======
+        // 6. SYNC LIVE SESSION FOR ALAMI (THURSDAY 06:00 - 11:00 for DEV101)
+        const [alamiRows] = await pool.query('SELECT id FROM users WHERE email = "alami@ofppt.ma"');
+        const [classRows] = await pool.query('SELECT id FROM classes WHERE id = "DEV101"');
+
+        const drAlami = alamiRows[0];
+        const dev101 = classRows[0];
+
+        if (drAlami && dev101) {
+            await pool.query('INSERT IGNORE INTO class_supervisors (class_id, formateur_id) VALUES (?, ?)', [dev101.id, drAlami.id]);
+            await pool.query('DELETE FROM timetable WHERE day = "THURSDAY" AND class_id = "DEV101"');
+            await pool.query(
+                'INSERT INTO timetable (day, time, class_id, formateur_id, subject, room) VALUES (?, ?, ?, ?, ?, ?)',
+                ['THURSDAY', '06:00 - 11:00', dev101.id, drAlami.id, 'ADVANCED NEURAL SYSTEMS', 'LAB_REDOX']
+            );
+            console.log(`✅ Targeted Test Session Active: THURSDAY 06:00 - 11:00 for Dr. Alami (DEV101)`);
+        }
+>>>>>>> 6a6ba9556e523366f663093f32ea6fa7de4f575e
 
         // Synchronize Identity Schema
         await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS image LONGTEXT`);

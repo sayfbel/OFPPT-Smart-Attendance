@@ -3,14 +3,29 @@ import ReactDOM from 'react-dom';
 import { ChevronRight, X, ChevronDown, CheckSquare, Square, UserPlus, Save, Mail, Shield, GraduationCap, Briefcase, Settings, User, BookOpen, Hash, Layers } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
+<<<<<<< HEAD
 const IdentityModal = ({ isOpen, onClose, newUser, setNewUser, handleAddUser, handleUpdateUser, selectedClass, availableClasses = [], availableFilieres = [], isEditing = false }) => {
+=======
+const IdentityModal = ({ isOpen, onClose, newUser, setNewUser, handleAddUser, handleUpdateUser, selectedClass, availableClasses = [], availableFilieres = [], availableOptions = [], isEditing = false }) => {
+>>>>>>> 6a6ba9556e523366f663093f32ea6fa7de4f575e
     const { t, i18n } = useTranslation();
     const isRtl = i18n.language === 'ar';
     const [isRoleDropdownOpen, setIsRoleDropdownOpen] = useState(false);
     const [isClassDropdownOpen, setIsClassDropdownOpen] = useState(false);
     const [isFiliereDropdownOpen, setIsFiliereDropdownOpen] = useState(false);
+<<<<<<< HEAD
 
 
+=======
+    const [isOptionDropdownOpen, setIsOptionDropdownOpen] = useState(false);
+    const [isAnneeDropdownOpen, setIsAnneeDropdownOpen] = useState(false);
+
+    const niveaux = [
+        { value: '1er', label: '1ER ANNÉE' },
+        { value: '2eme', label: '2ÈME ANNÉE' },
+        { value: '3eme', label: '3ÈME ANNÉE' }
+    ];
+>>>>>>> 6a6ba9556e523366f663093f32ea6fa7de4f575e
 
     if (!isOpen) return null;
 
@@ -25,7 +40,12 @@ const IdentityModal = ({ isOpen, onClose, newUser, setNewUser, handleAddUser, ha
 
     const roles = [
         { value: 'stagiaire', label: t('roles.stagiaire'), icon: GraduationCap },
+<<<<<<< HEAD
         { value: 'formateur', label: t('roles.formateur'), icon: Briefcase }
+=======
+        { value: 'formateur', label: t('roles.formateur'), icon: Briefcase },
+        { value: 'admin', label: t('roles.admin'), icon: Shield }
+>>>>>>> 6a6ba9556e523366f663093f32ea6fa7de4f575e
     ];
 
     const currentRole = roles.find(r => r.value === newUser.role) || roles[0];
@@ -110,6 +130,7 @@ const IdentityModal = ({ isOpen, onClose, newUser, setNewUser, handleAddUser, ha
                                     />
                                 </div>
 
+<<<<<<< HEAD
                                 {/* NumInscription (Stagiaire only) */}
                                 {newUser.role === 'stagiaire' && (
                                     <div className="space-y-3">
@@ -129,6 +150,8 @@ const IdentityModal = ({ isOpen, onClose, newUser, setNewUser, handleAddUser, ha
                                     </div>
                                 )}
 
+=======
+>>>>>>> 6a6ba9556e523366f663093f32ea6fa7de4f575e
                                 {/* Rôle */}
                                 <div className="relative space-y-3">
                                     <label className={`flex items-center gap-2 text-[10px] font-black tracking-widest text-slate-400 uppercase ${isRtl ? 'flex-row-reverse' : ''}`}>
@@ -169,12 +192,27 @@ const IdentityModal = ({ isOpen, onClose, newUser, setNewUser, handleAddUser, ha
                                 </div>
 
                                 {/* Groupes */}
+<<<<<<< HEAD
                                 <div className="space-y-3 relative">
+=======
+                                <div className="space-y-3">
+>>>>>>> 6a6ba9556e523366f663093f32ea6fa7de4f575e
                                     <label className={`flex items-center gap-2 text-[10px] font-black tracking-widest text-slate-400 uppercase ${isRtl ? 'flex-row-reverse' : ''}`}>
                                         <Briefcase className="w-3 h-3" />
                                         {t('modals.identity.group_assignment')}
                                     </label>
+<<<<<<< HEAD
 
+=======
+                                    {newUser.role === 'admin' ? (
+                                        <div className="px-6 py-4 bg-slate-50 border border-dashed border-slate-200 rounded-2xl">
+                                            <p className={`text-[10px] font-black text-slate-400 uppercase italic ${isRtl ? 'text-right' : ''}`}>
+                                                {t('modals.identity.no_req')}
+                                            </p>
+                                        </div>
+                                    ) : (
+                                        <div className="relative">
+>>>>>>> 6a6ba9556e523366f663093f32ea6fa7de4f575e
                                             <div
                                                 onClick={() => setIsClassDropdownOpen(!isClassDropdownOpen)}
                                                 className={`w-full bg-slate-50 border border-slate-100 rounded-2xl px-6 py-4 flex justify-between items-center cursor-pointer hover:border-[var(--primary)] transition-all ${isRtl ? 'flex-row-reverse' : ''}`}
@@ -222,6 +260,11 @@ const IdentityModal = ({ isOpen, onClose, newUser, setNewUser, handleAddUser, ha
                                                     })}
                                                 </div>
                                             )}
+<<<<<<< HEAD
+=======
+                                        </div>
+                                    )}
+>>>>>>> 6a6ba9556e523366f663093f32ea6fa7de4f575e
                                 </div>
                             </div>
 
@@ -241,14 +284,59 @@ const IdentityModal = ({ isOpen, onClose, newUser, setNewUser, handleAddUser, ha
                                                 <div className="absolute bottom-full left-0 w-full mb-2 bg-white border border-slate-100 rounded-2xl shadow-2xl z-50 max-h-40 overflow-y-auto ista-scrollbar animate-in fade-in zoom-in-95 duration-200">
                                                     {(availableFilieres || []).map(f => (
                                                         <div key={f.id} className={`px-4 py-3 cursor-pointer flex items-center justify-between hover:bg-slate-50 transition-colors ${newUser.filiereId === f.id ? 'bg-green-50' : ''}`}
+<<<<<<< HEAD
                                                             onClick={() => { setNewUser({ ...newUser, filiereId: f.id }); setIsFiliereDropdownOpen(false); }}>
+=======
+                                                            onClick={() => { setNewUser({ ...newUser, filiereId: f.id, optionId: '' }); setIsFiliereDropdownOpen(false); }}>
+>>>>>>> 6a6ba9556e523366f663093f32ea6fa7de4f575e
                                                             <span className={`text-[10px] font-bold uppercase ${newUser.filiereId === f.id ? 'text-[var(--primary)]' : 'text-[var(--secondary)]'}`}>{f.nom}</span>
                                                         </div>
                                                     ))}
                                                 </div>
                                             )}
                                         </div>
+<<<<<<< HEAD
 
+=======
+                                        <div className="space-y-3 relative">
+                                            <label className="text-[9px] font-black tracking-widest text-slate-400 uppercase flex items-center gap-2"><Hash className="w-3 h-3"/> Option</label>
+                                            <div onClick={() => setIsOptionDropdownOpen(!isOptionDropdownOpen)} className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-4 py-3 flex justify-between items-center cursor-pointer hover:border-[var(--primary)] transition-all">
+                                                <span className={`text-xs font-bold truncate ${newUser.optionId ? 'text-[var(--secondary)]' : 'text-slate-400'}`}>
+                                                    {availableOptions?.find(o => o.id === newUser.optionId)?.nom || 'SÉLECTIONNER...'}
+                                                </span>
+                                                <ChevronDown className={`w-4 h-4 text-[var(--primary)] transition-transform ${isOptionDropdownOpen ? 'rotate-180' : ''}`} />
+                                            </div>
+                                            {isOptionDropdownOpen && (
+                                                <div className="absolute bottom-full left-0 w-full mb-2 bg-white border border-slate-100 rounded-2xl shadow-2xl z-[51] max-h-40 overflow-y-auto ista-scrollbar animate-in fade-in zoom-in-95 duration-200">
+                                                    {(availableOptions || []).filter(o => !newUser.filiereId || o.filiereId === newUser.filiereId).map(opt => (
+                                                        <div key={opt.id} className={`px-4 py-3 cursor-pointer flex items-center justify-between hover:bg-slate-50 transition-colors ${newUser.optionId === opt.id ? 'bg-green-50' : ''}`}
+                                                            onClick={() => { setNewUser({ ...newUser, optionId: opt.id }); setIsOptionDropdownOpen(false); }}>
+                                                            <span className={`text-[10px] font-bold uppercase ${newUser.optionId === opt.id ? 'text-[var(--primary)]' : 'text-[var(--secondary)]'}`}>{opt.nom}</span>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </div>
+                                        <div className="space-y-3 relative">
+                                            <label className="text-[9px] font-black tracking-widest text-slate-400 uppercase flex items-center gap-2"><Layers className="w-3 h-3"/> Niveau</label>
+                                            <div onClick={() => setIsAnneeDropdownOpen(!isAnneeDropdownOpen)} className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-4 py-3 flex justify-between items-center cursor-pointer hover:border-[var(--primary)] transition-all">
+                                                <span className={`text-xs font-bold truncate ${newUser.annee ? 'text-[var(--secondary)]' : 'text-slate-400'}`}>
+                                                    {niveaux.find(n => n.value === (newUser.annee || '1er'))?.label}
+                                                </span>
+                                                <ChevronDown className={`w-4 h-4 text-[var(--primary)] transition-transform ${isAnneeDropdownOpen ? 'rotate-180' : ''}`} />
+                                            </div>
+                                            {isAnneeDropdownOpen && (
+                                                <div className="absolute bottom-full left-0 w-full mb-2 bg-white border border-slate-100 rounded-2xl shadow-2xl z-[52] overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                                                    {niveaux.map((niv) => (
+                                                        <div key={niv.value} className={`px-4 py-3 cursor-pointer flex items-center justify-between hover:bg-slate-50 transition-colors ${newUser.annee === niv.value ? 'bg-green-50' : ''}`}
+                                                            onClick={() => { setNewUser({ ...newUser, annee: niv.value }); setIsAnneeDropdownOpen(false); }}>
+                                                            <span className={`text-[10px] font-bold uppercase ${newUser.annee === niv.value ? 'text-[var(--primary)]' : 'text-[var(--secondary)]'}`}>{niv.label}</span>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </div>
+>>>>>>> 6a6ba9556e523366f663093f32ea6fa7de4f575e
                                     </div>
                                 )}
                                 <button

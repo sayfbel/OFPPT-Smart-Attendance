@@ -6,7 +6,11 @@ import json
 def generate_student_qr(user_data):
     """
     Generates a QR code image for a student/user and saves it to qrs_folder.
+<<<<<<< HEAD
     Expects user_data to have: Name, Group, Institute, Profession
+=======
+    Expects user_data to have: Name, Group, Institute, Year, Profession
+>>>>>>> 6a6ba9556e523366f663093f32ea6fa7de4f575e
     """
     # The folder where the QR code will be saved
     script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -21,7 +25,11 @@ def generate_student_qr(user_data):
 
     # --- Generate QR Code Content ---
     # Format matches the scanner: NAME:xxx|GROUP:yyy|...
+<<<<<<< HEAD
     qr_content = f"NAME:{user_data['Name']}|GROUP:{user_data['Group']}|INSTITUTE:{user_data['Institute']}|PROFESSION:{user_data['Profession']}"
+=======
+    qr_content = f"NAME:{user_data['Name']}|GROUP:{user_data['Group']}|INSTITUTE:{user_data['Institute']}|YEAR:{user_data['Year']}|PROFESSION:{user_data['Profession']}"
+>>>>>>> 6a6ba9556e523366f663093f32ea6fa7de4f575e
 
     # Create QR Code object
     qr = qrcode.QRCode(
@@ -57,6 +65,10 @@ if __name__ == "__main__":
             "Name": "Saif Befaquir",
             "Group": "DEV101",
             "Institute": "OFPPT ISTA Mirleft",
+<<<<<<< HEAD
+=======
+            "Year": "2025/2026",
+>>>>>>> 6a6ba9556e523366f663093f32ea6fa7de4f575e
             "Profession": "stagiaire"
         }
         generate_student_qr(test_data)

@@ -20,10 +20,14 @@ import {
     Layers,
     UserCheck,
     Globe,
+<<<<<<< HEAD
     Settings,
     ClipboardCheck,
     Gavel,
     User
+=======
+    Settings
+>>>>>>> 6a6ba9556e523366f663093f32ea6fa7de4f575e
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import axios from 'axios';
@@ -147,6 +151,7 @@ const DashboardLayout = ({ children }) => {
                     { icon: LayoutDashboard, label: t('nav.dashboard'), path: '/admin' },
                     { icon: Key, label: t('nav.members'), path: '/admin/users' },
                     { icon: Layers, label: t('nav.groups'), path: '/admin/classes' },
+<<<<<<< HEAD
                     { icon: FileText, label: t('nav.reports'), path: '/admin/reports' },
                     { icon: ClipboardCheck, label: 'ABSENCES', path: '/admin/absence-registry' },
                 ];
@@ -160,6 +165,17 @@ const DashboardLayout = ({ children }) => {
                     formateurLinks.push({ icon: User, label: 'MON PROFIL', path: '/formateur/profile' });
                 }
                 return formateurLinks;
+=======
+                    { icon: Calendar, label: t('nav.timetable'), path: '/admin/timetable' },
+                    { icon: FileText, label: t('nav.reports'), path: '/admin/reports' },
+                ];
+            case 'formateur':
+                return [
+                    { icon: LayoutDashboard, label: t('nav.dashboard'), path: '/formateur' },
+                    { icon: UserCheck, label: t('nav.my_groups'), path: '/formateur/classes' },
+                    { icon: Calendar, label: t('nav.timetable'), path: '/formateur/timetable' },
+                ];
+>>>>>>> 6a6ba9556e523366f663093f32ea6fa7de4f575e
             default:
                 return [];
         }
@@ -243,6 +259,7 @@ const DashboardLayout = ({ children }) => {
                             <Menu className="w-6 h-6" />
                         </button>
 
+<<<<<<< HEAD
                             <Link to={user?.role === 'formateur' ? '/formateur/profile' : '#'} className={`flex items-center gap-3 hover:opacity-80 transition-opacity ${isRtl ? 'flex-row-reverse text-right' : ''}`}>
                                 <div className="w-8 h-8 lg:w-10 lg:h-10 bg-gradient-to-br from-[var(--primary)] to-[var(--primary-dark)] rounded-xl flex items-center justify-center text-white font-bold text-xs lg:text-sm shadow-md">
                                     {user?.name?.charAt(0)}
@@ -252,6 +269,17 @@ const DashboardLayout = ({ children }) => {
                                     <p className="text-[8px] lg:text-[9px] text-[var(--primary)] uppercase tracking-[0.2em] font-black opacity-70">{user?.role === 'admin' ? t('header.admin_access') : t('header.formateur_access')}</p>
                                 </div>
                             </Link>
+=======
+                        <div className={`flex items-center gap-3 ${isRtl ? 'flex-row-reverse text-right' : ''}`}>
+                            <div className="w-8 h-8 lg:w-10 lg:h-10 bg-gradient-to-br from-[var(--primary)] to-[var(--primary-dark)] rounded-xl flex items-center justify-center text-white font-bold text-xs lg:text-sm shadow-md">
+                                {user?.name?.charAt(0)}
+                            </div>
+                            <div className="hidden sm:block">
+                                <h3 className="text-[10px] lg:text-[11px] font-black tracking-widest text-[var(--secondary)] uppercase leading-none mb-1">{user?.name}</h3>
+                                <p className="text-[8px] lg:text-[9px] text-[var(--primary)] uppercase tracking-[0.2em] font-black opacity-70">{user?.role === 'admin' ? t('header.admin_access') : t('header.formateur_access')}</p>
+                            </div>
+                        </div>
+>>>>>>> 6a6ba9556e523366f663093f32ea6fa7de4f575e
                     </div>
 
                     <div className={`flex items-center gap-2 lg:gap-3 relative ${isRtl ? 'flex-row-reverse' : ''}`}>
