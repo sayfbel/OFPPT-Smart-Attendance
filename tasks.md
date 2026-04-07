@@ -5,11 +5,7 @@
 ### 1. User & Authentication Refactor
 - [x] **1. User Table Split**:
     - [x] Separate `users` table into `admins` and `formateurs`
-<<<<<<< HEAD
-    - [x] Update database schema and foreign keys (Reports, etc.)
-=======
     - [x] Update database schema and foreign keys (Reports, Timetable, etc.)
->>>>>>> 6a6ba9556e523366f663093f32ea6fa7de4f575e
 - [x] **2. Security & Profiles**:
     - [x] Remove unused `image` field from admin and formateur profiles
     - [x] Update auth logic to handle multi-table authentication
@@ -47,7 +43,6 @@
 ### 6. Attendance & Reporting
 - [x] **7. Report Table**: Add `sallID` (FK to `salles`)
 - [x] **8. Repport_attendence Table**: Add `Justifier` (boolean)
-<<<<<<< HEAD
 
 ## 🚀 7. New Evolution Tasks
 - [x] **Data Model Simplification**:
@@ -68,5 +63,3 @@
         - [x] **Justify**: Mark absence as "Absent Justifié" (Equivalent to `PRESENT`).
         - [x] **Correct**: Change "Absent" back to **`PRESENT`** (Delete the entry).
         - [x] **Penalize**: Directly assign a "Blame" (`suivieDisipline`) while reviewing the absence.
-=======
->>>>>>> 6a6ba9556e523366f663093f32ea6fa7de4f575e

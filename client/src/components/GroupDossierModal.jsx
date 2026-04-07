@@ -4,7 +4,7 @@ import { X, CheckCircle2, AlertTriangle, ArrowRight, PenTool, Hash, Users, Activ
 import { useTranslation } from 'react-i18next';
 import { useNotification } from '../context/NotificationContext';
 
-const ClassDossierModal = ({ isOpen, onClose, activeSession, students, stats, onConfirm, submitting }) => {
+const GroupDossierModal = ({ isOpen, onClose, activeSession, students, stats, onConfirm, submitting }) => {
     const { addNotification } = useNotification();
     const { t, i18n } = useTranslation();
     const isRtl = i18n.language === 'ar';
@@ -114,7 +114,7 @@ const ClassDossierModal = ({ isOpen, onClose, activeSession, students, stats, on
                         <div className={`hidden md:flex flex-col ${isRtl ? 'items-start' : 'items-end'}`}>
                             <span className="text-[9px] font-black text-slate-300 uppercase tracking-[0.2em] mb-1">{t('modals.dossier.unit_label')}</span>
                             <span className="text-xs font-black italic text-[var(--primary)] uppercase">
-                                {activeSession?.class} — {activeSession?.subject}
+                                {activeSession?.group} — {activeSession?.subject}
                             </span>
                         </div>
                         <button
@@ -279,4 +279,4 @@ const ClassDossierModal = ({ isOpen, onClose, activeSession, students, stats, on
     );
 };
 
-export default ClassDossierModal;
+export default GroupDossierModal;

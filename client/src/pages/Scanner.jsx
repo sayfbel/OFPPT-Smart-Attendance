@@ -10,7 +10,7 @@ const Scanner = () => {
     const navigate = useNavigate();
     const { addNotification } = useNotification();
     const [searchParams] = useSearchParams();
-    const classId = searchParams.get('classId');
+    const groupId = searchParams.get('groupId');
     const subject = searchParams.get('subject');
     const room = searchParams.get('room');
     const formateurName = searchParams.get('formateurName');
@@ -26,13 +26,13 @@ const Scanner = () => {
 
     // 1. Sync Checkins
     useEffect(() => {
-        if (!classId) return;
+        if (!groupId) return;
 
         const syncCheckins = async () => {
             try {
                 const token = localStorage.getItem('token');
                 const config = { headers: { Authorization: `Bearer ${token}` } };
-                const checkinRes = await axios.get(`/api/formateur/active-checkins/${classId}`, config);
+                const checkinRes = await axios.get(`/api/formateur/active-checkins/${groupId}`, config);
                 const currentIds = checkinRes.data.checkins || [];
 
                 if (currentIds.length > prevCheckinsRef.current.length) {
@@ -59,7 +59,7 @@ const Scanner = () => {
 
         const interval = setInterval(syncCheckins, 1500);
         return () => clearInterval(interval);
-    }, [classId, activeStudents]);
+    }, [groupId, activeStudents]);
 
     // 2. Start Bridge
     useEffect(() => {
@@ -68,22 +68,22 @@ const Scanner = () => {
             try {
                 const token = localStorage.getItem('token');
                 const config = { headers: { Authorization: `Bearer ${token}` } };
-                await axios.post('/api/formateur/start-external-scanner', { classId }, config);
+                await axios.post('/api/formateur/start-external-scanner', { groupId }, config);
             } catch (err) {
                 if (isInstanceMounted) setError("SCANNER_OFFLINE");
             }
         };
 
-        if (classId) startBridge();
+        if (groupId) startBridge();
 
         return () => {
             isInstanceMounted = false;
             const token = localStorage.getItem('token');
             const config = { headers: { Authorization: `Bearer ${token}` } };
-            axios.post('/api/formateur/stop-external-scanner', { classId }, config)
+            axios.post('/api/formateur/stop-external-scanner', { groupId }, config)
                 .catch(e => console.error("Bridge Shutdown Error:", e));
         };
-    }, [classId]);
+    }, [groupId]);
 
     // 3. Initial Data
     useEffect(() => {
@@ -91,14 +91,14 @@ const Scanner = () => {
             try {
                 const token = localStorage.getItem('token');
                 const config = { headers: { Authorization: `Bearer ${token}` } };
-                const res = await axios.get(`/api/formateur/users/by-class/${classId}`, config);
+                const res = await axios.get(`/api/formateur/users/by-group/${groupId}`, config);
                 setActiveStudents(res.data.users || []);
             } catch (err) {
                 console.error("Manifest Load Error:", err);
             }
         };
-        if (classId) fetchMainData();
-    }, [classId]);
+        if (groupId) fetchMainData();
+    }, [groupId]);
 
     const handleExit = () => {
         navigate('/formateur');
@@ -113,11 +113,10 @@ const Scanner = () => {
             const config = { headers: { Authorization: `Bearer ${token}` } };
 
             const reportData = {
-                report_code: `REP-${classId}-${new Date().toISOString().split('T')[0]}-${Date.now().toString().slice(-4)}`,
-                class_id: classId,
+                report_code: `REP-${groupId}-${new Date().toISOString().split('T')[0]}-${Date.now().toString().slice(-4)}`,
+                group_id: groupId,
                 date: new Date().toISOString().split('T')[0],
                 subject: decodeURIComponent(subject || 'COURS'),
-                salle: decodeURIComponent(room || 'SALLE'),
                 heure: sessionTime || new Date().toLocaleTimeString(),
                 stagiaires: activeStudents.map(s => ({
                     id: s.id,
@@ -129,13 +128,13 @@ const Scanner = () => {
             await axios.post('/api/formateur/submit-report', reportData, config);
 
             try {
-                await axios.post('/api/formateur/stop-external-scanner', { classId }, config);
+                await axios.post('/api/formateur/stop-external-scanner', { groupId }, config);
             } catch (stopErr) {
                 console.warn("[BRIDGE_STOP_SILENT]:", stopErr.message);
             }
 
             addNotification(t('scanner.success_msg'), 'success');
-            navigate(`/formateur?selectedClass=${classId}`);
+            navigate(`/formateur?selectedGroup=${groupId}`);
         } catch (err) {
             console.error("Submission error:", err);
             addNotification(t('scanner.save_error'), "error");
@@ -183,7 +182,7 @@ const Scanner = () => {
                     <div className="grid grid-cols-2 md:grid-cols-4 bg-slate-50 border-b border-[var(--border)]">
                         <div className="p-6 border-r border-[var(--border)] flex flex-col gap-1">
                             <span className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest">{t('scanner.group_label')}</span>
-                            <span className="text-sm font-black text-[var(--secondary)] uppercase italic">{classId || '---'}</span>
+                            <span className="text-sm font-black text-[var(--secondary)] uppercase italic">{groupId || '---'}</span>
                         </div>
                         <div className="p-6 border-r border-[var(--border)] flex flex-col gap-1">
                             <span className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest">{t('scanner.session_label')}</span>

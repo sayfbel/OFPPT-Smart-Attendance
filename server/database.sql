@@ -1,52 +1,46 @@
--- OFPPT Attendance System - Updated Schema with Filiere and Option Support
-DROP DATABASE IF EXISTS ofppt_attendance;
+-- OFPPT Attendance System - Clean Schema Initialization
 CREATE DATABASE IF NOT EXISTS ofppt_attendance;
 USE ofppt_attendance;
 
+-- 0. Cleanup existing tables in correct order (reverse dependencies)
+SET FOREIGN_KEY_CHECKS = 0;
+DROP TABLE IF EXISTS suivieDisipline;
+DROP TABLE IF EXISTS report_attendance;
+DROP TABLE IF EXISTS active_checkins;
+DROP TABLE IF EXISTS notifications;
+DROP TABLE IF EXISTS reports;
+DROP TABLE IF EXISTS groups_supervisors;
+DROP TABLE IF EXISTS stagiaires;
+DROP TABLE IF EXISTS groups;
+DROP TABLE IF EXISTS formateurs;
+DROP TABLE IF EXISTS admins;
+DROP TABLE IF EXISTS salles;
+DROP TABLE IF EXISTS filiere;
+SET FOREIGN_KEY_CHECKS = 1;
+
 -- 1. Infrastructure Tables
-CREATE TABLE IF NOT EXISTS filiere (
+CREATE TABLE filiere (
     id INT AUTO_INCREMENT PRIMARY KEY,
     nom VARCHAR(255) NOT NULL,
-    niveau VARCHAR(50) DEFAULT 'TS',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-<<<<<<< HEAD
-=======
-CREATE TABLE IF NOT EXISTS options (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    filiereId INT NOT NULL,
-    nom VARCHAR(255) NOT NULL,
-    niveau VARCHAR(50) DEFAULT 'TS',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (filiereId) REFERENCES filiere(id) ON DELETE CASCADE
-);
->>>>>>> 6a6ba9556e523366f663093f32ea6fa7de4f575e
-
-CREATE TABLE IF NOT EXISTS salles (
+CREATE TABLE salles (
     id INT AUTO_INCREMENT PRIMARY KEY,
     nom VARCHAR(100) NOT NULL UNIQUE
 );
 
--- 2. Classes Registry
-CREATE TABLE IF NOT EXISTS classes (
+-- 2. Groups Registry
+CREATE TABLE groups (
     id VARCHAR(50) PRIMARY KEY,
     annee_scolaire VARCHAR(50) DEFAULT '2025/2026',
-    level VARCHAR(50) DEFAULT '1er',
     filiereId INT,
-<<<<<<< HEAD
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (filiereId) REFERENCES filiere(id) ON DELETE SET NULL
-=======
-    optionId INT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (filiereId) REFERENCES filiere(id) ON DELETE SET NULL,
-    FOREIGN KEY (optionId) REFERENCES options(id) ON DELETE SET NULL
->>>>>>> 6a6ba9556e523366f663093f32ea6fa7de4f575e
 );
 
--- 3. Core Actors (Split from users table)
-CREATE TABLE IF NOT EXISTS admins (
+-- 3. Core Actors
+CREATE TABLE admins (
     id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     email VARCHAR(255) UNIQUE NOT NULL,
@@ -54,116 +48,79 @@ CREATE TABLE IF NOT EXISTS admins (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE IF NOT EXISTS formateurs (
+CREATE TABLE formateurs (
     id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     email VARCHAR(255) UNIQUE NOT NULL,
     password VARCHAR(255) NOT NULL,
     type ENUM('Parrain', 'Vacataire') DEFAULT 'Parrain',
+    first_login BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- 4. Stagiaires Registry
-CREATE TABLE IF NOT EXISTS stagiaires (
+CREATE TABLE stagiaires (
     NumInscription VARCHAR(50) PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
-    class_id VARCHAR(50),
-    annee VARCHAR(50) DEFAULT '1er',
+    group_id VARCHAR(50),
     filiereId INT,
-<<<<<<< HEAD
-=======
-    optionId INT,
->>>>>>> 6a6ba9556e523366f663093f32ea6fa7de4f575e
     Active BOOLEAN DEFAULT TRUE,
     qr_path VARCHAR(255),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (class_id) REFERENCES classes(id) ON DELETE SET NULL,
-<<<<<<< HEAD
+    FOREIGN KEY (group_id) REFERENCES groups(id) ON DELETE SET NULL,
     FOREIGN KEY (filiereId) REFERENCES filiere(id) ON DELETE SET NULL
-=======
-    FOREIGN KEY (filiereId) REFERENCES filiere(id) ON DELETE SET NULL,
-    FOREIGN KEY (optionId) REFERENCES options(id) ON DELETE SET NULL
->>>>>>> 6a6ba9556e523366f663093f32ea6fa7de4f575e
 );
 
 -- 5. Junction & Management
-CREATE TABLE IF NOT EXISTS class_supervisors (
-    class_id VARCHAR(50),
+CREATE TABLE groups_supervisors (
+    group_id VARCHAR(50),
     formateur_id INT,
-    PRIMARY KEY (class_id, formateur_id),
-    FOREIGN KEY (class_id) REFERENCES classes(id) ON DELETE CASCADE,
+    PRIMARY KEY (group_id, formateur_id),
+    FOREIGN KEY (group_id) REFERENCES groups(id) ON DELETE CASCADE,
     FOREIGN KEY (formateur_id) REFERENCES formateurs(id) ON DELETE CASCADE
 );
 
-<<<<<<< HEAD
-=======
--- Timetable
-CREATE TABLE IF NOT EXISTS timetable (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    day VARCHAR(20) NOT NULL,
-    time VARCHAR(50) NOT NULL,
-    class_id VARCHAR(50) NOT NULL,
-    formateur_id INT,
-    subject VARCHAR(255) NOT NULL,
-    room VARCHAR(100) NOT NULL,
-    FOREIGN KEY (class_id) REFERENCES classes(id) ON DELETE CASCADE,
-    FOREIGN KEY (formateur_id) REFERENCES formateurs(id) ON DELETE SET NULL
-);
->>>>>>> 6a6ba9556e523366f663093f32ea6fa7de4f575e
-
 -- 6. Reports & Attendance
-CREATE TABLE IF NOT EXISTS reports (
+CREATE TABLE reports (
     id INT AUTO_INCREMENT PRIMARY KEY,
     report_code VARCHAR(50) UNIQUE NOT NULL,
     formateur_id INT NOT NULL,
-    class_id VARCHAR(50) NOT NULL,
+    group_id VARCHAR(50) NOT NULL,
     date DATE NOT NULL,
     subject VARCHAR(255) NOT NULL,
-    salle VARCHAR(100),
     salleId INT,
     heure VARCHAR(100),
-<<<<<<< HEAD
     signature LONGTEXT,
-=======
->>>>>>> 6a6ba9556e523366f663093f32ea6fa7de4f575e
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (class_id) REFERENCES classes(id) ON DELETE CASCADE,
+    FOREIGN KEY (group_id) REFERENCES groups(id) ON DELETE CASCADE,
     FOREIGN KEY (formateur_id) REFERENCES formateurs(id) ON DELETE CASCADE,
     FOREIGN KEY (salleId) REFERENCES salles(id) ON DELETE SET NULL
 );
 
-CREATE TABLE IF NOT EXISTS report_attendance (
+CREATE TABLE report_attendance (
     id INT AUTO_INCREMENT PRIMARY KEY,
     report_id INT NOT NULL,
     student_id VARCHAR(50) NOT NULL,
-<<<<<<< HEAD
     status ENUM('PRESENT', 'ABSENT', 'LATE') NOT NULL,
-=======
-    status ENUM('PRESENT', 'ABSENT') NOT NULL,
->>>>>>> 6a6ba9556e523366f663093f32ea6fa7de4f575e
-    Justifier BOOLEAN DEFAULT FALSE,
+    Justifier ENUM('ABSENCE', 'JUSTIFIÉ', 'NON JUSTIFIÉ') DEFAULT 'ABSENCE',
     FOREIGN KEY (report_id) REFERENCES reports(id) ON DELETE CASCADE,
     FOREIGN KEY (student_id) REFERENCES stagiaires(NumInscription) ON DELETE CASCADE
 );
 
-CREATE TABLE IF NOT EXISTS active_checkins (
+CREATE TABLE active_checkins (
     id INT AUTO_INCREMENT PRIMARY KEY,
     student_id VARCHAR(50) NOT NULL,
-    class_id VARCHAR(50) NOT NULL,
-<<<<<<< HEAD
+    group_id VARCHAR(50) NOT NULL,
     status ENUM('PRESENT', 'ABSENT', 'LATE') DEFAULT 'PRESENT',
-=======
-    status ENUM('PRESENT', 'ABSENT') DEFAULT 'PRESENT',
->>>>>>> 6a6ba9556e523366f663093f32ea6fa7de4f575e
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (student_id) REFERENCES stagiaires(NumInscription) ON DELETE CASCADE,
-    FOREIGN KEY (class_id) REFERENCES classes(id) ON DELETE CASCADE
+    FOREIGN KEY (group_id) REFERENCES groups(id) ON DELETE CASCADE
 );
 
 -- 7. Notifications
-CREATE TABLE IF NOT EXISTS notifications (
+CREATE TABLE notifications (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    user_id INT, -- Pointing to formateur or admin depends on context (may need split or generic)
+    user_id INT,
     type ENUM('request', 'message', 'alert', 'success') DEFAULT 'message',
     category VARCHAR(50),
     title VARCHAR(255) NOT NULL,
@@ -172,9 +129,8 @@ CREATE TABLE IF NOT EXISTS notifications (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-<<<<<<< HEAD
 -- 8. Discipline Tracking
-CREATE TABLE IF NOT EXISTS suivieDisipline (
+CREATE TABLE suivieDisipline (
     id INT AUTO_INCREMENT PRIMARY KEY,
     student_id VARCHAR(50) NOT NULL,
     penalty_type ENUM('Blâme 1', 'Blâme 2', 'Blâme 3') NOT NULL,
@@ -184,10 +140,9 @@ CREATE TABLE IF NOT EXISTS suivieDisipline (
     FOREIGN KEY (student_id) REFERENCES stagiaires(NumInscription) ON DELETE CASCADE
 );
 
-=======
->>>>>>> 6a6ba9556e523366f663093f32ea6fa7de4f575e
 -- --- SEEDING ---
 -- (Admin: admin@ofppt.ma / admin123)
+-- Using IGNORE to prevent duplicate errors since we didn't drop the DB
 INSERT INTO admins (name, email, password) 
 VALUES ('System Admin', 'admin@ofppt.ma', '$2a$10$vI8AAn.PyueTVUf4D6./juR3L6T/vT.hYj9f1.hS8GgJm.8G/5/mu')
 ON DUPLICATE KEY UPDATE name='System Admin';

@@ -23,7 +23,7 @@ const AdminDashboard = () => {
     const [stats, setStats] = useState({
         totalStudents: 0,
         totalFormateurs: 0,
-        totalClasses: 0,
+        totalGroups: 0,
         totalReports: 0
     });
     const [loading, setLoading] = useState(true);
@@ -32,9 +32,9 @@ const AdminDashboard = () => {
         const fetchStats = async () => {
             try {
                 const token = localStorage.getItem('token');
-                const [usersRes, classesRes, reportsRes] = await Promise.all([
+                const [usersRes, groupsRes, reportsRes] = await Promise.all([
                     axios.get('/api/admin/users', { headers: { Authorization: `Bearer ${token}` } }),
-                    axios.get('/api/admin/classes', { headers: { Authorization: `Bearer ${token}` } }),
+                    axios.get('/api/admin/groups', { headers: { Authorization: `Bearer ${token}` } }),
                     axios.get('/api/admin/reports', { headers: { Authorization: `Bearer ${token}` } })
                 ]);
 
@@ -42,7 +42,7 @@ const AdminDashboard = () => {
                 setStats({
                     totalStudents: users.filter(u => u.role === 'stagiaire').length,
                     totalFormateurs: users.filter(u => u.role === 'formateur').length,
-                    totalClasses: (classesRes.data.classes || []).length,
+                    totalGroups: (groupsRes.data.groups || []).length,
                     totalReports: (reportsRes.data.reports || []).length
                 });
             } catch (error) {
@@ -99,7 +99,7 @@ const AdminDashboard = () => {
                 {[
                     { label: t('dashboard.total_students'), value: stats.totalStudents, icon: Users, color: 'var(--primary)', tag: t('dashboard.status_active') },
                     { label: t('dashboard.total_formateurs'), value: stats.totalFormateurs, icon: Briefcase, color: 'royalblue', tag: t('dashboard.status_online') },
-                    { label: t('dashboard.total_classes'), value: stats.totalClasses, icon: LayoutDashboard, color: 'var(--secondary)', tag: t('dashboard.status_open') },
+                    { label: t('dashboard.total_groups'), value: stats.totalGroups, icon: LayoutDashboard, color: 'var(--secondary)', tag: t('dashboard.status_open') },
                     { label: t('dashboard.total_reports'), value: stats.totalReports, icon: FileText, color: 'orange', tag: t('dashboard.status_archived') }
                 ].map((stat, i) => (
                     <div key={i} className="ista-card relative overflow-hidden group hover:scale-[1.02] transition-all duration-300">

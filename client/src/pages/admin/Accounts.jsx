@@ -26,37 +26,25 @@ const Accounts = () => {
     const { t } = useTranslation();
     const { addNotification } = useNotification();
     const [users, setUsers] = useState([]);
-    const [availableClasses, setAvailableClasses] = useState([]);
+    const [availableGroups, setAvailableGroups] = useState([]);
     const [availableFilieres, setAvailableFilieres] = useState([]);
-<<<<<<< HEAD
-=======
-    const [availableOptions, setAvailableOptions] = useState([]);
->>>>>>> 6a6ba9556e523366f663093f32ea6fa7de4f575e
-    const [selectedClass, setSelectedClass] = useState('all');
+
+    const [selectedGroup, setSelectedGroup] = useState('all');
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
     const [isConfirmOpen, setIsConfirmOpen] = useState(false);
-<<<<<<< HEAD
     const [userToDelete, setUserToDelete] = useState({ id: null, role: null });
-=======
-    const [userToDelete, setUserToDelete] = useState(null);
->>>>>>> 6a6ba9556e523366f663093f32ea6fa7de4f575e
 
     const [newUser, setNewUser] = useState({
         name: '',
         email: '',
         role: 'stagiaire',
-        class_id: '',
-        class_ids: [],
+        group_id: '',
+        group_ids: [],
         filiereId: '',
-<<<<<<< HEAD
         numInsc: ''
-=======
-        optionId: '',
-        annee: '1er'
->>>>>>> 6a6ba9556e523366f663093f32ea6fa7de4f575e
     });
 
     const streams = [
@@ -65,18 +53,17 @@ const Accounts = () => {
         { id: 'ID', label: 'INFRASTRUCTURE DIGITALE' }
     ];
 
-<<<<<<< HEAD
     const fetchData = async () => {
         try {
             setLoading(true);
             const token = localStorage.getItem('token');
-            const [usersRes, classesRes, filieresRes] = await Promise.all([
+            const [usersRes, groupsRes, filieresRes] = await Promise.all([
                 axios.get('/api/admin/users', { headers: { Authorization: `Bearer ${token}` } }),
-                axios.get('/api/admin/classes', { headers: { Authorization: `Bearer ${token}` } }),
+                axios.get('/api/admin/groups', { headers: { Authorization: `Bearer ${token}` } }),
                 axios.get('/api/admin/filieres', { headers: { Authorization: `Bearer ${token}` } })
             ]);
             setUsers(usersRes.data.users || []);
-            setAvailableClasses(classesRes.data.classes || []);
+            setAvailableGroups(groupsRes.data.groups || []);
             setAvailableFilieres(filieresRes.data.filieres || []);
         } catch (err) {
             console.error('Error fetching data:', err);
@@ -86,28 +73,6 @@ const Accounts = () => {
     };
 
     useEffect(() => {
-=======
-    useEffect(() => {
-        const fetchData = async () => {
-            try {
-                const token = localStorage.getItem('token');
-                const [usersRes, classesRes, filieresRes, optionsRes] = await Promise.all([
-                    axios.get('/api/admin/users', { headers: { Authorization: `Bearer ${token}` } }),
-                    axios.get('/api/admin/classes', { headers: { Authorization: `Bearer ${token}` } }),
-                    axios.get('/api/admin/filieres', { headers: { Authorization: `Bearer ${token}` } }),
-                    axios.get('/api/admin/options', { headers: { Authorization: `Bearer ${token}` } })
-                ]);
-                setUsers(usersRes.data.users || []);
-                setAvailableClasses(classesRes.data.classes || []);
-                setAvailableFilieres(filieresRes.data.filieres || []);
-                setAvailableOptions(optionsRes.data.options || []);
-            } catch (err) {
-                console.error('Error fetching data:', err);
-            } finally {
-                setLoading(false);
-            }
-        };
->>>>>>> 6a6ba9556e523366f663093f32ea6fa7de4f575e
         fetchData();
     }, []);
 
@@ -116,26 +81,16 @@ const Accounts = () => {
         try {
             const token = localStorage.getItem('token');
             const userToSubmit = { ...newUser };
-            if (newUser.role !== 'stagiaire' && newUser.class_ids?.length > 0) {
-                userToSubmit.class_id = newUser.class_ids.join(',');
+            if (newUser.role !== 'stagiaire' && newUser.group_ids?.length > 0) {
+                userToSubmit.group_id = newUser.group_ids.join(',');
             }
-<<<<<<< HEAD
             await axios.post('/api/admin/users', userToSubmit, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             await fetchData();
             setIsModalOpen(false);
             addNotification(t('accounts.create_success'), 'success');
-            setNewUser({ name: '', email: '', role: 'stagiaire', class_id: '', class_ids: [], filiereId: '', numInsc: '' });
-=======
-            const res = await axios.post('/api/admin/users', userToSubmit, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            setUsers([...users, res.data.user]);
-            setIsModalOpen(false);
-            addNotification(t('accounts.create_success'), 'success');
-            setNewUser({ name: '', email: '', role: 'stagiaire', class_id: '', class_ids: [], filiereId: '', optionId: '', annee: '1er' });
->>>>>>> 6a6ba9556e523366f663093f32ea6fa7de4f575e
+            setNewUser({ name: '', email: '', role: 'stagiaire', group_id: '', group_ids: [], filiereId: '', numInsc: '' });
         } catch (err) {
             addNotification(err.response?.data?.message || 'Error adding user', 'error');
         }
@@ -146,20 +101,13 @@ const Accounts = () => {
         try {
             const token = localStorage.getItem('token');
             const userToSubmit = { ...newUser };
-            if (newUser.role !== 'stagiaire' && newUser.class_ids?.length > 0) {
-                userToSubmit.class_id = newUser.class_ids.join(',');
+            if (newUser.role !== 'stagiaire' && newUser.group_ids?.length > 0) {
+                userToSubmit.group_id = newUser.group_ids.join(',');
             }
-<<<<<<< HEAD
             await axios.put(`/api/admin/users/${newUser.id}`, userToSubmit, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             await fetchData();
-=======
-            const res = await axios.put(`/api/admin/users/${newUser.id}`, userToSubmit, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            setUsers(users.map(u => u.id === res.data.user.id ? res.data.user : u));
->>>>>>> 6a6ba9556e523366f663093f32ea6fa7de4f575e
             setIsModalOpen(false);
             setIsEditing(false);
             addNotification(t('accounts.update_success'), 'success');
@@ -168,7 +116,6 @@ const Accounts = () => {
         }
     };
 
-<<<<<<< HEAD
     const handleDeleteUser = async () => {
         try {
             const { id, role } = userToDelete;
@@ -177,15 +124,6 @@ const Accounts = () => {
                 headers: { Authorization: `Bearer ${token}` }
             });
             await fetchData();
-=======
-    const handleDeleteUser = async (id) => {
-        try {
-            const token = localStorage.getItem('token');
-            await axios.delete(`/api/admin/users/${id}`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            setUsers(users.filter(u => u.id !== id));
->>>>>>> 6a6ba9556e523366f663093f32ea6fa7de4f575e
             setIsConfirmOpen(false);
             addNotification(t('accounts.delete_success'), 'success');
         } catch (err) {
@@ -198,13 +136,12 @@ const Accounts = () => {
             user.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
             user.id.toString().includes(searchQuery);
 
-        const matchesClass = selectedClass === 'all' || user.class_id === selectedClass || (user.class_ids && user.class_ids.includes(selectedClass));
+        const matchesGroup = selectedGroup === 'all' || user.group_id === selectedGroup || (user.group_ids && user.group_ids.includes(selectedGroup));
 
-        return matchesSearch && matchesClass;
+        return matchesSearch && matchesGroup;
     });
 
     const students = filteredUsers.filter(u => u.role === 'stagiaire');
-<<<<<<< HEAD
     const formateursList = users.filter(u => u.role === 'formateur');
     
     const [searchFormateur, setSearchFormateur] = useState('');
@@ -212,9 +149,6 @@ const Accounts = () => {
         f.name.toLowerCase().includes(searchFormateur.toLowerCase()) ||
         f.email.toLowerCase().includes(searchFormateur.toLowerCase())
     );
-=======
-    const formateurs = users.filter(u => u.role === 'formateur' || u.role === 'admin');
->>>>>>> 6a6ba9556e523366f663093f32ea6fa7de4f575e
 
     return (
         <div className="space-y-12 fade-up max-w-[1600px] mx-auto">
@@ -248,54 +182,41 @@ const Accounts = () => {
                 </div>
             </div>
 
-            {/* Class Cards */}
-            <div className="flex gap-6 overflow-x-auto pb-6 ista-scrollbar">
-                {availableClasses.length > 0 ? (
-                    availableClasses.map((cls) => (
+            {/* Class Cards */}            <div className="flex gap-6 overflow-x-auto pb-6 ista-scrollbar">
+                {availableGroups.length > 0 ? (
+                    availableGroups.map((grp) => (
                         <div
-                            key={cls.id}
-                            onClick={() => setSelectedClass(cls.id)}
+                            key={grp.id}
+                            onClick={() => setSelectedGroup(grp.id)}
                             className={`min-w-[320px] p-8 rounded-[24px] cursor-pointer transition-all duration-300 border ${
-                                selectedClass === cls.id 
+                                selectedGroup === grp.id 
                                     ? 'bg-white border-[var(--primary)] shadow-lg shadow-[var(--primary)]/5' 
                                     : 'bg-white border-slate-100 hover:border-slate-300 opacity-60 hover:opacity-100'
                             }`}
                         >
                             <div className="flex justify-between items-center mb-6">
-<<<<<<< HEAD
                                 <span className={`text-[12px] font-black uppercase tracking-widest truncate-text flex-1 ${
-=======
-                                <span className={`text-[12px] font-black uppercase tracking-widest ${
->>>>>>> 6a6ba9556e523366f663093f32ea6fa7de4f575e
-                                    selectedClass === cls.id ? 'text-[var(--primary)]' : 'text-[var(--secondary)]'
+                                    selectedGroup === grp.id ? 'text-[var(--primary)]' : 'text-[var(--secondary)]'
                                 }`}>
-                                    {(cls.title || cls.id || '').split('-')[0].trim()}
+                                    {(grp.id || '').split('-')[0].trim()}
                                 </span>
                                 <div className={`w-2.5 h-2.5 rounded-full outline outline-4 outline-offset-2 ${
-                                    selectedClass === cls.id ? 'bg-[var(--primary)] outline-[var(--primary)]/20' : 'bg-slate-200 outline-slate-100'
-                                }`}></div>
+                                    selectedGroup === grp.id ? 'bg-[var(--primary)] outline-[var(--primary)]/20' : 'bg-slate-200 outline-slate-100'
+                                }}`}></div>
                             </div>
-<<<<<<< HEAD
                             <h3 className="text-2xl font-black italic text-[var(--secondary)] uppercase tracking-tight mb-8 truncate-text">
-                                {cls.title || cls.id} {(cls.title && (cls.title.includes('SQUADRON') || cls.title.includes('CLUSTER'))) ? '' : '- SQUADRON'}
+                                {grp.id}
                             </h3>
                             <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">
                                 FILIÈRE: <span className="text-[var(--secondary)] ml-1 truncate-text inline-block align-bottom max-w-[150px]">
-=======
-                            <h3 className="text-2xl font-black italic text-[var(--secondary)] uppercase tracking-tight mb-8">
-                                {cls.title || cls.id} {(cls.title && (cls.title.includes('SQUADRON') || cls.title.includes('CLUSTER'))) ? '' : '- SQUADRON'}
-                            </h3>
-                            <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">
-                                FILIÈRE: <span className="text-[var(--secondary)] ml-1">
->>>>>>> 6a6ba9556e523366f663093f32ea6fa7de4f575e
-                                    {cls.stream || 'GESTION DES ENTREPRISES'}
+                                    {grp.filiere || 'GESTION DES ENTREPRISES'}
                                 </span>
                             </p>
                         </div>
                     ))
                 ) : (
                     <div className="min-w-[320px] p-8 rounded-[24px] bg-white border border-slate-100 opacity-60 flex items-center justify-center">
-                        <p className="text-[10px] font-black text-slate-400 tracking-widest uppercase">AUCUNE CLASSE DISPONIBLE</p>
+                        <p className="text-[10px] font-black text-slate-400 tracking-widest uppercase">AUCUN GROUPE DISPONIBLE</p>
                     </div>
                 )}
             </div>
@@ -328,15 +249,8 @@ const Accounts = () => {
                                 <tr className="border-b border-slate-100">
                                     <th className="pb-6 text-[9px] font-black text-slate-300 uppercase tracking-widest w-16">ID</th>
                                     <th className="pb-6 text-[9px] font-black text-slate-300 uppercase tracking-widest">NOM COMPLET</th>
-<<<<<<< HEAD
                                     <th className="pb-6 text-[9px] font-black text-slate-300 uppercase tracking-widest text-center">FILIÈRE</th>
-                                    <th className="pb-6 text-[9px] font-black text-slate-300 uppercase tracking-widest text-center">CLASS</th>
-                                    <th className="pb-6 text-[9px] font-black text-slate-300 uppercase tracking-widest text-center">ANNÉE SCOLAIRE</th>
-=======
-                                    <th className="pb-6 text-[9px] font-black text-slate-300 uppercase tracking-widest text-center">RÔLE</th>
-                                    <th className="pb-6 text-[9px] font-black text-slate-300 uppercase tracking-widest text-center">ÉTAT</th>
-                                    <th className="pb-6 text-[9px] font-black text-slate-300 uppercase tracking-widest text-center">DERNIÈRE CONNEXION</th>
->>>>>>> 6a6ba9556e523366f663093f32ea6fa7de4f575e
+                                    <th className="pb-6 text-[9px] font-black text-slate-300 uppercase tracking-widest text-center">GROUPE</th>
                                     <th className="pb-6 text-[9px] font-black text-slate-300 uppercase tracking-widest text-right">ACTIONS</th>
                                 </tr>
                             </thead>
@@ -348,57 +262,29 @@ const Accounts = () => {
                                                 {user.id}
                                             </td>
                                             <td className="py-6">
-<<<<<<< HEAD
                                                 <span className="text-sm font-black italic text-[var(--secondary)] uppercase tracking-tight truncate-text max-w-[150px]">
-=======
-                                                <span className="text-sm font-black italic text-[var(--secondary)] uppercase tracking-tight">
->>>>>>> 6a6ba9556e523366f663093f32ea6fa7de4f575e
                                                     {user.name}
                                                 </span>
                                             </td>
                                             <td className="py-6 text-center">
-<<<<<<< HEAD
                                                 <span className="text-[10px] font-black text-[var(--primary)] uppercase tracking-widest truncate-text max-w-[100px] mx-auto">
                                                     {user.filiere || 'DD'}
                                                 </span>
                                             </td>
                                             <td className="py-6 text-center">
                                                 <span className="text-[10px] font-black text-[var(--secondary)] uppercase tracking-widest">
-                                                    {user.class_id}
-                                                </span>
-                                            </td>
-                                            <td className="py-6 text-center">
-                                                <span className="px-4 py-1.5 bg-slate-100 text-slate-500 text-[9px] font-black rounded-full uppercase tracking-widest">
-                                                    {user.annee_scolaire || '2025/2026'}
-=======
-                                                <span className="inline-block px-4 py-1.5 bg-slate-100 text-slate-500 text-[9px] font-black rounded-full uppercase tracking-widest">
-                                                    STAGIAIRE
-                                                </span>
-                                            </td>
-                                            <td className="py-6 text-center">
-                                                <span className="inline-block px-4 py-1.5 border border-[var(--primary)] text-[var(--primary)] text-[9px] font-black rounded-full uppercase tracking-widest bg-[var(--primary)]/5">
-                                                    ACTIVE
-                                                </span>
-                                            </td>
-                                            <td className="py-6 text-center">
-                                                <span className="text-[10px] font-bold text-slate-400 italic uppercase">
-                                                    NO LOGIN
->>>>>>> 6a6ba9556e523366f663093f32ea6fa7de4f575e
+                                                    {user.group_id}
                                                 </span>
                                             </td>
                                             <td className="py-6 text-right">
                                                 <div className="flex justify-end gap-2 opacity-50 group-hover:opacity-100 transition-opacity">
                                                     <button
                                                         onClick={() => {
-<<<<<<< HEAD
                                                             const userData = { ...user };
-                                                            if (user.role === 'formateur' && user.classes) {
-                                                                userData.class_ids = user.classes.split(',').map(c => c.trim()).filter(Boolean);
+                                                            if (user.role === 'formateur' && user.groups) {
+                                                                userData.group_ids = user.groups.split(',').map(g => g.trim()).filter(Boolean);
                                                             }
                                                             setNewUser(userData);
-=======
-                                                            setNewUser(user);
->>>>>>> 6a6ba9556e523366f663093f32ea6fa7de4f575e
                                                             setIsEditing(true);
                                                             setIsModalOpen(true);
                                                         }}
@@ -408,11 +294,7 @@ const Accounts = () => {
                                                     </button>
                                                     <button
                                                         onClick={() => {
-<<<<<<< HEAD
                                                             setUserToDelete({ id: user.id, role: 'stagiaire' });
-=======
-                                                            setUserToDelete(user.id);
->>>>>>> 6a6ba9556e523366f663093f32ea6fa7de4f575e
                                                             setIsConfirmOpen(true);
                                                         }}
                                                         className="w-10 h-10 rounded-xl border border-slate-200 flex items-center justify-center text-slate-400 hover:text-red-500 hover:border-red-500 hover:bg-red-50 transition-all"
@@ -439,7 +321,6 @@ const Accounts = () => {
                 </div>
             </div>
 
-<<<<<<< HEAD
             {/* Formateurs Section */}
             <div className="space-y-6 pb-20">
                 <h2 className="text-3xl font-black italic tracking-tighter text-[var(--secondary)] uppercase text-right">
@@ -466,9 +347,8 @@ const Accounts = () => {
                         <table className="w-full text-left min-w-[800px]">
                             <thead>
                                 <tr className="border-b border-slate-100">
-                                    <th className="pb-6 text-[9px] font-black text-slate-300 uppercase tracking-widest w-16">ID</th>
                                     <th className="pb-6 text-[9px] font-black text-slate-300 uppercase tracking-widest">NOM</th>
-                                    <th className="pb-6 text-[9px] font-black text-slate-300 uppercase tracking-widest text-center">CLASSES</th>
+                                    <th className="pb-6 text-[9px] font-black text-slate-300 uppercase tracking-widest text-center">GROUPES</th>
                                     <th className="pb-6 text-[9px] font-black text-slate-300 uppercase tracking-widest text-center">EMAIL</th>
                                     <th className="pb-6 text-[9px] font-black text-slate-300 uppercase tracking-widest text-center">STATUS</th>
                                     <th className="pb-6 text-[9px] font-black text-slate-300 uppercase tracking-widest text-right">ACTIONS</th>
@@ -484,8 +364,8 @@ const Accounts = () => {
                                             </td>
                                             <td className="py-6 text-center">
                                                 <div className="flex flex-wrap justify-center gap-1">
-                                                    {(u.classes || '').split(',').map((cls, idx) => (
-                                                        <span key={idx} className="px-2 py-0.5 bg-slate-100 text-[8px] font-black text-slate-500 rounded-lg">{cls.trim()}</span>
+                                                    {(u.groups || '').split(',').map((grp, idx) => (
+                                                        <span key={idx} className="px-2 py-0.5 bg-slate-100 text-[8px] font-black text-slate-500 rounded-lg">{grp.trim()}</span>
                                                     ))}
                                                 </div>
                                             </td>
@@ -505,8 +385,8 @@ const Accounts = () => {
                                                     <button
                                                         onClick={() => {
                                                             const userData = { ...u };
-                                                            if (u.role === 'formateur' && u.classes) {
-                                                                userData.class_ids = u.classes.split(',').map(c => c.trim()).filter(Boolean);
+                                                            if (u.role === 'formateur' && u.groups) {
+                                                                userData.group_ids = u.groups.split(',').map(g => g.trim()).filter(Boolean);
                                                             }
                                                             setNewUser(userData);
                                                             setIsEditing(true);
@@ -542,8 +422,6 @@ const Accounts = () => {
                 </div>
             </div>
 
-=======
->>>>>>> 6a6ba9556e523366f663093f32ea6fa7de4f575e
             <IdentityModal
                 isOpen={isModalOpen}
                 onClose={() => setIsModalOpen(false)}
@@ -551,24 +429,17 @@ const Accounts = () => {
                 setNewUser={setNewUser}
                 handleAddUser={handleAddUser}
                 handleUpdateUser={handleUpdateUser}
-                selectedClass={selectedClass}
-                availableClasses={availableClasses}
+                selectedGroup={selectedGroup}
+                availableGroups={availableGroups}
                 availableFilieres={availableFilieres}
-<<<<<<< HEAD
-=======
-                availableOptions={availableOptions}
->>>>>>> 6a6ba9556e523366f663093f32ea6fa7de4f575e
+
                 isEditing={isEditing}
             />
 
             <ConfirmationModal
                 isOpen={isConfirmOpen}
                 onClose={() => setIsConfirmOpen(false)}
-<<<<<<< HEAD
                 onConfirm={handleDeleteUser}
-=======
-                onConfirm={() => handleDeleteUser(userToDelete)}
->>>>>>> 6a6ba9556e523366f663093f32ea6fa7de4f575e
                 title={t('accounts.delete_confirm_title')}
                 message={t('accounts.delete_confirm_message')}
             />

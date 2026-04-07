@@ -7,41 +7,37 @@ const activeScanners = new Map();
 
 exports.startExternalScanner = async (req, res) => {
     try {
-        const { classId } = req.body;
-        if (!classId) return res.status(400).json({ message: 'Target cluster id is required.' });
+        const { groupId } = req.body;
+        if (!groupId) return res.status(400).json({ message: 'Target cluster id is required.' });
 
-        if (activeScanners.has(classId)) {
-            return res.json({ message: `Scanner for Cluster ${classId} is already active.` });
+        if (activeScanners.has(groupId)) {
+            return res.json({ message: `Scanner for Cluster ${groupId} is already active.` });
         }
 
         const scriptPath = path.join(__dirname, '../scaning_qr.py');
         const camIdx = process.env.QR_CAMERA_INDEX || '1';
         // Spawn Python process with both cluster id and camera index
-        const scannerProc = spawn('py', [scriptPath, classId, camIdx]);
+        const scannerProc = spawn('py', [scriptPath, groupId, camIdx]);
 
-        activeScanners.set(classId, scannerProc);
+        activeScanners.set(groupId, scannerProc);
 
         scannerProc.stdout.on('data', async (data) => {
             const rawOutput = data.toString();
-            console.log(`[PYTHON_SCANNER_${classId}]: ${rawOutput}`);
+            console.log(`[PYTHON_SCANNER_${groupId}]: ${rawOutput}`);
 
             // Neural Link: Parse scan notification marker
             // Match format: NAME: {name} : present
             const match = rawOutput.match(/NAME:\s+(.*?)\s+:\s+present/);
             if (match) {
                 const studentName = match[1].trim();
-                console.log(`[BRIDGE_LOCK]: Synchronizing ${studentName} for Cluster ${classId}...`);
+                console.log(`[BRIDGE_LOCK]: Synchronizing ${studentName} for Cluster ${groupId}...`);
 
                 try {
-                    // Look up student by name in the specified class
-<<<<<<< HEAD
-                    const [students] = await pool.query('SELECT NumInscription as id FROM stagiaires WHERE name = ? AND class_id = ?', [studentName, classId]);
-=======
-                    const [students] = await pool.query('SELECT id FROM stagiaires WHERE name = ? AND class_id = ?', [studentName, classId]);
->>>>>>> 6a6ba9556e523366f663093f32ea6fa7de4f575e
+                    // Look up student by name in the specified group
+                    const [students] = await pool.query('SELECT NumInscription as id FROM stagiaires WHERE name = ? AND group_id = ?', [studentName, groupId]);
                     if (students.length > 0) {
                         const studentId = students[0].id;
-                        await pool.query('INSERT IGNORE INTO active_checkins (student_id, class_id) VALUES (?, ?)', [studentId, classId]);
+                        await pool.query('INSERT IGNORE INTO active_checkins (student_id, group_id) VALUES (?, ?)', [studentId, groupId]);
                         console.log(`[SYNC_COMPLETE]: ${studentName} registered.`);
                     }
                 } catch (dbErr) {
@@ -51,15 +47,15 @@ exports.startExternalScanner = async (req, res) => {
         });
 
         scannerProc.stderr.on('data', (data) => {
-            console.error(`[PYTHON_SCANNER_ERROR_${classId}]: ${data}`);
+            console.error(`[PYTHON_SCANNER_ERROR_${groupId}]: ${data}`);
         });
 
         scannerProc.on('close', (code) => {
-            console.log(`[SCANNER_DISCONNECTED]: Process for ${classId} exited with code ${code}.`);
-            activeScanners.delete(classId);
+            console.log(`[SCANNER_DISCONNECTED]: Process for ${groupId} exited with code ${code}.`);
+            activeScanners.delete(groupId);
         });
 
-        res.json({ message: `Neural Bridge established for Cluster ${classId}. Scanner initialized.` });
+        res.json({ message: `Neural Bridge established for Cluster ${groupId}. Scanner initialized.` });
 
     } catch (err) {
         console.error("EXTERNAL_SCANNER_START_ERROR:", err);
@@ -69,13 +65,13 @@ exports.startExternalScanner = async (req, res) => {
 
 exports.stopExternalScanner = async (req, res) => {
     try {
-        const { classId } = req.body;
-        console.log(`[BRIDGE_CONTROL]: Shutdown request for Cluster ${classId}`);
+        const { groupId } = req.body;
+        console.log(`[BRIDGE_CONTROL]: Shutdown request for Cluster ${groupId}`);
 
-        const proc = activeScanners.get(classId);
+        const proc = activeScanners.get(groupId);
 
         if (proc) {
-            console.log(`[BRIDGE_CONTROL]: Terminating process tree for Cluster ${classId}...`);
+            console.log(`[BRIDGE_CONTROL]: Terminating process tree for Cluster ${groupId}...`);
 
             if (process.platform === 'win32') {
                 // Forcefully kill the process tree on Windows to ensure CV2 window closes
@@ -87,14 +83,14 @@ exports.stopExternalScanner = async (req, res) => {
                 proc.kill('SIGTERM');
             }
 
-            activeScanners.delete(classId);
-            console.log(`[BRIDGE_CONTROL]: Synchronized shutdown complete for Cluster ${classId}`);
-            return res.json({ message: `Neural Bridge for Cluster ${classId} disconnected.` });
+            activeScanners.delete(groupId);
+            console.log(`[BRIDGE_CONTROL]: Synchronized shutdown complete for Cluster ${groupId}`);
+            return res.json({ message: `Neural Bridge for Cluster ${groupId} disconnected.` });
         }
 
         // Return 200 even if not found to avoid noisy AxiosErrors in frontend cleanup
-        console.log(`[BRIDGE_CONTROL]: No active process found for ${classId}. Status: Idle.`);
-        res.json({ message: `Neural Bridge for Cluster ${classId} is already inactive.` });
+        console.log(`[BRIDGE_CONTROL]: No active process found for ${groupId}. Status: Idle.`);
+        res.json({ message: `Neural Bridge for Cluster ${groupId} is already inactive.` });
     } catch (err) {
         console.error("EXTERNAL_SCANNER_STOP_ERROR:", err);
         res.status(500).json({ message: 'Internal Server Error: Bridge disconnect failed.' });
@@ -103,22 +99,21 @@ exports.stopExternalScanner = async (req, res) => {
 
 exports.submitReport = async (req, res) => {
     try {
-        const { report_code, class_id, date, subject, salle, heure, stagiaires, signature } = req.body;
+        const { report_code, group_id, date, subject, heure, stagiaires, signature } = req.body;
         const formateur_id = req.user.id;
 
-        if (!report_code || !class_id || !date || !subject) {
-            return res.status(400).json({ message: 'Required fields missing: report_code, class_id, date, subject' });
+        if (!report_code || !group_id || !date || !subject) {
+            return res.status(400).json({ message: 'Required fields missing: report_code, group_id, date, subject' });
         }
 
         // 1. Create the report record
         const [reportRes] = await pool.query(
-            'INSERT INTO reports (report_code, formateur_id, class_id, date, subject, salle, heure, signature) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-            [report_code, formateur_id, class_id, date, subject, salle, heure, signature]
+            'INSERT INTO reports (report_code, formateur_id, group_id, date, subject, heure, signature) VALUES (?, ?, ?, ?, ?, ?, ?)',
+            [report_code, formateur_id, group_id, date, subject, heure, signature]
         );
 
         const reportId = reportRes.insertId;
 
-<<<<<<< HEAD
         // 2. Save individual attendance records for this report (optimized: only non-present)
         if (stagiaires && stagiaires.length > 0) {
             const nonPresentStagiaires = stagiaires.filter(s => s.status !== 'PRESENT');
@@ -133,19 +128,6 @@ exports.submitReport = async (req, res) => {
 
         // 3. Create notification for Admin(s)
         const [admins] = await pool.query('SELECT id FROM admins');
-=======
-        // 2. Save individual attendance records for this report
-        if (stagiaires && stagiaires.length > 0) {
-            const values = stagiaires.map(s => [reportId, s.id, s.status]);
-            await pool.query(
-                'INSERT INTO report_attendance (report_id, student_id, status) VALUES ?',
-                [values]
-            );
-        }
-
-        // 3. Create notification for Admin(s)
-        const [admins] = await pool.query('SELECT id FROM users WHERE role = "admin"');
->>>>>>> 6a6ba9556e523366f663093f32ea6fa7de4f575e
         for (const admin of admins) {
             await pool.query(
                 'INSERT INTO notifications (user_id, type, category, title, message) VALUES (?, ?, ?, ?, ?)',
@@ -153,7 +135,7 @@ exports.submitReport = async (req, res) => {
                     admin.id,
                     'message',
                     'RAPPORT',
-                    `Nouveau rapport : ${class_id}`,
+                    `Nouveau rapport : ${group_id}`,
                     `Le formateur ${req.user.name} a soumis le rapport de présence pour le module ${subject}.`
                 ]
             );
@@ -169,78 +151,34 @@ exports.submitReport = async (req, res) => {
     }
 };
 
-exports.getSchedule = async (req, res) => {
+exports.getGroups = async (req, res) => {
     try {
         const formateur_id = req.user.id;
 
-        // Get classes where this formateur is a supervisor
-        const [classes] = await pool.query(`
-            SELECT c.* FROM classes c
-            JOIN class_supervisors cs ON c.id = cs.class_id
-            WHERE cs.formateur_id = ?
+        // Get groups where this formateur is a supervisor
+        const [groups] = await pool.query(`
+            SELECT g.* FROM \`groups\` g
+            JOIN groups_supervisors gs ON g.id = gs.group_id
+            WHERE gs.formateur_id = ?
         `, [formateur_id]);
 
-<<<<<<< HEAD
-        res.json({ classes, schedule: [] });
+        res.json({ groups });
     } catch (err) {
-        console.error("GET FORMATEUR CLASSES ERROR:", err);
-        res.status(500).json({ message: 'Server error fetching classes' });
-=======
-        // Get schedule for this formateur
-        const [schedule] = await pool.query(`
-            SELECT t.id, t.day, t.time, t.class_id as class, u.name as formateur, t.subject, t.room 
-            FROM timetable t 
-            LEFT JOIN users u ON t.formateur_id = u.id
-            WHERE t.formateur_id = ?
-        `, [formateur_id]);
-
-        // Today's Reminder Logic
-        const days = ['DIMANCHE', 'LUNDI', 'MARDI', 'MERCREDI', 'JEUDI', 'VENDREDI', 'SAMEDI'];
-        const todayName = days[new Date().getDay()];
-        const todaySessions = schedule.filter(s => s.day.toUpperCase() === todayName);
-
-        if (todaySessions.length > 0) {
-            const todayStr = new Date().toISOString().split('T')[0];
-            for (const session of todaySessions) {
-                // Check if we already notified for this session today
-                const [existingNotif] = await pool.query(
-                    'SELECT id FROM notifications WHERE user_id = ? AND category = "RAPPEL" AND title LIKE ? AND DATE(created_at) = ?',
-                    [formateur_id, `%${session.class}%`, todayStr]
-                );
-
-                if (existingNotif.length === 0) {
-                    await pool.query(
-                        'INSERT INTO notifications (user_id, type, category, title, message) VALUES (?, ?, ?, ?, ?)',
-                        [
-                            formateur_id,
-                            'request',
-                            'RAPPEL',
-                            `Séance aujourd'hui : ${session.class}`,
-                            `Rappel : Vous avez une séance de ${session.subject} avec le groupe ${session.class} à ${session.time} (Salle ${session.room}).`
-                        ]
-                    );
-                }
-            }
-        }
-
-        res.json({ classes, schedule });
-    } catch (err) {
-        console.error("GET FORMATEUR SCHEDULE ERROR:", err);
-        res.status(500).json({ message: 'Server error fetching schedule' });
->>>>>>> 6a6ba9556e523366f663093f32ea6fa7de4f575e
+        console.error("GET FORMATEUR GROUPS ERROR:", err);
+        res.status(500).json({ message: 'Server error fetching groups' });
     }
 };
 
-exports.getUsersByClass = async (req, res) => {
+exports.getUsersByGroup = async (req, res) => {
     try {
-        const { classId } = req.params;
+        const { groupId } = req.params;
         const formateur_id = req.user.id;
 
         // Verify access: Admin can access all, Formateurs must be supervisors
         if (req.user.role !== 'admin') {
             const [supervisors] = await pool.query(
-                'SELECT * FROM class_supervisors WHERE class_id = ? AND formateur_id = ?',
-                [classId, formateur_id]
+                'SELECT * FROM groups_supervisors WHERE group_id = ? AND formateur_id = ?',
+                [groupId, formateur_id]
             );
 
             if (supervisors.length === 0) {
@@ -249,12 +187,8 @@ exports.getUsersByClass = async (req, res) => {
         }
 
         const [users] = await pool.query(
-<<<<<<< HEAD
-            'SELECT NumInscription as id, name, class_id FROM stagiaires WHERE class_id = ?',
-=======
-            'SELECT id, name, class_id FROM stagiaires WHERE class_id = ?',
->>>>>>> 6a6ba9556e523366f663093f32ea6fa7de4f575e
-            [classId]
+            'SELECT NumInscription as id, name, group_id FROM stagiaires WHERE group_id = ?',
+            [groupId]
         );
 
         res.json({ users: users.map(u => ({ ...u, status: 'ACTIVE', lastLogin: 'Connected' })) });
@@ -267,21 +201,17 @@ exports.getUsersByClass = async (req, res) => {
 // Neural Portal: Process Check-in (QR or Face)
 exports.processCheckin = async (req, res) => {
     try {
-        const { studentId, classId } = req.body;
+        const { studentId, groupId } = req.body;
 
         // 1. Verify existence
-<<<<<<< HEAD
-        const [students] = await pool.query('SELECT NumInscription as id, name FROM stagiaires WHERE NumInscription = ? AND class_id = ?', [studentId, classId]);
-=======
-        const [students] = await pool.query('SELECT id, name FROM stagiaires WHERE id = ? AND class_id = ?', [studentId, classId]);
->>>>>>> 6a6ba9556e523366f663093f32ea6fa7de4f575e
+        const [students] = await pool.query('SELECT NumInscription as id, name FROM stagiaires WHERE NumInscription = ? AND group_id = ?', [studentId, groupId]);
         const student = students[0];
         if (!student) {
             return res.status(404).json({ message: 'Entity not found in this cluster.' });
         }
 
         // 2. Register check-in
-        await pool.query('INSERT IGNORE INTO active_checkins (student_id, class_id) VALUES (?, ?)', [studentId, classId]);
+        await pool.query('INSERT IGNORE INTO active_checkins (student_id, group_id) VALUES (?, ?)', [studentId, groupId]);
 
         res.json({ message: `Signal Locked: ${student.name} synchronized.`, name: student.name });
     } catch (err) {
@@ -293,7 +223,7 @@ exports.processCheckin = async (req, res) => {
 // Neural Portal: Process Check-in by QR Content
 exports.processCheckinByQR = async (req, res) => {
     try {
-        const { qrContent, classId } = req.body;
+        const { qrContent, groupId } = req.body;
 
         if (!qrContent) return res.status(400).json({ message: 'No QR signal received.' });
 
@@ -309,16 +239,12 @@ exports.processCheckinByQR = async (req, res) => {
         const name = namePart.split(':')[1];
         const group = groupPart.split(':')[1];
 
-        if (group !== classId) {
+        if (group !== groupId) {
             return res.status(403).json({ message: `Access Denied: Node ${name} belongs to Cluster ${group}.` });
         }
 
         // Look up student id from name and group
-<<<<<<< HEAD
-        const [students] = await pool.query('SELECT NumInscription as id FROM stagiaires WHERE name = ? AND class_id = ?', [name, group]);
-=======
-        const [students] = await pool.query('SELECT id FROM stagiaires WHERE name = ? AND class_id = ?', [name, group]);
->>>>>>> 6a6ba9556e523366f663093f32ea6fa7de4f575e
+        const [students] = await pool.query('SELECT NumInscription as id FROM stagiaires WHERE name = ? AND group_id = ?', [name, group]);
         if (students.length === 0) {
             return res.status(404).json({ message: 'Entity not found in the manifest.' });
         }
@@ -326,7 +252,7 @@ exports.processCheckinByQR = async (req, res) => {
         const studentId = students[0].id;
 
         // Register in active_checkins
-        await pool.query('INSERT IGNORE INTO active_checkins (student_id, class_id) VALUES (?, ?)', [studentId, classId]);
+        await pool.query('INSERT IGNORE INTO active_checkins (student_id, group_id) VALUES (?, ?)', [studentId, groupId]);
 
         res.json({ message: 'Signal Captured: Syncing node...', name });
     } catch (err) {
@@ -335,27 +261,31 @@ exports.processCheckinByQR = async (req, res) => {
     }
 };
 
-// Neural Portal: Get Active Check-ins for a class
 exports.getActiveCheckins = async (req, res) => {
     try {
-        const { classId } = req.params;
-<<<<<<< HEAD
+        const { groupId } = req.params;
         const [checkins] = await pool.query(`
-            SELECT ra.student_id, ra.status, 1 as priority
-            FROM report_attendance ra 
-            JOIN reports r ON ra.report_id = r.id 
-            WHERE r.class_id = ? AND r.date = CURDATE()
-            UNION
-            SELECT student_id, status, 2 as priority 
-            FROM active_checkins 
-            WHERE class_id = ?
-            ORDER BY priority ASC
-        `, [classId, classId]);
-        res.json({ checkins: checkins.map(c => ({ student_id: c.student_id, status: c.status })) });
-=======
-        const [checkins] = await pool.query('SELECT student_id FROM active_checkins WHERE class_id = ?', [classId]);
-        res.json({ checkins: checkins.map(c => c.student_id) });
->>>>>>> 6a6ba9556e523366f663093f32ea6fa7de4f575e
+            SELECT id, status FROM (
+                SELECT id, status, ROW_NUMBER() OVER(PARTITION BY id ORDER BY priority ASC) as rank_idx
+                FROM (
+                    SELECT ra.student_id as id, 'PRESENT' as status, 1 as priority
+                    FROM report_attendance ra
+                    JOIN reports r ON ra.report_id = r.id
+                    WHERE r.group_id = ? AND DATE(r.date) = CURDATE() AND (ra.Justifier = 'JUSTIFIÉ' OR ra.Justifier = 'NON JUSTIFIÉ')
+                    UNION
+                    SELECT ra.student_id as id, 'ABSENT' as status, 1 as priority
+                    FROM report_attendance ra
+                    JOIN reports r ON ra.report_id = r.id
+                    WHERE r.group_id = ? AND DATE(r.date) = CURDATE() AND ra.Justifier = 'ABSENCE'
+                    UNION
+                    SELECT student_id as id, status, 2 as priority 
+                    FROM active_checkins 
+                    WHERE group_id = ?
+                ) as raw_data
+            ) as ranked_data
+            WHERE rank_idx = 1
+        `, [groupId, groupId, groupId]);
+        res.json({ checkins: checkins.map(c => ({ student_id: c.id, status: c.status })) });
     } catch (err) {
         console.error("GET CHECKINS ERROR:", err);
         res.status(500).json({ message: 'Telemetry fetch failure.' });
@@ -365,8 +295,8 @@ exports.getActiveCheckins = async (req, res) => {
 // Neural Portal: Clear Check-ins
 exports.clearCheckins = async (req, res) => {
     try {
-        const { classId } = req.body;
-        await pool.query('DELETE FROM active_checkins WHERE class_id = ?', [classId]);
+        const { groupId } = req.body;
+        await pool.query('DELETE FROM active_checkins WHERE group_id = ?', [groupId]);
         res.json({ message: 'Active matrix reset.' });
     } catch (err) {
         console.error("CLEAR CHECKINS ERROR:", err);
@@ -377,21 +307,13 @@ exports.clearCheckins = async (req, res) => {
 // Neural Portal: Manual Status Override
 exports.updateCheckinStatus = async (req, res) => {
     try {
-        const { studentId, classId, status } = req.body;
+        const { studentId, groupId, status } = req.body;
 
-<<<<<<< HEAD
-            await pool.query('DELETE FROM active_checkins WHERE student_id = ? AND class_id = ?', [studentId, classId]);
+            await pool.query('DELETE FROM active_checkins WHERE student_id = ? AND group_id = ?', [studentId, groupId]);
             await pool.query(
-                'INSERT INTO active_checkins (student_id, class_id, status) VALUES (?, ?, ?)',
-                [studentId, classId, status]
+                'INSERT INTO active_checkins (student_id, group_id, status) VALUES (?, ?, ?)',
+                [studentId, groupId, status]
             );
-=======
-        if (status === 'PRESENT') {
-            await pool.query('INSERT IGNORE INTO active_checkins (student_id, class_id) VALUES (?, ?)', [studentId, classId]);
-        } else if (status === 'ABSENT') {
-            await pool.query('DELETE FROM active_checkins WHERE student_id = ? AND class_id = ?', [studentId, classId]);
-        }
->>>>>>> 6a6ba9556e523366f663093f32ea6fa7de4f575e
 
         res.json({ message: `Status synchronized for entity ${studentId}.` });
     } catch (err) {
@@ -405,13 +327,8 @@ exports.getProfile = async (req, res) => {
     try {
         const formateur_id = req.user.id;
         const [profiles] = await pool.query(`
-<<<<<<< HEAD
             SELECT u.id, u.name, u.email, 'formateur' as role, u.image 
             FROM formateurs u
-=======
-            SELECT u.id, u.name, u.email, u.role, u.image 
-            FROM users u
->>>>>>> 6a6ba9556e523366f663093f32ea6fa7de4f575e
             WHERE u.id = ?
         `, [formateur_id]);
 
@@ -432,11 +349,7 @@ exports.updateProfile = async (req, res) => {
         const formateur_id = req.user.id;
         const { image } = req.body;
 
-<<<<<<< HEAD
         await pool.query('UPDATE formateurs SET image = ? WHERE id = ?', [image, formateur_id]);
-=======
-        await pool.query('UPDATE users SET image = ? WHERE id = ?', [image, formateur_id]);
->>>>>>> 6a6ba9556e523366f663093f32ea6fa7de4f575e
 
         res.json({ message: 'Neural Identity updated.' });
     } catch (err) {
@@ -445,7 +358,6 @@ exports.updateProfile = async (req, res) => {
     }
 };
 
-<<<<<<< HEAD
 // Update FORMATEUR profile (specifically name/email)
 exports.updateFormateurProfile = async (req, res) => {
     try {
@@ -508,5 +420,3 @@ exports.forceUpdatePassword = async (req, res) => {
         res.status(500).json({ message: 'Internal Server Error' });
     }
 };
-=======
->>>>>>> 6a6ba9556e523366f663093f32ea6fa7de4f575e

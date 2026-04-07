@@ -12,17 +12,13 @@ import {
     Scan,
     ChevronDown,
     CalendarCheck,
-<<<<<<< HEAD
     AlertCircle,
     Watch
-=======
-    AlertCircle
->>>>>>> 6a6ba9556e523366f663093f32ea6fa7de4f575e
 } from 'lucide-react';
 import axios from 'axios';
 import { useNotification } from '../../context/NotificationContext';
 import { useTranslation } from 'react-i18next';
-import ClassDossierModal from '../../components/ClassDossierModal';
+import GroupDossierModal from '../../components/GroupDossierModal';
 
 const FormateurDashboard = () => {
     const { t, i18n } = useTranslation();
@@ -32,8 +28,7 @@ const FormateurDashboard = () => {
     const [searchParams] = useSearchParams();
     const { addNotification } = useNotification();
     const [currentTime, setCurrentTime] = useState(new Date());
-    const [schedule, setSchedule] = useState([]);
-    const [classes, setClasses] = useState([]);
+    const [groups, setGroups] = useState([]);
     const [activeSession, setActiveSession] = useState(null);
     const [students, setStudents] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -68,43 +63,24 @@ const FormateurDashboard = () => {
                 const token = localStorage.getItem('token');
                 if (!token) return;
                 const config = { headers: { Authorization: `Bearer ${token}` } };
-                const res = await axios.get('/api/formateur/schedule', config);
-                const fetchedSchedule = res.data.schedule || [];
-                setSchedule(fetchedSchedule);
-                setClasses(res.data.classes || []);
+                const res = await axios.get('/api/formateur/groups', config);
+                setGroups(res.data.groups || []);
 
-                // Auto-select class from URL if present
-                const selectedClassId = searchParams.get('selectedClass');
-                if (selectedClassId) {
-                    const session = fetchedSchedule.find(s => s.class === selectedClassId) || {
-                        class: selectedClassId,
+                // Auto-select group from URL if present
+                const selectedGroupId = searchParams.get('selectedGroup');
+                if (selectedGroupId) {
+                    const session = {
+                        group: selectedGroupId,
                         subject: 'SESSION',
                         room: 'ROOM',
-                        time: `${new Date().getHours()}:00 - ${new Date().getHours() + 2}:00`
+                        time: '08:30-11:00'
                     };
-                    setActiveSession({ ...session, class: selectedClassId });
+                    setActiveSession({ ...session, group: selectedGroupId });
 
-<<<<<<< HEAD
-                    const [sRes, checkinsRes] = await Promise.all([
-                        axios.get(`/api/formateur/users/by-class/${selectedClassId}`, config),
-                        axios.get(`/api/formateur/active-checkins/${selectedClassId}`, config)
-                    ]);
-                    const checkinsList = checkinsRes.data.checkins || [];
-                    const checkinsMap = {};
-                    checkinsList.forEach(c => { checkinsMap[c.student_id] = c.status; });
-                    
-                    setStudents((sRes.data.users || []).map(u => ({ 
-                        ...u, 
-                        status: checkinsMap[u.id] || 'PRESENT' 
-                    })));
-=======
-                    const sRes = await axios.get(`/api/formateur/users/by-class/${selectedClassId}`, config);
-                    setStudents((sRes.data.users || []).map(u => ({ ...u, status: 'ABSENT' })));
->>>>>>> 6a6ba9556e523366f663093f32ea6fa7de4f575e
+                    fetchStudents(selectedGroupId);
                 }
-
-            } catch (error) {
-                console.error('Error fetching schedule data', error);
+            } catch (err) {
+                console.error("Fetch Data Error:", err);
             } finally {
                 setLoading(false);
             }
@@ -112,36 +88,35 @@ const FormateurDashboard = () => {
         fetchScheduleData();
     }, [searchParams]);
 
-    const selectClass = (classId) => {
-        if (!classId) {
+    const handleSessionSelect = (groupId) => {
+        if (!groupId) {
             setActiveSession(null);
-            setStudents([]);
+            setUsers([]);
             return;
         }
 
-        const session = schedule.find(s => s.class === classId) || {
-            class: classId,
+        const session = {
+            group: groupId,
             subject: 'SESSION',
             room: 'ROOM',
-            time: `${new Date().getHours()}:00 - ${new Date().getHours() + 2}:00`
+            time: '08:30-11:00'
         };
 
         setActiveSession({
             ...session,
-            class: classId
+            group: groupId
         });
-        fetchStudents(classId);
+        fetchStudents(groupId);
     };
 
-    const fetchStudents = async (classId) => {
+    const fetchStudents = async (groupId) => {
         try {
             const token = localStorage.getItem('token');
             const config = { headers: { Authorization: `Bearer ${token}` } };
-<<<<<<< HEAD
             
             const [sRes, checkinsRes] = await Promise.all([
-                axios.get(`/api/formateur/users/by-class/${classId}`, config),
-                axios.get(`/api/formateur/active-checkins/${classId}`, config)
+                axios.get(`/api/formateur/users/by-group/${groupId}`, config),
+                axios.get(`/api/formateur/active-checkins/${groupId}`, config)
             ]);
             
             const checkinsList = checkinsRes.data.checkins || [];
@@ -151,13 +126,8 @@ const FormateurDashboard = () => {
             const fetchedUsers = sRes.data.users || [];
             setStudents(fetchedUsers.map(u => ({ 
                 ...u, 
-                status: checkinsMap[u.id] || 'PRESENT' 
+                status: checkinsMap[u.id] || 'ABSENT' 
             })));
-=======
-            const res = await axios.get(`/api/formateur/users/by-class/${classId}`, config);
-            const fetchedUsers = res.data.users || [];
-            setStudents(fetchedUsers.map(u => ({ ...u, status: 'ABSENT' })));
->>>>>>> 6a6ba9556e523366f663093f32ea6fa7de4f575e
         } catch (error) {
             console.error('Error fetching session students', error);
         }
@@ -171,23 +141,15 @@ const FormateurDashboard = () => {
             try {
                 const token = localStorage.getItem('token');
                 const config = { headers: { Authorization: `Bearer ${token}` } };
-                const res = await axios.get(`/api/formateur/active-checkins/${activeSession.class}`, config);
-<<<<<<< HEAD
+                const res = await axios.get(`/api/formateur/active-checkins/${activeSession.group}`, config);
                 const checkinsList = res.data.checkins || [];
                 const checkinsMap = {};
                 checkinsList.forEach(c => { checkinsMap[c.student_id] = c.status; });
 
                 setStudents(prev => prev.map(s => ({
                     ...s,
-                    status: checkinsMap[s.id] || 'PRESENT'
+                    status: checkinsMap[s.id] || 'ABSENT'
                 })));
-=======
-                const checkedInIds = res.data.checkins || [];
-
-                setStudents(prev => prev.map(s =>
-                    checkedInIds.includes(s.id) ? { ...s, status: 'PRESENT' } : { ...s, status: 'ABSENT' }
-                ));
->>>>>>> 6a6ba9556e523366f663093f32ea6fa7de4f575e
 
             } catch (err) {
                 console.error("Polling Error:", err);
@@ -206,7 +168,7 @@ const FormateurDashboard = () => {
             const config = { headers: { Authorization: `Bearer ${token}` } };
             await axios.post('/api/formateur/update-checkin-status', {
                 studentId,
-                classId: activeSession.class,
+                groupId: activeSession.group,
                 status
             }, config);
         } catch (error) {
@@ -222,12 +184,11 @@ const FormateurDashboard = () => {
             const config = { headers: { Authorization: `Bearer ${token}` } };
 
             const reportData = {
-                report_code: `REP-${activeSession.class}-${new Date().toISOString().split('T')[0]}-${Date.now().toString().slice(-4)}`,
-                class_id: activeSession.class,
+                report_code: `REP-${activeSession.group}-${new Date().toISOString().split('T')[0]}-${Date.now().toString().slice(-4)}`,
+                group_id: activeSession.group,
                 date: new Date().toISOString().split('T')[0],
                 subject: activeSession.subject,
-                salle: activeSession.room,
-                heure: meta.startTime && meta.endTime ? `${meta.startTime} - ${meta.endTime}` : activeSession.time,
+                heure: meta.selectedSeance || activeSession.time,
                 stagiaires: students.map(s => ({ id: s.id, status: s.status })),
                 signature: signatureData
             };
@@ -235,10 +196,10 @@ const FormateurDashboard = () => {
             await axios.post('/api/formateur/submit-report', reportData, config);
 
             try {
-                await axios.post('/api/formateur/clear-checkins', { classId: activeSession.class }, config);
+                await axios.post('/api/formateur/clear-checkins', { groupId: activeSession.group }, config);
             } catch (err) { console.error("Clear Checkins Error:", err); }
 
-            addNotification(t('formateur.report_success', { class: activeSession.class }), 'success');
+            addNotification(t('formateur.report_success', { group: activeSession.group }), 'success');
             setIsConfirming(false);
         } catch (error) {
             console.error('Submission failed', error);
@@ -256,12 +217,8 @@ const FormateurDashboard = () => {
     const stats = {
         total: students.length,
         present: students.filter(s => s.status === 'PRESENT').length,
-<<<<<<< HEAD
         absent: students.filter(s => s.status === 'ABSENT').length,
         late: students.filter(s => s.status === 'LATE').length
-=======
-        absent: students.filter(s => s.status === 'ABSENT').length
->>>>>>> 6a6ba9556e523366f663093f32ea6fa7de4f575e
     };
 
 
@@ -288,7 +245,7 @@ const FormateurDashboard = () => {
                         </div>
                         <div className="flex flex-col">
                             <h1 className="text-4xl md:text-5xl lg:text-7xl font-black tracking-tight text-[var(--secondary)] uppercase italic leading-[1.1]">
-                                {activeSession ? t('formateur.session', { class: activeSession.class }) : t('formateur.welcome', { name: user?.name })}
+                                {activeSession ? t('formateur.session', { group: activeSession.group }) : t('formateur.welcome', { name: user?.name })}
                             </h1>
                             <div className={`flex items-center gap-3 mt-4 ${isRtl ? 'flex-row-reverse' : ''}`}>
                                 <p className="text-[var(--text-muted)] text-[11px] font-bold tracking-widest uppercase bg-white px-3 py-1.5 rounded-lg border border-[var(--border)] shadow-sm">
@@ -306,7 +263,7 @@ const FormateurDashboard = () => {
                             >
                                 <div className={`flex items-center gap-3 ${isRtl ? 'flex-row-reverse' : ''}`}>
                                     <CalendarCheck className={`w-4 h-4 ${activeSession ? 'text-[var(--primary)]' : 'text-[var(--text-muted)]'}`} />
-                                    <span>{activeSession ? `${activeSession.class}` : t('formateur.select_group')}</span>
+                                    <span>{activeSession ? `${activeSession.group}` : t('formateur.select_group')}</span>
                                 </div>
                                 <ChevronDown className={`w-4 h-4 text-[var(--text-muted)] transition-transform duration-300 ${isSelectOpen ? 'rotate-180' : ''}`} />
                             </button>
@@ -314,13 +271,13 @@ const FormateurDashboard = () => {
                             {isSelectOpen && (
                                 <div className="absolute top-[calc(100%+8px)] right-0 w-full bg-white border border-[var(--border)] z-50 shadow-xl rounded-xl py-2 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
                                     <div className="max-h-[250px] overflow-y-auto ista-scrollbar">
-                                        {classes.map(c => (
+                                        {groups.map(g => (
                                             <div
-                                                key={c.id}
-                                                onClick={() => { selectClass(c.id); setIsSelectOpen(false); }}
-                                                className={`px-6 py-4 text-[10px] font-black tracking-widest uppercase cursor-pointer transition-all hover:bg-[var(--surface-hover)] hover:text-[var(--primary)] ${activeSession?.class === c.id ? 'text-[var(--primary)] bg-green-50' : 'text-[var(--text-muted)]'} ${isRtl ? 'text-right' : ''}`}
+                                                key={g.id}
+                                                onClick={() => { handleSessionSelect(g.id); setIsSelectOpen(false); }}
+                                                className={`px-6 py-4 text-[10px] font-black tracking-widest uppercase cursor-pointer transition-all hover:bg-[var(--surface-hover)] hover:text-[var(--primary)] ${activeSession?.group === g.id ? 'text-[var(--primary)] bg-green-50' : 'text-[var(--text-muted)]'} ${isRtl ? 'text-right' : ''}`}
                                             >
-                                                <span>{c.id} - {c.title}</span>
+                                                <span>{g.id}</span>
                                             </div>
                                         ))}
                                     </div>
@@ -339,7 +296,7 @@ const FormateurDashboard = () => {
                                 </button>
                                 <button
                                     className="btn-ista px-6 py-4 flex items-center justify-center"
-                                    onClick={() => navigate(`/scanner?classId=${activeSession.class}&mode=scann&subject=${encodeURIComponent(activeSession.subject)}&room=${encodeURIComponent(activeSession.room)}&formateurName=${encodeURIComponent(user?.name)}&time=${activeSession.time}`)}
+                                    onClick={() => navigate(`/scanner?groupId=${activeSession.group}&mode=scann&subject=${encodeURIComponent(activeSession.subject)}&room=${encodeURIComponent(activeSession.room)}&formateurName=${encodeURIComponent(user?.name)}&time=${activeSession.time}`)}
                                     title={t('formateur.scanner_tooltip')}
                                 >
                                     <Scan className="w-5 h-5" />
@@ -366,14 +323,11 @@ const FormateurDashboard = () => {
                         <h2 className="text-4xl font-black text-red-500">{stats.absent.toString().padStart(2, '0')}</h2>
                         <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest mt-1">{t('dashboard.absent')}</p>
                     </div>
-<<<<<<< HEAD
                     <div className="ista-card p-8 bg-white text-center shadow-sm border-b-4 border-b-amber-500">
                         <Watch className="w-6 h-6 text-amber-500 mx-auto mb-3" />
                         <h2 className="text-4xl font-black text-amber-500">{stats.late?.toString().padStart(2, '0') || '00'}</h2>
                         <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest mt-1">RETARD</p>
                     </div>
-=======
->>>>>>> 6a6ba9556e523366f663093f32ea6fa7de4f575e
                 </div>
 
                 {/* List Section */}
@@ -412,19 +366,11 @@ const FormateurDashboard = () => {
                                             <tr key={student.id} className="hover:bg-slate-50 transition-colors group">
                                                 <td className="p-6">
                                                     <div className={`flex items-center gap-4 ${isRtl ? 'flex-row-reverse' : ''}`}>
-<<<<<<< HEAD
                                                         <div className={`w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-[10px] font-black text-[var(--secondary)] group-hover:bg-[var(--primary)] group-hover:text-white transition-all shadow-sm ${student.status === 'PRESENT' ? '' : 'grayscale opacity-50'}`}>
                                                             {student.name.split(' ').map(n => n[0]).join('')}
                                                         </div>
                                                         <div className={`flex flex-col ${isRtl ? 'text-right' : ''}`}>
                                                             <span className={`text-xs font-bold tracking-tight text-[var(--secondary)] uppercase ${student.status === 'PRESENT' ? '' : 'opacity-40'}`}>{student.name}</span>
-=======
-                                                        <div className={`w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-[10px] font-black text-[var(--secondary)] group-hover:bg-[var(--primary)] group-hover:text-white transition-all shadow-sm ${student.status === 'ABSENT' ? 'opacity-50' : ''}`}>
-                                                            {student.name.split(' ').map(n => n[0]).join('')}
-                                                        </div>
-                                                        <div className={`flex flex-col ${isRtl ? 'text-right' : ''}`}>
-                                                            <span className={`text-xs font-bold tracking-tight text-[var(--secondary)] uppercase ${student.status === 'ABSENT' ? 'opacity-40' : ''}`}>{student.name}</span>
->>>>>>> 6a6ba9556e523366f663093f32ea6fa7de4f575e
                                                             <span className="text-[9px] text-[var(--text-muted)] font-mono">#{student.id}</span>
                                                         </div>
                                                     </div>
@@ -433,21 +379,12 @@ const FormateurDashboard = () => {
                                                     {student.email}
                                                 </td>
                                                 <td className="p-6">
-<<<<<<< HEAD
                                                     <span className={`badge ${student.status === 'PRESENT' ? 'badge-present' : student.status === 'LATE' ? 'bg-amber-50 text-amber-500 border-amber-100' : 'badge-absent'}`}>
                                                         {student.status === 'PRESENT' ? t('dashboard.present') : student.status === 'LATE' ? 'RETARD' : t('dashboard.absent')}
                                                     </span>
                                                 </td>
                                                 <td className={`p-6 ${isRtl ? 'text-left' : 'text-right'}`}>
-                                                    <div className={`flex gap-2 ${isRtl ? 'justify-start' : 'justify-end'}`}>
-=======
-                                                    <span className={`badge ${student.status === 'PRESENT' ? 'badge-present' : 'badge-absent'}`}>
-                                                        {student.status === 'PRESENT' ? t('dashboard.present') : t('dashboard.absent')}
-                                                    </span>
-                                                </td>
-                                                <td className={`p-6 ${isRtl ? 'text-left' : 'text-right'}`}>
                                                     <div className={`flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity ${isRtl ? 'justify-start' : 'justify-end'}`}>
->>>>>>> 6a6ba9556e523366f663093f32ea6fa7de4f575e
                                                         <button
                                                             onClick={() => handleStatusChange(student.id, 'PRESENT')}
                                                             className={`p-2 rounded-lg border transition-all ${student.status === 'PRESENT' ? 'bg-[var(--primary)] border-[var(--primary)] text-white' : 'border-[var(--border)] text-[var(--text-muted)] hover:border-[var(--primary)] hover:text-[var(--primary)]'}`}
@@ -455,15 +392,12 @@ const FormateurDashboard = () => {
                                                             <CheckCircle2 className="w-4 h-4" />
                                                         </button>
                                                         <button
-<<<<<<< HEAD
                                                             onClick={() => handleStatusChange(student.id, 'LATE')}
                                                             className={`p-2 rounded-lg border transition-all ${student.status === 'LATE' ? 'bg-amber-500 border-amber-500 text-white' : 'border-[var(--border)] text-[var(--text-muted)] hover:border-amber-500 hover:text-amber-500'}`}
                                                         >
                                                             <Watch className="w-4 h-4" />
                                                         </button>
                                                         <button
-=======
->>>>>>> 6a6ba9556e523366f663093f32ea6fa7de4f575e
                                                             onClick={() => handleStatusChange(student.id, 'ABSENT')}
                                                             className={`p-2 rounded-lg border transition-all ${student.status === 'ABSENT' ? 'bg-red-500 border-red-500 text-white' : 'border-[var(--border)] text-[var(--text-muted)] hover:border-red-500 hover:text-red-500'}`}
                                                         >
@@ -498,8 +432,8 @@ const FormateurDashboard = () => {
                 </div>
             </div>
 
-            {/* Class Dossier Modal */}
-            <ClassDossierModal
+            {/* Group Dossier Modal */}
+            <GroupDossierModal
                 isOpen={isConfirming}
                 onClose={() => setIsConfirming(false)}
                 activeSession={activeSession}

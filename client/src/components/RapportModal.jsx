@@ -46,7 +46,7 @@ const RapportModal = ({ isOpen, onClose, rapport }) => {
                         </div>
                         <div className="space-y-1">
                             <p className="text-[9px] font-black text-white/40 tracking-widest uppercase">{t('modals.report.group_label')}</p>
-                            <p className="text-sm font-bold uppercase tracking-tight text-white/70">{rapport.class_id}</p>
+                            <p className="text-sm font-bold uppercase tracking-tight text-white/70">{rapport.group_id}</p>
                         </div>
                     </div>
 

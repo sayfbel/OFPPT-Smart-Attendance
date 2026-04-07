@@ -28,6 +28,7 @@ const AbsenceRegistry = () => {
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
     const [filterStatus, setFilterStatus] = useState('ALL');
+    const [filterJustified, setFilterJustified] = useState('ALL');
     const [selectedStudent, setSelectedStudent] = useState(null);
     const [isPenaltyModalOpen, setIsPenaltyModalOpen] = useState(false);
     const [penaltyData, setPenaltyData] = useState({
@@ -54,16 +55,17 @@ const AbsenceRegistry = () => {
         fetchRegistry();
     }, []);
 
-    const handleJustify = async (recordId) => {
+    const handleJustify = async (recordId, currentJustification) => {
         try {
             const token = localStorage.getItem('token');
-            await axios.post('/api/admin/justify-absence', { recordId, justified: true }, {
+            const newJustified = currentJustification === 'JUSTIFIÉ' ? 'ABSENCE' : 'JUSTIFIÉ';
+            await axios.post('/api/admin/justify-absence', { recordId, justified: newJustified === 'JUSTIFIÉ' }, {
                 headers: { Authorization: `Bearer ${token}` }
             });
-            setRegistry(prev => prev.filter(r => r.record_id !== recordId));
-            addNotification("Absence justifiée avec succès", "success");
+            setRegistry(prev => prev.map(r => r.record_id === recordId ? { ...r, justified: newJustified } : r));
+            addNotification(newJustified === 'JUSTIFIÉ' ? "Absence justifiée avec succès" : "Justification retirée", "success");
         } catch (err) {
-            addNotification("Erreur lors de la justification", "error");
+            addNotification("Erreur lors de la mise à jour de la justification", "error");
         }
     };
 
@@ -79,6 +81,7 @@ const AbsenceRegistry = () => {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setIsPenaltyModalOpen(false);
+            setRegistry(prev => prev.map(r => (r.student_id === selectedStudent.student_id && r.justified === 'ABSENCE') ? { ...r, justified: 'NON JUSTIFIÉ' } : r));
             addNotification("Sanction attribuée avec succès", "success");
         } catch (err) {
             addNotification("Erreur lors de l'attribution de la sanction", "error");
@@ -91,13 +94,18 @@ const AbsenceRegistry = () => {
         const matchesSearch = item.student_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                             item.student_id.toLowerCase().includes(searchQuery.toLowerCase());
         const matchesStatus = filterStatus === 'ALL' || item.status === filterStatus;
-        return matchesSearch && matchesStatus;
+        const matchesJustified = filterJustified === 'ALL' || 
+                                (filterJustified === 'JUSTIFIED' && item.justified === 'JUSTIFIÉ') || 
+                                (filterJustified === 'PENDING' && item.justified === 'NON JUSTIFIÉ') ||
+                                (filterJustified === 'ABSENCE' && item.justified === 'ABSENCE');
+        return matchesSearch && matchesStatus && matchesJustified;
     });
 
     const statusBadge = (status) => {
         switch(status) {
             case 'ABSENT': return <span className="px-3 py-1 bg-red-50 text-red-500 text-[9px] font-black rounded-full border border-red-100 uppercase tracking-widest">ABSENCE</span>;
             case 'LATE': return <span className="px-3 py-1 bg-amber-50 text-amber-500 text-[9px] font-black rounded-full border border-amber-100 uppercase tracking-widest">RETARD</span>;
+            case 'PRESENT': return <span className="px-3 py-1 bg-green-50 text-green-500 text-[9px] font-black rounded-full border border-green-100 uppercase tracking-widest">PRÉSENT</span>;
             default: return null;
         }
     };
@@ -139,6 +147,18 @@ const AbsenceRegistry = () => {
                         <option value="ALL">TOUS LES ÉTATS</option>
                         <option value="ABSENT">ABSENCES</option>
                         <option value="LATE">RETARDS</option>
+                        <option value="PRESENT">PRÉSENCES</option>
+                    </select>
+
+                    <select 
+                        value={filterJustified}
+                        onChange={(e) => setFilterJustified(e.target.value)}
+                        className="bg-white border border-slate-200 rounded-2xl px-6 py-4 text-[10px] font-black tracking-widest text-[var(--secondary)] uppercase outline-none focus:border-[var(--primary)] shadow-sm cursor-pointer"
+                    >
+                        <option value="ALL">TOUTES JUSTIF.</option>
+                        <option value="JUSTIFIED">JUSTIFIÉES</option>
+                        <option value="PENDING">NON JUSTIFIÉES</option>
+                        <option value="ABSENCE">EN ATTENTE</option>
                     </select>
                 </div>
             </div>
@@ -183,7 +203,21 @@ const AbsenceRegistry = () => {
                                         </div>
                                     </td>
                                     <td className="p-8 text-center">
-                                        {statusBadge(item.status)}
+                                        <div className="flex flex-col items-center gap-2">
+                                            {item.justified === 'JUSTIFIÉ' ? (
+                                                <span className="px-3 py-1 bg-green-50 text-[var(--primary)] text-[9px] font-black rounded-full border border-green-100 uppercase tracking-widest shadow-sm">
+                                                    JUSTIFIÉ
+                                                </span>
+                                            ) : item.justified === 'NON JUSTIFIÉ' ? (
+                                                <span className="px-3 py-1 bg-red-100 text-red-600 text-[9px] font-black rounded-full border border-red-200 uppercase tracking-widest shadow-sm">
+                                                    NON JUSTIFIÉ
+                                                </span>
+                                            ) : (
+                                                <span className="px-3 py-1 bg-red-50 text-red-500 text-[9px] font-black rounded-full border border-red-100 uppercase tracking-widest shadow-sm">
+                                                    ABSENCE
+                                                </span>
+                                            )}
+                                        </div>
                                     </td>
                                     <td className="p-8 text-center">
                                         <div className="flex flex-col items-center">
@@ -192,20 +226,24 @@ const AbsenceRegistry = () => {
                                         </div>
                                     </td>
                                     <td className={`p-8 ${isRtl ? 'text-left' : 'text-right'}`}>
-                                        <div className={`flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity ${isRtl ? 'flex-row-reverse' : ''}`}>
-                                            <button 
-                                                onClick={() => handleJustify(item.record_id)}
-                                                className="px-4 py-2 bg-green-50 text-[var(--primary)] border border-green-100 rounded-xl text-[9px] font-black tracking-widest uppercase hover:bg-[var(--primary)] hover:text-white transition-all shadow-sm"
-                                            >
-                                                JUSTIFIER
-                                            </button>
-                                            <button 
-                                                onClick={() => { setSelectedStudent(item); setIsPenaltyModalOpen(true); }}
-                                                className="px-4 py-2 bg-red-50 text-red-500 border border-red-100 rounded-xl text-[9px] font-black tracking-widest uppercase hover:bg-red-500 hover:text-white transition-all shadow-sm"
-                                            >
-                                                SANCTIONNER
-                                            </button>
-                                        </div>
+                                        {item.status !== 'PRESENT' && (
+                                            <div className={`flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity ${isRtl ? 'flex-row-reverse' : ''}`}>
+                                                <button 
+                                                    onClick={() => handleJustify(item.record_id, item.justified)}
+                                                    className={`px-4 py-2 border rounded-xl text-[9px] font-black tracking-widest uppercase transition-all shadow-sm ${item.justified === 'JUSTIFIÉ' 
+                                                        ? 'bg-amber-50 text-amber-600 border-amber-100 hover:bg-amber-100' 
+                                                        : 'bg-green-50 text-[var(--primary)] border-green-100 hover:bg-[var(--primary)] hover:text-white'}`}
+                                                >
+                                                    {item.justified === 'JUSTIFIÉ' ? 'ANNULER JUSTIF.' : 'JUSTIFIER'}
+                                                </button>
+                                                <button 
+                                                    onClick={() => { setSelectedStudent(item); setIsPenaltyModalOpen(true); }}
+                                                    className="px-4 py-2 bg-red-50 text-red-500 border border-red-100 rounded-xl text-[9px] font-black tracking-widest uppercase hover:bg-red-500 hover:text-white transition-all shadow-sm"
+                                                >
+                                                    SANCTIONNER
+                                                </button>
+                                            </div>
+                                        )}
                                     </td>
                                 </tr>
                             ))}

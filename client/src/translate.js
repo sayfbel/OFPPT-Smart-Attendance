@@ -9,13 +9,12 @@ const resources = {
                 dashboard: 'Tableau de bord',
                 members: 'Membres',
                 groups: 'Groupes',
-<<<<<<< HEAD
-=======
                 timetable: 'Emploi du temps',
->>>>>>> 6a6ba9556e523366f663093f32ea6fa7de4f575e
                 reports: 'Rapports',
                 my_groups: 'Mes Groupes',
                 logout: 'Déconnexion',
+                filieres_nav: 'Filières',
+                salles_nav: 'Salles',
                 portal: 'PORTAIL ISTA',
                 digital_campus: 'Digital Campus'
             },
@@ -42,7 +41,7 @@ const resources = {
                 sync_button: 'Synchronisation',
                 total_students: 'Total Stagiaires',
                 total_formateurs: 'Formateurs',
-                total_classes: 'Groupes Actifs',
+                total_groups: 'Groupes Actifs',
                 total_reports: 'Rapports Générés',
                 status_active: 'ACTIF',
                 status_online: 'EN LIGNE',
@@ -69,7 +68,7 @@ const resources = {
                 student_name: 'NOM',
                 student_email: 'EMAIL',
                 actions: 'ACTIONS',
-                select_class_prompt: 'SÉLECTIONNER UN GROUPE POUR VOIR LES MEMBRES',
+                select_group_prompt: 'SÉLECTIONNER UN GROUPE POUR VOIR LES MEMBRES',
                 no_students: 'AUCUN STAGIAIRE DANS CE GROUPE',
                 formateurs_title: 'CORPS ENSEIGNANT',
                 formateurs_subtitle: 'LISTE DES FORMATEURS ET INTERVENANTS',
@@ -105,8 +104,6 @@ const resources = {
                 create_success: 'Groupe créé avec succès.',
                 delete_success: 'Groupe supprimé avec succès.'
             },
-<<<<<<< HEAD
-=======
             timetable: {
                 title: 'Emploi du Temps',
                 subtitle: 'Gestion administrative du planning',
@@ -135,7 +132,7 @@ const resources = {
                 delete_confirm_title: 'SUPPRESSION DE SÉANCE',
                 delete_confirm_message: 'Êtes-vous sûr de vouloir supprimer cette séance de l\'emploi du temps ?',
                 add_session: 'AJOUTER UNE SÉANCE',
-                class_select: 'GROUPE',
+                group_select: 'GROUPE',
                 formateur_select: 'FORMATEUR',
                 day_select: 'JOUR',
                 start_time: 'DÉBUT',
@@ -146,7 +143,6 @@ const resources = {
                 select_formateur_placeholder: 'SÉLECTIONNER UN FORMATEUR',
                 room_placeholder: 'EX: SALLE 101'
             },
->>>>>>> 6a6ba9556e523366f663093f32ea6fa7de4f575e
             reports: {
                 title: 'Rapports',
                 subtitle: 'Gérez et exportez vos rapports de présence.',
@@ -234,8 +230,7 @@ const resources = {
                     signature_label: 'Signature du Formateur',
                     sign_here: 'Émargez ici',
                     clear: 'Effacer',
-                    start_time: 'Heure Début',
-                    end_time: 'Heure Fin',
+                    seance_header: 'SÉANCE',
                     submit: 'FINALISER ET TRANSMETTRE LE RAPPORT',
                     validating: 'VALIDATION OPÉRATIONNELLE...',
                     sig_req: 'La signature du formateur est requise pour valider le rapport.',
@@ -268,7 +263,7 @@ const resources = {
             formateur: {
                 initializing: 'INITIALISATION DU TERMINAL...',
                 welcome: 'BIENVENU, {{name}}',
-                session: 'SESSION {{class}}',
+                session: 'SESSION {{group}}',
                 select_prompt: 'SÉLECTIONNEZ UN GROUPE POUR COMMENCER',
                 select_group: 'CHOISIR UN GROUPE',
                 validate_attendance: 'VALIDER LA PRÉSENCE',
@@ -280,7 +275,7 @@ const resources = {
                 no_students: 'AUCUN STAGIAIRE TROUVÉ DANS CE GROUPE',
                 waiting_session: 'EN ATTENTE DE SÉLECTION...',
                 update_fail: 'ÉCHEC DE LA MISE À JOUR MANUELLE',
-                report_success: 'RAPPORT DE {{class}} TRANSMIS AVEC SUCCÈS',
+                report_success: 'RAPPORT DE {{group}} TRANSMIS AVEC SUCCÈS',
                 report_error: 'ERREUR LORS DE LA TRANSMISSION'
             },
             divisions: {
@@ -295,8 +290,6 @@ const resources = {
                 loading: 'Chargement du Registre...',
                 error_fetch: 'Échec de la récupération des groupes.'
             },
-<<<<<<< HEAD
-=======
             formateur_timetable: {
                 title: 'Emploi du Temps',
                 subtitle: 'VOTRE EMPLOI DU TEMPS PERSONNEL',
@@ -306,7 +299,6 @@ const resources = {
                 loading: 'SYNCHRONISATION DU PLANNING...',
                 error_fetch: 'ERREUR LORS DE LA RÉCUPÉRATION DU PLANNING'
             },
->>>>>>> 6a6ba9556e523366f663093f32ea6fa7de4f575e
             datepicker: {
                 months: ["JANVIER", "FÉVRIER", "MARS", "AVRIL", "MAI", "JUIN", "JUILLET", "AOÛT", "SEPTEMBRE", "OCTOBRE", "NOVEMBRE", "DÉCEMBRE"],
                 days: ["DIM", "LUN", "MAR", "MER", "JEU", "VEN", "SAM"],
@@ -321,13 +313,12 @@ const resources = {
                 dashboard: 'لوحة القيادة',
                 members: 'الأعضاء',
                 groups: 'المجموعات',
-<<<<<<< HEAD
-=======
                 timetable: 'الجدول الزمني',
->>>>>>> 6a6ba9556e523366f663093f32ea6fa7de4f575e
                 reports: 'التقارير',
                 my_groups: 'مجموعاتي',
                 logout: 'تسجيل الخروج',
+                filieres_nav: 'الشعب',
+                salles_nav: 'القاعات',
                 portal: 'بوابة ISTA',
                 digital_campus: 'الحرم الرقمي'
             },
@@ -354,7 +345,7 @@ const resources = {
                 sync_button: 'مزامنة',
                 total_students: 'إجمالي المتدربين',
                 total_formateurs: 'المكونون',
-                total_classes: 'المجموعات النشطة',
+                total_groups: 'المجموعات النشطة',
                 total_reports: 'التقارير التي تم إنشاؤها',
                 status_active: 'نشط',
                 status_online: 'متصل',
@@ -381,7 +372,7 @@ const resources = {
                 student_name: 'الاسم',
                 student_email: 'البريد الإلكتروني',
                 actions: 'عمليات',
-                select_class_prompt: 'اختر مجموعة لعرض الأعضاء',
+                select_group_prompt: 'اختر مجموعة لعرض الأعضاء',
                 no_students: 'لا يوجد متدربين في هذه المجموعة',
                 formateurs_title: 'هيئة التدريس',
                 formateurs_subtitle: 'قائمة المكونين والمتدخلين',
@@ -421,8 +412,6 @@ const resources = {
                 create_success: 'تم إنشاء المجموعة بنجاح.',
                 delete_success: 'تم حذف المجموعة بنجاح.'
             },
-<<<<<<< HEAD
-=======
             timetable: {
                 title: 'الجدول الزمني',
                 subtitle: 'الإدارة الإدارية للتخطيط',
@@ -451,18 +440,16 @@ const resources = {
                 delete_confirm_title: 'حذف الحصة',
                 delete_confirm_message: 'هل أنت متأكد من رغبتك في حذف هذه الحصة من الجدول الزمني؟',
                 add_session: 'إضافة حصة',
-                class_select: 'المجموعة',
+                group_select: 'المجموعة',
                 formateur_select: 'المكون',
                 day_select: 'اليوم',
-                start_time: 'البداية',
-                end_time: 'النهاية',
+                seance_header: 'الحصة',
                 room_label: 'القاعة',
                 add_button: 'إضافة إلى الجدول',
                 select_group_placeholder: 'اختر مجموعة',
                 select_formateur_placeholder: 'اختر مكوناً',
                 room_placeholder: 'مثال: القاعة 101'
             },
->>>>>>> 6a6ba9556e523366f663093f32ea6fa7de4f575e
             reports: {
                 title: 'التقارير',
                 subtitle: 'إدارة وتصدير تقارير الحضور الخاصة بك.',
@@ -550,8 +537,7 @@ const resources = {
                     signature_label: 'توقيع المكون',
                     sign_here: 'وقع هنا',
                     clear: 'مسح',
-                    start_time: 'وقت البدء',
-                    end_time: 'وقت الانتهاء',
+                    seance_header: 'الحصة',
                     submit: 'إنهاء وإرسال التقرير',
                     validating: 'جاري التحقق التشغيلي...',
                     sig_req: 'توقيع المكون مطلوب للمصادقة على التقرير.',
@@ -583,7 +569,7 @@ const resources = {
             },
             formateur: {
                 welcome: 'مرحباً، السيد {{name}}',
-                session: 'الحصة : {{class}}',
+                session: 'الحصة : {{group}}',
                 select_prompt: 'يرجى اختيار مجموعة لبدء الحصة.',
                 select_group: 'اختر مجموعة',
                 validate_attendance: 'تصديق الحضور',
@@ -596,7 +582,7 @@ const resources = {
                 manual_actions: 'عمليات يدوية',
                 initializing: 'جاري تهيئة البوابة...',
                 update_fail: 'فشل التحديث اليدوي.',
-                report_success: 'تم أرشفة تقرير المجموعة {{class}}.',
+                report_success: 'تم أرشفة تقرير المجموعة {{group}}.',
                 report_error: 'خطأ أثناء الإرسال.'
             },
             divisions: {
@@ -611,8 +597,6 @@ const resources = {
                 loading: 'جاري تحميل السجل...',
                 error_fetch: 'فشل استرجاع المجموعات.'
             },
-<<<<<<< HEAD
-=======
             formateur_timetable: {
                 title: 'الجدول الزمني',
                 subtitle: 'جدول النشر الشخصي الخاص بي',
@@ -622,7 +606,6 @@ const resources = {
                 loading: 'جاري تحميل الجدول...',
                 error_fetch: 'فشل استرجاع الجدول الزمني الشخصي.'
             },
->>>>>>> 6a6ba9556e523366f663093f32ea6fa7de4f575e
             datepicker: {
                 months: ["يناير", "فبراير", "مارس", "أبريل", "مايو", "يونيو", "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر"],
                 days: ["أحد", "اثنين", "ثلاثاء", "أربعاء", "خميس", "جمعة", "سبت"],

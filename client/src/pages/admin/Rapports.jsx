@@ -10,8 +10,8 @@ const Rapports = () => {
     const isRtl = i18n.language === 'ar';
     const [selectedDate, setSelectedDate] = useState('');
     const [searchQuery, setSearchQuery] = useState('');
-    const [availableClasses, setAvailableClasses] = useState([]);
-    const [classFilter, setClassFilter] = useState('ALL');
+    const [availableGroups, setAvailableGroups] = useState([]);
+    const [groupFilter, setGroupFilter] = useState('ALL');
     const [isFilterDropdownOpen, setIsFilterDropdownOpen] = useState(false);
     const [selectedRecords, setSelectedRecords] = useState([]);
     const [selectedRapport, setSelectedRapport] = useState(null);
@@ -20,18 +20,18 @@ const Rapports = () => {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        const fetchClasses = async () => {
+        const fetchGroups = async () => {
             try {
                 const token = localStorage.getItem('token');
                 if (!token) return;
                 const config = { headers: { Authorization: `Bearer ${token}` } };
-                const res = await axios.get('/api/admin/schedule', config);
-                setAvailableClasses(res.data.classes || []);
+                const res = await axios.get('/api/admin/groups', config);
+                setAvailableGroups(res.data.groups || []);
             } catch (error) {
-                console.error('Error fetching classes', error);
+                console.error('Error fetching groups', error);
             }
         };
-        fetchClasses();
+        fetchGroups();
 
         const fetchReports = async () => {
             try {
@@ -57,14 +57,14 @@ const Rapports = () => {
 
     const displayedAbsences = allReports.filter(record => {
         const matchesDate = !selectedDate || record.date === selectedDate;
-        const matchesClass = classFilter === 'ALL' || record.class_id === classFilter;
+        const matchesGroup = groupFilter === 'ALL' || record.group_id === groupFilter;
         const matchesSearch = !searchQuery ||
             (record.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
                 record.studentId?.toLowerCase().includes(searchQuery.toLowerCase()) ||
                 record.subject?.toLowerCase().includes(searchQuery.toLowerCase()) ||
                 record.id?.toLowerCase().includes(searchQuery.toLowerCase()) ||
                 record.formateur?.toLowerCase().includes(searchQuery.toLowerCase()));
-        return matchesDate && matchesSearch && matchesClass;
+        return matchesDate && matchesSearch && matchesGroup;
     });
 
     const toggleSelectAll = () => {
@@ -137,8 +137,8 @@ const Rapports = () => {
                             className="bg-white border border-[var(--border)] px-6 py-4 rounded-xl flex items-center gap-4 hover:border-[var(--primary)] transition-all shadow-sm"
                         >
                             <Filter className="w-4 h-4 text-[var(--primary)]" />
-                            <span className="text-[10px] font-black tracking-widest uppercase text-[var(--secondary)]">
-                                {classFilter === 'ALL' ? t('reports.all_groups') : classFilter}
+                             <span className="text-[10px] font-black tracking-widest uppercase text-[var(--secondary)]">
+                                {groupFilter === 'ALL' ? t('reports.all_groups') : groupFilter}
                             </span>
                             <ChevronDown className={`w-4 h-4 text-[var(--primary)] transition-transform ${isFilterDropdownOpen ? 'rotate-180' : ''}`} />
                         </button>
@@ -146,21 +146,21 @@ const Rapports = () => {
                         {isFilterDropdownOpen && (
                             <div className="absolute top-full left-0 mt-3 bg-white border border-[var(--border)] rounded-2xl z-50 shadow-2xl min-w-[240px] overflow-hidden animate-in fade-in zoom-in-95 duration-200">
                                 <div
-                                    className={`px-6 py-4 cursor-pointer text-[10px] font-black tracking-widest uppercase transition-colors ${classFilter === 'ALL' ? 'bg-[var(--primary)] text-white' : 'text-[var(--secondary)] hover:bg-slate-50'}`}
-                                    onClick={() => { setClassFilter('ALL'); setIsFilterDropdownOpen(false); }}
+                                    className={`px-6 py-4 cursor-pointer text-[10px] font-black tracking-widest uppercase transition-colors ${groupFilter === 'ALL' ? 'bg-[var(--primary)] text-white' : 'text-[var(--secondary)] hover:bg-slate-50'}`}
+                                    onClick={() => { setGroupFilter('ALL'); setIsFilterDropdownOpen(false); }}
                                 >
                                     {t('reports.all_groups')}
                                 </div>
-                                {availableClasses.map(cls => (
+                                {availableGroups.map(grp => (
                                     <div
-                                        key={cls.id}
-                                        className={`px-6 py-4 cursor-pointer text-[10px] font-black tracking-widest uppercase transition-colors ${classFilter === cls.id ? 'bg-[var(--primary)] text-white' : 'text-[var(--secondary)] hover:bg-slate-50'}`}
+                                        key={grp.id}
+                                        className={`px-6 py-4 cursor-pointer text-[10px] font-black tracking-widest uppercase transition-colors ${groupFilter === grp.id ? 'bg-[var(--primary)] text-white' : 'text-[var(--secondary)] hover:bg-slate-50'}`}
                                         onClick={() => {
-                                            setClassFilter(cls.id);
+                                            setGroupFilter(grp.id);
                                             setIsFilterDropdownOpen(false);
                                         }}
                                     >
-                                        {cls.id}
+                                        {grp.id}
                                     </div>
                                 ))}
                             </div>
@@ -263,7 +263,7 @@ const Rapports = () => {
                                         </td>
                                         <td className="py-6 px-4">
                                             <span className="px-3 py-1 bg-slate-50 text-[10px] font-black text-[var(--primary)] border border-green-500/10 rounded-lg">
-                                                {record.class_id}
+                                                {record.group_id}
                                             </span>
                                         </td>
                                         <td className="py-6 px-4">
@@ -317,7 +317,7 @@ const Rapports = () => {
                                 </div>
                                 <div className={isRtl ? 'text-left' : 'text-right'}>
                                     <div className="bg-[var(--primary)] text-white px-8 py-4 mb-4 inline-block rounded-xl">
-                                        <span className="text-xl font-black italic uppercase tracking-tight">{rapport.class_id}</span>
+                                        <span className="text-xl font-black italic uppercase tracking-tight">{rapport.group_id}</span>
                                     </div>
                                     <p className="text-xs font-black tracking-widest text-[var(--secondary)] uppercase">{rapport.date}</p>
                                 </div>

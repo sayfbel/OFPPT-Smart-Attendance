@@ -13,13 +13,6 @@ The primary purpose of this project is to replace traditional paper-based attend
 
 ### 2. User & Identity Management
 - **Stagiaires (Students):** Detailed registry of students. When a student is created, a unique QR code is automatically generated via a Python script integration for fast physical scanning.
-<<<<<<< HEAD
-- **Formateurs (Instructors):** Instructors have their own profiles and specific classes they supervise.
-- **Admin Management:** Total control over the network's user base.
-
-### 3. Squadron Management
-- **Clusters (Classes):** Groups of students are organized into classes (e.g., DEV101).
-=======
 - **Formateurs (Instructors):** Instructors have their own profiles, schedules, and specific classes they supervise.
 - **Admin Management:** Total control over the network's user base.
 
@@ -27,7 +20,6 @@ The primary purpose of this project is to replace traditional paper-based attend
 - **Clusters (Classes):** Groups of students are organized into classes (e.g., DEV101).
 - **The Matrix (Timetable):** An intelligent scheduling system where admins can allocate rooms, subjects, and instructors to specific time slots.
 - **Automatic Reminders:** Instructors receive automated system notifications reminding them of their sessions for the day.
->>>>>>> 6a6ba9556e523366f663093f32ea6fa7de4f575e
 
 ### 4. Smart Check-in System (Neural Gateway)
 - **QR Code Scanning:** Fast, secure check-ins via generated QR codes using integrated Python scripts.
@@ -112,6 +104,19 @@ npm run dev
 ```
 
 The frontend will start at `http://localhost:5173` (depending on Vite configuration) and the backend at `http://localhost:5000`.
+
+### Database Utility Scripts
+The `/server` directory includes several utility scripts for database management and testing:
+
+| Script | Purpose | When to use |
+| :--- | :--- | :--- |
+| `check_db_health.js` | Diagnostic tool | To verify table existence and record counts. |
+| `check_db_status.js` | Schema verification | To check table structure (columns) of the `admins` table. |
+| `re-init-db.js` | **Emergency Reset** | To wipe and rebuild the database using `database.sql`. |
+| `test_query.js` | Logic testing | To debug the complex attendance `UNION` query. |
+| `test_query2.js` | Query validator | To verify basic relationships between reports and attendance. |
+
+Run these with `node server/<script_name>.js`.
 
 ---
 
