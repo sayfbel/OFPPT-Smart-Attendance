@@ -45,7 +45,7 @@ const AbsenceRegistry = () => {
             setRegistry(res.data.registry || []);
         } catch (err) {
             console.error("FETCH REGISTRY ERROR:", err);
-            addNotification("Erreur lors de la récupération du registre", "error");
+            addNotification(t('absence_registry.sync_error'), "error");
         } finally {
             setLoading(false);
         }
@@ -63,9 +63,9 @@ const AbsenceRegistry = () => {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setRegistry(prev => prev.map(r => r.record_id === recordId ? { ...r, justified: newJustified } : r));
-            addNotification(newJustified === 'JUSTIFIÉ' ? "Absence justifiée avec succès" : "Justification retirée", "success");
+            addNotification(newJustified === 'JUSTIFIÉ' ? t('absence_registry.justif_success') : t('absence_registry.justif_removed'), "success");
         } catch (err) {
-            addNotification("Erreur lors de la mise à jour de la justification", "error");
+            addNotification(t('absence_registry.justif_error'), "error");
         }
     };
 
@@ -82,9 +82,9 @@ const AbsenceRegistry = () => {
             });
             setIsPenaltyModalOpen(false);
             setRegistry(prev => prev.map(r => (r.student_id === selectedStudent.student_id && r.justified === 'ABSENCE') ? { ...r, justified: 'NON JUSTIFIÉ' } : r));
-            addNotification("Sanction attribuée avec succès", "success");
+            addNotification(t('absence_registry.penalty_success'), "success");
         } catch (err) {
-            addNotification("Erreur lors de l'attribution de la sanction", "error");
+            addNotification(t('absence_registry.penalty_error'), "error");
         } finally {
             setLoading(false);
         }
@@ -103,15 +103,15 @@ const AbsenceRegistry = () => {
 
     const statusBadge = (status) => {
         switch(status) {
-            case 'ABSENT': return <span className="px-3 py-1 bg-red-50 text-red-500 text-[9px] font-black rounded-full border border-red-100 uppercase tracking-widest">ABSENCE</span>;
-            case 'LATE': return <span className="px-3 py-1 bg-amber-50 text-amber-500 text-[9px] font-black rounded-full border border-amber-100 uppercase tracking-widest">RETARD</span>;
-            case 'PRESENT': return <span className="px-3 py-1 bg-green-50 text-green-500 text-[9px] font-black rounded-full border border-green-100 uppercase tracking-widest">PRÉSENT</span>;
+            case 'ABSENT': return <span className="px-3 py-1 bg-red-50 text-red-500 text-[9px] font-black rounded-full border border-red-100 uppercase tracking-widest">{t('absence_registry.status_absence')}</span>;
+            case 'LATE': return <span className="px-3 py-1 bg-amber-50 text-amber-500 text-[9px] font-black rounded-full border border-amber-100 uppercase tracking-widest">{t('absence_registry.status_late')}</span>;
+            case 'PRESENT': return <span className="px-3 py-1 bg-green-50 text-green-500 text-[9px] font-black rounded-full border border-green-100 uppercase tracking-widest">{t('absence_registry.status_present')}</span>;
             default: return null;
         }
     };
 
     if (loading) {
-        return <div className="flex items-center justify-center h-[50vh] animate-pulse uppercase tracking-[0.5em] font-black italic text-slate-400">Synchronisation du Registre...</div>;
+        return <div className="flex items-center justify-center h-[50vh] animate-pulse uppercase tracking-[0.5em] font-black italic text-slate-400">{t('absence_registry.sync')}</div>;
     }
 
     return (
@@ -120,10 +120,10 @@ const AbsenceRegistry = () => {
             <div className={`flex flex-col md:flex-row md:items-center justify-between gap-8 transition-all duration-500 ${isRtl ? 'flex-row-reverse' : ''}`}>
                 <div className="space-y-2">
                     <h1 className={`text-5xl md:text-[64px] font-black tracking-tighter text-[var(--secondary)] uppercase italic leading-none ${isRtl ? 'text-right' : ''}`}>
-                        REGISTRE <span className="text-[var(--primary)] shrink-0">D'ABSENCES</span>
+                        {t('absence_registry.title')}
                     </h1>
                     <p className={`text-[10px] text-slate-400 font-bold tracking-[0.3em] uppercase ${isRtl ? 'text-right' : ''}`}>
-                        GESTION DISCIPLINAIRE ET JUSTIFICATIONS
+                        {t('absence_registry.subtitle')}
                     </p>
                 </div>
 
@@ -132,7 +132,7 @@ const AbsenceRegistry = () => {
                         <Search className="w-4 h-4 text-slate-400 mr-3" />
                         <input
                             type="text"
-                            placeholder="RECHERCHER..."
+                            placeholder={t('absence_registry.search')}
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                             className="bg-transparent border-none text-[10px] font-bold tracking-widest focus:ring-0 text-[var(--secondary)] placeholder-slate-300 p-0 uppercase"
@@ -144,10 +144,10 @@ const AbsenceRegistry = () => {
                         onChange={(e) => setFilterStatus(e.target.value)}
                         className="bg-white border border-slate-200 rounded-2xl px-6 py-4 text-[10px] font-black tracking-widest text-[var(--secondary)] uppercase outline-none focus:border-[var(--primary)] shadow-sm cursor-pointer"
                     >
-                        <option value="ALL">TOUS LES ÉTATS</option>
-                        <option value="ABSENT">ABSENCES</option>
-                        <option value="LATE">RETARDS</option>
-                        <option value="PRESENT">PRÉSENCES</option>
+                        <option value="ALL">{t('absence_registry.filter_status')}</option>
+                        <option value="ABSENT">{t('absence_registry.filter_absences')}</option>
+                        <option value="LATE">{t('absence_registry.filter_lates')}</option>
+                        <option value="PRESENT">{t('absence_registry.filter_presences')}</option>
                     </select>
 
                     <select 
@@ -155,10 +155,10 @@ const AbsenceRegistry = () => {
                         onChange={(e) => setFilterJustified(e.target.value)}
                         className="bg-white border border-slate-200 rounded-2xl px-6 py-4 text-[10px] font-black tracking-widest text-[var(--secondary)] uppercase outline-none focus:border-[var(--primary)] shadow-sm cursor-pointer"
                     >
-                        <option value="ALL">TOUTES JUSTIF.</option>
-                        <option value="JUSTIFIED">JUSTIFIÉES</option>
-                        <option value="PENDING">NON JUSTIFIÉES</option>
-                        <option value="ABSENCE">EN ATTENTE</option>
+                        <option value="ALL">{t('absence_registry.filter_all_justif')}</option>
+                        <option value="JUSTIFIED">{t('absence_registry.filter_justified')}</option>
+                        <option value="PENDING">{t('absence_registry.filter_not_justified')}</option>
+                        <option value="ABSENCE">{t('absence_registry.filter_pending')}</option>
                     </select>
                 </div>
             </div>
@@ -169,11 +169,11 @@ const AbsenceRegistry = () => {
                     <table className={`w-full text-left border-collapse ${isRtl ? 'text-right' : ''}`}>
                         <thead>
                             <tr className="border-b border-slate-50 bg-slate-50/30">
-                                <th className="p-8 text-[9px] font-black text-slate-300 uppercase tracking-widest">STAGIAIRE</th>
-                                <th className="p-8 text-[9px] font-black text-slate-300 uppercase tracking-widest text-center">SESSION / DATE</th>
-                                <th className="p-8 text-[9px] font-black text-slate-300 uppercase tracking-widest text-center">ÉTAT</th>
-                                <th className="p-8 text-[9px] font-black text-slate-300 uppercase tracking-widest text-center">SIGNALÉ PAR</th>
-                                <th className={`p-8 text-[9px] font-black text-slate-300 uppercase tracking-widest ${isRtl ? 'text-left' : 'text-right'}`}>ACTIONS</th>
+                                <th className="p-8 text-[9px] font-black text-slate-300 uppercase tracking-widest">{t('absence_registry.col_student')}</th>
+                                <th className="p-8 text-[9px] font-black text-slate-300 uppercase tracking-widest text-center">{t('absence_registry.col_session')}</th>
+                                <th className="p-8 text-[9px] font-black text-slate-300 uppercase tracking-widest text-center">{t('absence_registry.col_status')}</th>
+                                <th className="p-8 text-[9px] font-black text-slate-300 uppercase tracking-widest text-center">{t('absence_registry.col_reported_by')}</th>
+                                <th className={`p-8 text-[9px] font-black text-slate-300 uppercase tracking-widest ${isRtl ? 'text-left' : 'text-right'}`}>{t('absence_registry.col_actions')}</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-50">
@@ -206,15 +206,15 @@ const AbsenceRegistry = () => {
                                         <div className="flex flex-col items-center gap-2">
                                             {item.justified === 'JUSTIFIÉ' ? (
                                                 <span className="px-3 py-1 bg-green-50 text-[var(--primary)] text-[9px] font-black rounded-full border border-green-100 uppercase tracking-widest shadow-sm">
-                                                    JUSTIFIÉ
+                                                    {t('absence_registry.status_justified')}
                                                 </span>
                                             ) : item.justified === 'NON JUSTIFIÉ' ? (
                                                 <span className="px-3 py-1 bg-red-100 text-red-600 text-[9px] font-black rounded-full border border-red-200 uppercase tracking-widest shadow-sm">
-                                                    NON JUSTIFIÉ
+                                                    {t('absence_registry.status_not_justified')}
                                                 </span>
                                             ) : (
                                                 <span className="px-3 py-1 bg-red-50 text-red-500 text-[9px] font-black rounded-full border border-red-100 uppercase tracking-widest shadow-sm">
-                                                    ABSENCE
+                                                    {t('absence_registry.status_absence')}
                                                 </span>
                                             )}
                                         </div>
@@ -234,13 +234,13 @@ const AbsenceRegistry = () => {
                                                         ? 'bg-amber-50 text-amber-600 border-amber-100 hover:bg-amber-100' 
                                                         : 'bg-green-50 text-[var(--primary)] border-green-100 hover:bg-[var(--primary)] hover:text-white'}`}
                                                 >
-                                                    {item.justified === 'JUSTIFIÉ' ? 'ANNULER JUSTIF.' : 'JUSTIFIER'}
+                                                    {item.justified === 'JUSTIFIÉ' ? t('absence_registry.btn_cancel_justif') : t('absence_registry.btn_justify')}
                                                 </button>
                                                 <button 
                                                     onClick={() => { setSelectedStudent(item); setIsPenaltyModalOpen(true); }}
                                                     className="px-4 py-2 bg-red-50 text-red-500 border border-red-100 rounded-xl text-[9px] font-black tracking-widest uppercase hover:bg-red-500 hover:text-white transition-all shadow-sm"
                                                 >
-                                                    SANCTIONNER
+                                                    {t('absence_registry.btn_sanction')}
                                                 </button>
                                             </div>
                                         )}

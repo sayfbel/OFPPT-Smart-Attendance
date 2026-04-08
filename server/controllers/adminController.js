@@ -63,6 +63,14 @@ exports.createGroup = async (req, res, next) => {
             }
         }
 
+        // Link multiple salles if provided
+        const salleIds = req.body.salleIds || (req.body.salleId ? [req.body.salleId] : []);
+        if (salleIds.length > 0) {
+            for (const sId of salleIds) {
+                await pool.query('INSERT IGNORE INTO group_salles (group_id, salle_id) VALUES (?, ?)', [id, sId]);
+            }
+        }
+
         res.status(201).json({
             message: 'Group created successfully',
             group: { id, filiereId, annee_scolaire: année_scolaire, lead: leads.join(', '), students: 0 }
@@ -96,14 +104,24 @@ exports.updateGroup = async (req, res, next) => {
             }
         }
 
+        // Update room assignments (Many-to-Many)
+        await pool.query('DELETE FROM group_salles WHERE group_id = ?', [id]);
+        const salleIds = req.body.salleIds || (req.body.salleId ? [req.body.salleId] : []);
+        if (salleIds.length > 0) {
+            for (const sId of salleIds) {
+                await pool.query('INSERT IGNORE INTO group_salles (group_id, salle_id) VALUES (?, ?)', [id, sId]);
+            }
+        }
+
         // Fetch updated object with count and leads
         const [[updatedGroup]] = await pool.query(`
             SELECT 
-                c.*, f.nom as stream,
-                (SELECT COUNT(*) FROM stagiaires s WHERE s.group_id = c.id) as student_count,
+                c.*, f.nom as stream, s.nom as salle_nom,
+                (SELECT COUNT(*) FROM stagiaires st WHERE st.group_id = c.id) as student_count,
                 (SELECT GROUP_CONCAT(u_lead.name SEPARATOR ', ') FROM groups_supervisors cs JOIN formateurs u_lead ON cs.formateur_id = u_lead.id WHERE cs.group_id = c.id) as lead_formateurs
             FROM groups c 
             LEFT JOIN filiere f ON c.filiereId = f.id
+            LEFT JOIN salles s ON c.salleId = s.id
             WHERE c.id = ?
         `, [id]);
 
@@ -560,16 +578,27 @@ exports.getDisciplineHistory = async (req, res) => {
 exports.getGroups = async (req, res) => {
     try {
         const [groups] = await pool.query(`
-            SELECT c.*, f.nom as filiere_name,
-                (SELECT COUNT(*) FROM stagiaires s WHERE s.group_id = c.id) as student_count,
-                GROUP_CONCAT(u_lead.name SEPARATOR ', ') as lead_formateurs
-            FROM groups c
-            LEFT JOIN filiere f ON c.filiereId = f.id
-            LEFT JOIN groups_supervisors cs ON c.id = cs.group_id
-            LEFT JOIN formateurs u_lead ON cs.formateur_id = u_lead.id
-            GROUP BY c.id
+            SELECT 
+                g.*, 
+                filiere.nom AS filiere_name, 
+                filiere.nom AS filiere, 
+                (SELECT COUNT(*) FROM stagiaires WHERE group_id = g.id) AS student_count,
+                (SELECT GROUP_CONCAT(f.name SEPARATOR ', ') FROM groups_supervisors gs JOIN formateurs f ON gs.formateur_id = f.id WHERE gs.group_id = g.id) AS lead_formateurs,
+                (SELECT GROUP_CONCAT(s.nom SEPARATOR ', ') FROM group_salles gsl JOIN salles s ON gsl.salle_id = s.id WHERE gsl.group_id = g.id) AS salle_nom,
+                (SELECT GROUP_CONCAT(s.id) FROM group_salles gsl JOIN salles s ON gsl.salle_id = s.id WHERE gsl.group_id = g.id) AS salle_ids
+            FROM groups g
+            JOIN filiere ON g.filiereId = filiere.id
         `);
-        res.json({ groups: groups.map(c => ({...c, students: c.student_count, filiere: c.filiere_name, année_scolaire: c.annee_scolaire, lead: c.lead_formateurs ? c.lead_formateurs.split(', ') : [] })) });
+
+        res.json({ groups: groups.map(c => ({
+            ...c, 
+            students: c.student_count, 
+            filiere: c.filiere_name, 
+            salle_nom: c.salle_nom, 
+            salleIds: c.salle_ids ? c.salle_ids.split(',').map(Number) : [],
+            année_scolaire: c.annee_scolaire, 
+            lead: c.lead_formateurs ? c.lead_formateurs.split(', ') : [] 
+        })) });
     } catch (err) {
         console.error("GET GROUPS ERROR:", err);
         res.status(500).json({ message: 'Server Error getting groups' });
@@ -616,20 +645,40 @@ exports.updateFiliere = async (req, res, next) => {
     }
 };
 
-exports.getSalles = async (req, res) => {
+exports.getSalles = async (req, res, next) => {
     try {
-        const [salles] = await pool.query('SELECT * FROM salles');
-        res.json({ salles });
+        const [salles] = await pool.query(`
+            SELECT s.*, 
+            (SELECT GROUP_CONCAT(f.name SEPARATOR ', ') FROM groups_supervisors gs JOIN formateurs f ON gs.formateur_id = f.id JOIN group_salles gsl ON gs.group_id = gsl.group_id WHERE gsl.salle_id = s.id) as lead_formateurs,
+            (SELECT GROUP_CONCAT(gs.group_id SEPARATOR ', ') FROM group_salles gs WHERE gs.salle_id = s.id) as assigned_groups
+            FROM salles s
+        `);
+        res.json({ 
+            salles: salles.map(s => ({
+                ...s,
+                groupIds: s.assigned_groups ? s.assigned_groups.split(', ') : []
+            }))
+        });
     } catch (err) {
-        res.status(500).json({ message: 'Server Error getting salles' });
+        next(err);
     }
 };
 
 exports.createSalle = async (req, res, next) => {
     try {
-        const { nom } = req.body;
+        const { nom, groupIds } = req.body;
         const [result] = await pool.query('INSERT INTO salles (nom) VALUES (?)', [nom]);
-        res.json({ id: result.insertId, nom });
+        const salleId = result.insertId;
+
+        // Link multiple groups if provided
+        const groups = groupIds || (req.body.group_id ? [req.body.group_id] : []);
+        if (groups.length > 0) {
+            for (const gId of groups) {
+                await pool.query('INSERT IGNORE INTO group_salles (group_id, salle_id) VALUES (?, ?)', [gId, salleId]);
+            }
+        }
+
+        res.json({ id: salleId, nom });
     } catch (err) {
         next(err);
     }
@@ -638,8 +687,18 @@ exports.createSalle = async (req, res, next) => {
 exports.updateSalle = async (req, res, next) => {
     try {
         const { id } = req.params;
-        const { nom } = req.body;
+        const { nom, groupIds } = req.body;
         await pool.query('UPDATE salles SET nom = ? WHERE id = ?', [nom, id]);
+
+        // Update group assignments (Many-to-Many)
+        await pool.query('DELETE FROM group_salles WHERE salle_id = ?', [id]);
+        const groups = groupIds || (req.body.group_id ? [req.body.group_id] : []);
+        if (groups.length > 0) {
+            for (const gId of groups) {
+                await pool.query('INSERT IGNORE INTO group_salles (group_id, salle_id) VALUES (?, ?)', [gId, id]);
+            }
+        }
+
         res.json({ id, nom });
     } catch (err) {
         next(err);

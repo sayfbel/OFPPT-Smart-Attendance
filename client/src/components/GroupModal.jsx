@@ -13,6 +13,7 @@ const GroupModal = ({ isOpen, onClose, newGroup, setNewGroup, handleAddGroup, fo
 
     const [isAnneeDropdownOpen, setIsAnneeDropdownOpen] = useState(false);
     const [isFiliereDropdownOpen, setIsFiliereDropdownOpen] = useState(false);
+    const [isSalleDropdownOpen, setIsSalleDropdownOpen] = useState(false);
     const [isFormateurDropdownOpen, setIsFormateurDropdownOpen] = useState(false);
     const [isFiliereAutre, setIsFiliereAutre] = useState(false);
     const [deleteModalInfo, setDeleteModalInfo] = useState({ isOpen: false, type: '', id: null, message: '' });
@@ -20,6 +21,7 @@ const GroupModal = ({ isOpen, onClose, newGroup, setNewGroup, handleAddGroup, fo
 
     // API Data
     const [availableFilieres, setAvailableFilieres] = useState([]);
+    const [availableSalles, setAvailableSalles] = useState([]);
     const [loading, setLoading] = useState(false);
 
     // Custom Input Mode (Alternative to selecting from API)
@@ -43,11 +45,13 @@ const GroupModal = ({ isOpen, onClose, newGroup, setNewGroup, handleAddGroup, fo
             const token = localStorage.getItem('token');
             const config = { headers: { Authorization: `Bearer ${token}` } };
 
-            const [fRes] = await Promise.all([
-                axios.get('/api/admin/filieres', config)
+            const [fRes, sRes] = await Promise.all([
+                axios.get('/api/admin/filieres', config),
+                axios.get('/api/admin/salles', config)
             ]);
-
+ 
             setAvailableFilieres(fRes.data.filieres || []);
+            setAvailableSalles(sRes.data.salles || []);
         } catch (error) {
             console.error('Error fetching infrastructure:', error);
         } finally {
@@ -122,11 +126,11 @@ const GroupModal = ({ isOpen, onClose, newGroup, setNewGroup, handleAddGroup, fo
             <div className="bg-white rounded-3xl w-full max-w-2xl shadow-2xl relative overflow-hidden flex flex-col">
 
                 {/* Header */}
-                <div className={`p-8 border-b border-[var(--border)] bg-gradient-to-r from-[var(--secondary)] to-[#003d6b] text-white ${isRtl ? 'flex-row-reverse text-right' : ''}`}>
-                    <button onClick={onClose} className={`absolute top-6 p-2 hover:bg-white/10 rounded-full transition-all ${isRtl ? 'left-6' : 'right-6'}`}>
+                <div className="p-8 border-b border-[var(--border)] bg-gradient-to-r from-[var(--secondary)] to-[#003d6b] text-white relative">
+                    <button onClick={onClose} className="absolute top-6 right-6 p-2 hover:bg-white/10 rounded-full transition-all z-50">
                         <X className="w-6 h-6" />
                     </button>
-                    <div className={`flex items-center gap-4 ${isRtl ? 'flex-row-reverse' : ''}`}>
+                    <div className={`flex items-center gap-4 ${isRtl ? 'flex-row-reverse text-right' : ''}`}>
                         <div className="w-12 h-12 bg-white/10 rounded-xl flex items-center justify-center border border-white/20">
                             <BookOpen className="w-6 h-6" />
                         </div>
@@ -280,44 +284,95 @@ const GroupModal = ({ isOpen, onClose, newGroup, setNewGroup, handleAddGroup, fo
                                 )}
                             </div>
                             <div className="space-y-2 relative">
-                                <label className="text-[10px] font-black tracking-widest text-[var(--text-muted)] uppercase">FORMATEURS / RESPONSABLES</label>
+                                <label className="text-[10px] font-black tracking-widest text-[var(--text-muted)] uppercase">SALLE D'ASSIGNATION</label>
                                 <div
-                                    onClick={() => setIsFormateurDropdownOpen(!isFormateurDropdownOpen)}
+                                    onClick={() => setIsSalleDropdownOpen(!isSalleDropdownOpen)}
                                     className="w-full bg-slate-50 border border-[var(--border)] rounded-xl p-4 flex justify-between items-center cursor-pointer hover:border-[var(--primary)] transition-all"
                                 >
                                     <div className="flex items-center gap-3">
-                                        <UserCheck className="w-4 h-4 text-[var(--primary)]" />
-                                        <span className={`text-sm font-bold uppercase truncate-text flex-1 ${newGroup.lead?.length > 0 ? 'text-[var(--secondary)]' : 'text-slate-400'}`}>
-                                            {newGroup.lead?.length > 0 ? newGroup.lead.join(', ') : 'SÉLECTIONNER...'}
+                                        <Layers className="w-4 h-4 text-[var(--primary)]" />
+                                        <span className={`text-sm font-bold uppercase truncate-text flex-1 ${newGroup.salleIds?.length > 0 ? 'text-[var(--secondary)]' : 'text-slate-400'}`}>
+                                            {newGroup.salleIds?.length > 0 
+                                                ? availableSalles.filter(s => newGroup.salleIds.includes(s.id)).map(s => s.nom).join(', ') 
+                                                : 'SÉLECTIONNER...'}
                                         </span>
                                     </div>
-                                    <ChevronDown className={`w-5 h-5 text-[var(--primary)] transition-transform ${isFormateurDropdownOpen ? 'rotate-180' : ''}`} />
+                                    <ChevronDown className={`w-5 h-5 text-[var(--primary)] transition-transform ${isSalleDropdownOpen ? 'rotate-180' : ''}`} />
                                 </div>
 
-                                {isFormateurDropdownOpen && (
-                                    <div className="absolute bottom-full left-0 w-full mb-2 bg-white border border-slate-100 rounded-2xl shadow-2xl z-50 max-h-48 overflow-y-auto ista-scrollbar animate-in fade-in slide-in-from-bottom-2 duration-200">
-                                        {formateurs.map((f) => {
-                                            const isSelected = newGroup.lead?.includes(f.name);
-                                            return (
-                                                <div
-                                                    key={f.id}
-                                                    className={`px-6 py-4 cursor-pointer flex items-center justify-between hover:bg-slate-50 transition-colors ${isSelected ? 'bg-green-50' : ''}`}
-                                                    onClick={() => {
-                                                        const currentLeads = Array.isArray(newGroup.lead) ? newGroup.lead : [];
-                                                        const newLead = isSelected
-                                                            ? currentLeads.filter(l => l !== f.name)
-                                                            : [...currentLeads, f.name];
-                                                        setNewGroup({ ...newGroup, lead: newLead });
-                                                    }}
-                                                >
-                                                    <span className={`text-xs font-bold uppercase truncate-text flex-1 ${isSelected ? 'text-[var(--primary)]' : 'text-[var(--secondary)]'}`}>{f.name}</span>
-                                                    {isSelected ? <CheckSquare className="w-4 h-4 text-[var(--primary)]" /> : <Square className="w-4 h-4 text-slate-200" />}
-                                                </div>
-                                            );
-                                        })}
+                                {isSalleDropdownOpen && (
+                                    <div className="absolute top-full left-0 w-full mt-2 bg-white border border-slate-100 rounded-2xl shadow-2xl z-50 max-h-48 overflow-y-auto ista-scrollbar animate-in fade-in zoom-in-95 duration-200">
+                                        <div
+                                            className="px-6 py-4 cursor-pointer flex items-center justify-between hover:bg-slate-50 transition-colors"
+                                            onClick={() => {
+                                                setNewGroup({ ...newGroup, salleIds: [] });
+                                            }}
+                                        >
+                                            <span className="text-xs font-bold uppercase text-slate-400">DÉSELECTIONNER TOUT</span>
+                                        </div>
+                                        {availableSalles.map((s) => {
+                                                const isSelected = newGroup.salleIds?.includes(s.id);
+                                                return (
+                                                    <div
+                                                        key={s.id}
+                                                        className={`px-6 py-4 cursor-pointer flex items-center justify-between hover:bg-slate-50 transition-colors ${isSelected ? 'bg-green-50' : ''}`}
+                                                        onClick={() => {
+                                                            const currentIds = Array.isArray(newGroup.salleIds) ? newGroup.salleIds : [];
+                                                            const nextIds = isSelected 
+                                                                ? currentIds.filter(id => id !== s.id)
+                                                                : [...currentIds, s.id];
+                                                            setNewGroup({ ...newGroup, salleIds: nextIds });
+                                                        }}
+                                                    >
+                                                        <span className={`text-xs font-bold uppercase truncate-text flex-1 ${isSelected ? 'text-[var(--primary)]' : 'text-[var(--secondary)]'}`}>{s.nom}</span>
+                                                        {isSelected ? <CheckSquare className="w-4 h-4 text-[var(--primary)]" /> : <Square className="w-4 h-4 text-slate-200" />}
+                                                    </div>
+                                                );
+                                            }
+                                        )}
                                     </div>
                                 )}
                             </div>
+                        </div>
+
+                        <div className="space-y-2 relative">
+                            <label className="text-[10px] font-black tracking-widest text-[var(--text-muted)] uppercase">FORMATEURS / RESPONSABLES</label>
+                            <div
+                                onClick={() => setIsFormateurDropdownOpen(!isFormateurDropdownOpen)}
+                                className="w-full bg-slate-50 border border-[var(--border)] rounded-xl p-4 flex justify-between items-center cursor-pointer hover:border-[var(--primary)] transition-all"
+                            >
+                                <div className="flex items-center gap-3">
+                                    <UserCheck className="w-4 h-4 text-[var(--primary)]" />
+                                    <span className={`text-sm font-bold uppercase truncate-text flex-1 ${newGroup.lead?.length > 0 ? 'text-[var(--secondary)]' : 'text-slate-400'}`}>
+                                        {newGroup.lead?.length > 0 ? newGroup.lead.join(', ') : 'SÉLECTIONNER...'}
+                                    </span>
+                                </div>
+                                <ChevronDown className={`w-5 h-5 text-[var(--primary)] transition-transform ${isFormateurDropdownOpen ? 'rotate-180' : ''}`} />
+                            </div>
+
+                            {isFormateurDropdownOpen && (
+                                <div className="absolute bottom-full left-0 w-full mb-2 bg-white border border-slate-100 rounded-2xl shadow-2xl z-50 max-h-48 overflow-y-auto ista-scrollbar animate-in fade-in slide-in-from-bottom-2 duration-200">
+                                    {formateurs.map((f) => {
+                                        const isSelected = newGroup.lead?.includes(f.name);
+                                        return (
+                                            <div
+                                                key={f.id}
+                                                className={`px-6 py-4 cursor-pointer flex items-center justify-between hover:bg-slate-50 transition-colors ${isSelected ? 'bg-green-50' : ''}`}
+                                                onClick={() => {
+                                                    const currentLeads = Array.isArray(newGroup.lead) ? newGroup.lead : [];
+                                                    const newLead = isSelected
+                                                        ? currentLeads.filter(l => l !== f.name)
+                                                        : [...currentLeads, f.name];
+                                                    setNewGroup({ ...newGroup, lead: newLead });
+                                                }}
+                                            >
+                                                <span className={`text-xs font-bold uppercase truncate-text flex-1 ${isSelected ? 'text-[var(--primary)]' : 'text-[var(--secondary)]'}`}>{f.name}</span>
+                                                {isSelected ? <CheckSquare className="w-4 h-4 text-[var(--primary)]" /> : <Square className="w-4 h-4 text-slate-200" />}
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            )}
                         </div>
                     </div>
 

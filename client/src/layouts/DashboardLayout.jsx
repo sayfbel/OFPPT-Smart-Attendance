@@ -156,14 +156,14 @@ const DashboardLayout = ({ children }) => {
                     { icon: MapPin, label: t('nav.salles_nav'), path: '/admin/salles' },
                     { icon: Layers, label: t('nav.groups'), path: '/admin/groups' },
                     { icon: FileText, label: t('nav.reports'), path: '/admin/reports' },
-                    { icon: ClipboardCheck, label: 'ABSENCES', path: '/admin/absence-registry' },
-                    { icon: User, label: 'MON PROFIL', path: '/admin/profile' },
+                    { icon: ClipboardCheck, label: t('nav.absence_registry'), path: '/admin/absence-registry' },
+                    { icon: User, label: t('nav.profile'), path: '/admin/profile' },
                 ];
             case 'formateur':
                 const formateurLinks = [
                     { icon: LayoutDashboard, label: t('nav.dashboard'), path: '/formateur' },
                     { icon: UserCheck, label: t('nav.my_groups'), path: '/formateur/groups' },
-                    { icon: User, label: 'MON PROFIL', path: '/formateur/profile' }
+                    { icon: User, label: t('nav.profile'), path: '/formateur/profile' }
                 ];
                 return formateurLinks;
             default:
@@ -206,8 +206,8 @@ const DashboardLayout = ({ children }) => {
                     </div>
                 </div>
 
-                <nav className="mt-4 px-3 xl:px-4 pb-12 flex-1 flex flex-col overflow-y-auto no-scrollbar">
-                    <div className="space-y-2">
+                <div className="flex-1 overflow-y-auto no-scrollbar mt-4 px-3 xl:px-4">
+                    <nav className="space-y-2">
                         {links.map((link) => {
                             const isActive = location.pathname === link.path;
                             return (
@@ -226,17 +226,19 @@ const DashboardLayout = ({ children }) => {
                                 </Link>
                             );
                         })}
-                    </div>
+                    </nav>
+                </div>
 
+                <div className="p-3 xl:p-4 border-t border-[var(--border)] dark:border-white/5">
                     <button
                         onClick={handleLogout}
-                        className={`w-full flex items-center gap-3 px-4 py-3.5 text-[var(--text-muted)] hover:bg-red-50 hover:text-red-500 rounded-2xl transition-all mt-auto mb-4 ${isRtl ? 'flex-row-reverse' : ''}`}
+                        className={`w-full flex items-center gap-3 px-4 py-3.5 text-[var(--text-muted)] hover:bg-red-50 hover:text-red-500 rounded-2xl transition-all ${isRtl ? 'flex-row-reverse' : ''}`}
                         title={t('nav.logout')}
                     >
                         <LogOut className={`w-5 h-5 flex-shrink-0 ${isRtl ? 'rotate-180' : ''}`} />
                         <span className={`text-[11px] font-black uppercase tracking-widest flex-1 truncate ${isRtl ? 'text-right' : ''} ${isMobileMenuOpen ? 'block' : 'hidden xl:block'}`}>{t('nav.logout')}</span>
                     </button>
-                </nav>
+                </div>
             </aside>
 
             <main className={`flex-1 min-h-screen relative min-w-0 transition-all duration-300 ${isRtl ? 'lg:mr-20 xl:mr-64' : 'lg:ml-20 xl:ml-64'}`}>

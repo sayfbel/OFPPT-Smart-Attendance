@@ -31,8 +31,8 @@ const PenaltyModal = ({ isOpen, onClose, student, onConfirm, submitting }) => {
             <div className={`bg-white rounded-[40px] w-full max-w-5xl shadow-2xl relative overflow-hidden flex flex-col h-[85vh] max-h-[750px] ${isRtl ? 'text-right direction-rtl' : ''}`}>
                 
                 {/* Header Style like ClassDossierModal */}
-                <div className={`p-10 pb-8 border-b border-slate-50 flex justify-between items-start bg-white sticky top-0 z-30 ${isRtl ? 'flex-row-reverse' : ''}`}>
-                    <div>
+                <div className={`p-10 pb-8 border-b border-slate-50 flex justify-between items-start bg-white sticky top-0 z-30`}>
+                    <div className={isRtl ? 'text-right' : ''}>
                         <div className={`flex items-center gap-3 mb-2 ${isRtl ? 'flex-row-reverse' : ''}`}>
                             <div className="w-1.5 h-6 bg-red-500 rounded-full"></div>
                             <h3 className="text-3xl font-black italic tracking-tight text-[var(--secondary)] uppercase leading-none">

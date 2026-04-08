@@ -14,9 +14,9 @@ const Squadrons = () => {
     const [groups, setGroups] = useState([]);
     const [formateurs, setFormateurs] = useState([]);
     const [isGroupModalOpen, setIsGroupModalOpen] = useState(false);
-    const [newGroup, setNewGroup] = useState({ id: '', filiereId: '', lead: [], année_scolaire: '2025/2026' });
+    const [newGroup, setNewGroup] = useState({ id: '', filiereId: '', lead: [], année_scolaire: '2025/2026', salleIds: [] });
     const [flippedCardId, setFlippedCardId] = useState(null);
-    const [editData, setEditData] = useState({ filiereId: '', lead: [], année_scolaire: '' });
+    const [editData, setEditData] = useState({ filiereId: '', lead: [], année_scolaire: '', salleIds: [] });
     const [yearFilter, setYearFilter] = useState('ALL');
     const [isFilterDropdownOpen, setIsFilterDropdownOpen] = useState(false);
     const [isYearFilterDropdownOpen, setIsYearFilterDropdownOpen] = useState(false);
@@ -25,6 +25,8 @@ const Squadrons = () => {
     const [isFiliereEditDropdownOpen, setIsFiliereEditDropdownOpen] = useState(false);
     const [isFiliereEditAutre, setIsFiliereEditAutre] = useState(false);
     const [isAnneeEditDropdownOpen, setIsAnneeEditDropdownOpen] = useState(false);
+    const [isSalleEditDropdownOpen, setIsSalleEditDropdownOpen] = useState(false);
+    const [availableSalles, setAvailableSalles] = useState([]);
 
     const anneesScolaires = ['2023/2024', '2024/2025', '2025/2026', '2026/2027', '2027/2028'];
     const [availableFilieres, setAvailableFilieres] = useState([]);
@@ -37,15 +39,17 @@ const Squadrons = () => {
             if (!token) return;
             const config = { headers: { Authorization: `Bearer ${token}` } };
 
-            const [groupsRes, formateurRes, filiereRes] = await Promise.all([
+            const [groupsRes, formateurRes, filiereRes, sallesRes] = await Promise.all([
                 axios.get(`/api/admin/groups?_t=${new Date().getTime()}`, config),
                 axios.get(`/api/admin/formateurs?_t=${new Date().getTime()}`, config),
-                axios.get(`/api/admin/filieres?_t=${new Date().getTime()}`, config)
+                axios.get(`/api/admin/filieres?_t=${new Date().getTime()}`, config),
+                axios.get(`/api/admin/salles?_t=${new Date().getTime()}`, config)
             ]);
-
+ 
             setGroups(groupsRes.data.groups || []);
             setFormateurs(formateurRes.data.formateurs || []);
             setAvailableFilieres(filiereRes.data.filieres || []);
+            setAvailableSalles(sallesRes.data.salles || []);
         } catch (error) {
             console.error('Error fetching dashboard data', error);
         }
@@ -145,6 +149,7 @@ const Squadrons = () => {
                 id: grp.id,
                 filiereId: grp.filiereId || grp.filiereid || '',
                 année_scolaire: grp.année_scolaire || grp.annee_scolaire || '',
+                salleIds: grp.salleIds || [],
                 lead: leadArray
             });
             setIsFiliereEditAutre(false);
@@ -152,6 +157,7 @@ const Squadrons = () => {
             setIsEditDropdownOpen(false);
             setIsFiliereEditDropdownOpen(false);
             setIsAnneeEditDropdownOpen(false);
+            setIsSalleEditDropdownOpen(false);
         }
     };
 
@@ -254,8 +260,14 @@ const Squadrons = () => {
                                             {grp.filiere}
                                         </div>
 
-                                        <div className="text-[20px] font-black italic text-[var(--secondary)] tracking-tight leading-tight uppercase mt-4">
+                                        <div className="text-[20px] font-black italic text-[var(--secondary)] tracking-tight leading-tight uppercase mt-4 flex items-center gap-2">
                                             {grp.année_scolaire}
+                                            {grp.salle_nom && (
+                                                <>
+                                                    <span className="text-[var(--primary)] opacity-30">•</span>
+                                                    <span className="text-amber-500">{grp.salle_nom}</span>
+                                                </>
+                                            )}
                                         </div>
                                     </div>
                                 </div>
@@ -392,6 +404,59 @@ const Squadrons = () => {
                                                         {editData.année_scolaire === annee && <div className="w-1 h-1 bg-[var(--primary)] rounded-full"></div>}
                                                     </div>
                                                 ))}
+                                            </div>
+                                        )}
+                                    </div>
+
+
+                                    <div className="relative">
+                                        <label className="block text-[9px] font-black tracking-widest text-slate-400 uppercase mb-2">Salle d'assignation</label>
+                                        <div
+                                            onClick={() => setIsSalleEditDropdownOpen(!isSalleEditDropdownOpen)}
+                                            className="w-full bg-white border border-[var(--border)] rounded-xl px-4 py-3 flex justify-between items-center cursor-pointer hover:border-[var(--primary)] transition-all"
+                                        >
+                                            <div className="flex items-center gap-3">
+                                                <Layers className="w-4 h-4 text-[var(--primary)]" />
+                                                <span className="text-[10px] font-bold text-[var(--secondary)] uppercase tracking-tight">
+                                            {editData.salleIds?.length > 0
+                                                ? availableSalles.filter(s => editData.salleIds.includes(s.id)).map(s => s.nom).join(', ')
+                                                : 'SÉLECTIONNER...'}
+                                        </span>
+                                            </div>
+                                            <ChevronDown className={`w-4 h-4 text-[var(--primary)] transition-transform ${isSalleEditDropdownOpen ? 'rotate-180' : ''}`} />
+                                        </div>
+
+                                        {isSalleEditDropdownOpen && (
+                                            <div className="absolute top-full left-0 w-full mt-2 bg-white border border-slate-100 rounded-xl shadow-2xl z-[60] overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                                                <div
+                                                    className="px-4 py-3 cursor-pointer flex items-center justify-between hover:bg-slate-50 transition-colors"
+                                                    onClick={() => {
+                                                        setEditData({ ...editData, salleIds: [] });
+                                                    }}
+                                                >
+                                                    <span className="text-[10px] font-bold text-slate-400 uppercase">DÉSÉLECTIONNER TOUT</span>
+                                                </div>
+                                                {availableSalles.map((s) => {
+                                                    const isSelected = editData.salleIds?.includes(s.id);
+                                                    return (
+                                                        <div
+                                                            key={s.id}
+                                                            className={`px-4 py-3 cursor-pointer flex items-center justify-between hover:bg-slate-50 transition-colors ${isSelected ? 'bg-green-50' : ''}`}
+                                                            onClick={() => {
+                                                                const currentIds = Array.isArray(editData.salleIds) ? editData.salleIds : [];
+                                                                const nextIds = isSelected 
+                                                                    ? currentIds.filter(id => id !== s.id)
+                                                                    : [...currentIds, s.id];
+                                                                setEditData({ ...editData, salleIds: nextIds });
+                                                            }}
+                                                        >
+                                                            <span className={`text-[10px] font-bold uppercase ${isSelected ? 'text-[var(--primary)]' : 'text-[var(--secondary)]'}`}>
+                                                                {s.nom}
+                                                            </span>
+                                                            {isSelected ? <CheckSquare className="w-4 h-4 text-[var(--primary)]" /> : <Square className="w-4 h-4 text-slate-200" />}
+                                                        </div>
+                                                    );
+                                                })}
                                             </div>
                                         )}
                                     </div>

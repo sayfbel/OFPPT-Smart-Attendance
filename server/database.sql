@@ -16,7 +16,6 @@ DROP TABLE IF EXISTS formateurs;
 DROP TABLE IF EXISTS admins;
 DROP TABLE IF EXISTS salles;
 DROP TABLE IF EXISTS filiere;
-SET FOREIGN_KEY_CHECKS = 1;
 
 -- 1. Infrastructure Tables
 CREATE TABLE filiere (
@@ -38,6 +37,17 @@ CREATE TABLE groups (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (filiereId) REFERENCES filiere(id) ON DELETE SET NULL
 );
+
+-- 2b. Junction Table for Class/Room assignment (Many-to-Many)
+CREATE TABLE group_salles (
+    group_id VARCHAR(50),
+    salle_id INT,
+    PRIMARY KEY (group_id, salle_id),
+    FOREIGN KEY (group_id) REFERENCES groups(id) ON DELETE CASCADE,
+    FOREIGN KEY (salle_id) REFERENCES salles(id) ON DELETE CASCADE
+);
+
+SET FOREIGN_KEY_CHECKS = 1;
 
 -- 3. Core Actors
 CREATE TABLE admins (

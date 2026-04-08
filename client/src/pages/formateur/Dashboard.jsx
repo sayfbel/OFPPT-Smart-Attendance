@@ -126,7 +126,7 @@ const FormateurDashboard = () => {
             const fetchedUsers = sRes.data.users || [];
             setStudents(fetchedUsers.map(u => ({ 
                 ...u, 
-                status: checkinsMap[u.id] || 'ABSENT' 
+                status: checkinsMap[u.id] || 'PRESENT' 
             })));
         } catch (error) {
             console.error('Error fetching session students', error);
@@ -148,7 +148,7 @@ const FormateurDashboard = () => {
 
                 setStudents(prev => prev.map(s => ({
                     ...s,
-                    status: checkinsMap[s.id] || 'ABSENT'
+                    status: checkinsMap[s.id] || 'PRESENT'
                 })));
 
             } catch (err) {

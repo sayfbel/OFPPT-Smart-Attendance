@@ -15,8 +15,11 @@ import {
     LayoutDashboard
 } from 'lucide-react';
 import { useNotification } from '../context/NotificationContext';
+import { useTranslation } from 'react-i18next';
 
 const Profile = () => {
+    const { t, i18n } = useTranslation();
+    const isRtl = i18n.language === 'ar';
     const { user, setUser } = useAuth();
     const { addNotification } = useNotification();
     const [profile, setProfile] = useState({
@@ -54,12 +57,12 @@ const Profile = () => {
             }, {
                 headers: { Authorization: `Bearer ${token}` }
             });
-            addNotification("Profil mis à jour avec succès", "success");
+            addNotification(t('profile.success_msg'), "success");
             
             // Update local user state
             setUser(prev => ({ ...prev, name: profile.name, email: profile.email }));
         } catch (err) {
-            addNotification(err.response?.data?.message || "Erreur lors de la mise à jour", "error");
+            addNotification(err.response?.data?.message || t('profile.error_msg'), "error");
         } finally {
             setLoading(false);
         }
@@ -68,7 +71,7 @@ const Profile = () => {
     const handleUpdatePassword = async (e) => {
         e.preventDefault();
         if (passwords.newPassword !== passwords.confirmPassword) {
-            return addNotification("Les nouveaux mots de passe ne correspondent pas", "error");
+            return addNotification(t('profile.password_match_error'), "error");
         }
         
         setLoading(true);
@@ -91,20 +94,20 @@ const Profile = () => {
     };
 
     return (
-        <div className="space-y-12 fade-up max-w-[1200px] mx-auto pb-20">
+        <div className={`space-y-12 fade-up max-w-[1200px] mx-auto pb-20 ${isRtl ? 'text-right' : ''}`}>
             {/* Header section */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-8 transition-all duration-500">
+            <div className={`flex flex-col md:flex-row md:items-center justify-between gap-8 transition-all duration-500 ${isRtl ? 'flex-row-reverse' : ''}`}>
                 <div className="space-y-2">
-                    <h1 className="text-5xl md:text-[64px] font-black tracking-tighter text-[var(--secondary)] uppercase italic leading-none">
-                        PROFIL <span className="text-[var(--primary)] shrink-0">UTILISATEUR</span>
+                    <h1 className={`text-5xl md:text-[64px] font-black tracking-tighter text-[var(--secondary)] uppercase italic leading-none ${isRtl ? 'text-right' : ''}`}>
+                        {t('profile.title')}
                     </h1>
-                    <p className="text-[10px] text-slate-400 font-bold tracking-[0.3em] uppercase">
-                        GESTION DES INFORMATIONS PERSONNELLES ET SÉCURITÉ
+                    <p className={`text-[10px] text-slate-400 font-bold tracking-[0.3em] uppercase ${isRtl ? 'text-right' : ''}`}>
+                        {t('profile.subtitle')}
                     </p>
                 </div>
             </div>
 
-            <div className="flex flex-col lg:flex-row gap-12">
+            <div className={`flex flex-col lg:flex-row gap-12 ${isRtl ? 'lg:flex-row-reverse' : ''}`}>
                 {/* Sidebar / Left Column */}
                 <div className="w-full lg:w-[380px] space-y-10">
                     <div className="bg-white dark:bg-[var(--surface)] border border-slate-100 dark:border-white/5 rounded-[48px] p-12 shadow-sm relative overflow-hidden group">
@@ -129,23 +132,23 @@ const Profile = () => {
                                 {profile.name}
                             </h3>
                             <div className="px-5 py-1.5 bg-[var(--primary)]/10 text-[var(--primary)] rounded-full text-[9px] font-black uppercase tracking-widest mb-8">
-                                {user?.role === 'admin' ? 'ADMINISTRATEUR' : 'FORMATEUR'}
+                                {user?.role === 'admin' ? t('modals.roles.admin') : t('modals.roles.formateur')}
                             </div>
 
                             <div className="w-full space-y-4 pt-8 border-t border-slate-50 dark:border-white/5">
                                 <button 
                                     onClick={() => setActiveTab('general')}
-                                    className={`w-full p-5 rounded-2xl flex items-center gap-4 transition-all ${activeTab === 'general' ? 'bg-[var(--secondary)] text-white shadow-xl shadow-[var(--secondary)]/20' : 'bg-slate-50 dark:bg-white/5 text-slate-400 hover:bg-slate-100 dark:hover:bg-white/10'}`}
+                                    className={`w-full p-5 rounded-2xl flex items-center gap-4 transition-all ${isRtl ? 'flex-row-reverse' : ''} ${activeTab === 'general' ? 'bg-[var(--secondary)] text-white shadow-xl shadow-[var(--secondary)]/20' : 'bg-slate-50 dark:bg-white/5 text-slate-400 hover:bg-slate-100 dark:hover:bg-white/10'}`}
                                 >
                                     <User className="w-4 h-4" />
-                                    <span className="text-[10px] font-black uppercase tracking-widest">Informations Générales</span>
+                                    <span className="text-[10px] font-black uppercase tracking-widest">{t('profile.personal_info')}</span>
                                 </button>
                                 <button 
                                     onClick={() => setActiveTab('security')}
-                                    className={`w-full p-5 rounded-2xl flex items-center gap-4 transition-all ${activeTab === 'security' ? 'bg-[var(--secondary)] text-white shadow-xl shadow-[var(--secondary)]/20' : 'bg-slate-50 dark:bg-white/5 text-slate-400 hover:bg-slate-100 dark:hover:bg-white/10'}`}
+                                    className={`w-full p-5 rounded-2xl flex items-center gap-4 transition-all ${isRtl ? 'flex-row-reverse' : ''} ${activeTab === 'security' ? 'bg-[var(--secondary)] text-white shadow-xl shadow-[var(--secondary)]/20' : 'bg-slate-50 dark:bg-white/5 text-slate-400 hover:bg-slate-100 dark:hover:bg-white/10'}`}
                                 >
                                     <Lock className="w-4 h-4" />
-                                    <span className="text-[10px] font-black uppercase tracking-widest">Sécurité du Compte</span>
+                                    <span className="text-[10px] font-black uppercase tracking-widest">{t('profile.password_section')}</span>
                                 </button>
                             </div>
                         </div>
@@ -166,34 +169,34 @@ const Profile = () => {
                     {activeTab === 'general' ? (
                         <div className="bg-white dark:bg-[var(--surface)] border border-slate-100 dark:border-white/5 rounded-[48px] p-12 md:p-16 shadow-sm fade-up">
                             <div className="mb-12">
-                                <h3 className="text-3xl font-black italic tracking-tighter text-[var(--secondary)] dark:text-white uppercase leading-none mb-3">INFORMATIONS <span className="text-[var(--primary)] shrink-0">GÉNÉRALES</span></h3>
-                                <p className="text-[9px] font-bold text-slate-400 tracking-widest uppercase italic">METTEZ À JOUR VOS COORDONNÉES PERSONNELLES</p>
+                                <h3 className={`text-3xl font-black italic tracking-tighter text-[var(--secondary)] dark:text-white uppercase leading-none mb-3 ${isRtl ? 'text-right' : ''}`}>{t('profile.personal_info')}</h3>
+                                <p className={`text-[9px] font-bold text-slate-400 tracking-widest uppercase italic ${isRtl ? 'text-right' : ''}`}>{t('profile.subtitle')}</p>
                             </div>
 
                             <form onSubmit={handleUpdateProfile} className="space-y-10">
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
                                     <div className="space-y-4">
-                                        <label className="flex items-center gap-2 text-[10px] font-black tracking-widest text-slate-400 uppercase ml-2">
-                                            <User className="w-3 h-3 text-[var(--primary)]" /> NOM COMPLET
+                                        <label className={`flex items-center gap-2 text-[10px] font-black tracking-widest text-slate-400 uppercase ml-2 ${isRtl ? 'flex-row-reverse' : ''}`}>
+                                            <User className="w-3 h-3 text-[var(--primary)]" /> {t('profile.full_name')}
                                         </label>
                                         <input
                                             type="text"
                                             value={profile.name}
                                             onChange={e => setProfile({ ...profile, name: e.target.value })}
-                                            className="w-full bg-slate-50 dark:bg-black/20 border border-slate-100 dark:border-white/5 rounded-2xl px-6 py-5 text-sm font-bold text-[var(--secondary)] dark:text-white focus:border-[var(--primary)] focus:ring-8 focus:ring-[var(--primary)]/5 outline-none transition-all placeholder:text-slate-300 dark:placeholder:text-slate-600"
-                                            placeholder="Nom Complet"
+                                            className={`w-full bg-slate-50 dark:bg-black/20 border border-slate-100 dark:border-white/5 rounded-2xl px-6 py-5 text-sm font-bold text-[var(--secondary)] dark:text-white focus:border-[var(--primary)] focus:ring-8 focus:ring-[var(--primary)]/5 outline-none transition-all placeholder:text-slate-300 dark:placeholder:text-slate-600 ${isRtl ? 'text-right' : ''}`}
+                                            placeholder={t('profile.full_name')}
                                         />
                                     </div>
                                     <div className="space-y-4">
-                                        <label className="flex items-center gap-2 text-[10px] font-black tracking-widest text-slate-400 uppercase ml-2">
-                                            <Mail className="w-3 h-3 text-[var(--primary)]" /> ADRESSE EMAIL
+                                        <label className={`flex items-center gap-2 text-[10px] font-black tracking-widest text-slate-400 uppercase ml-2 ${isRtl ? 'flex-row-reverse' : ''}`}>
+                                            <Mail className="w-3 h-3 text-[var(--primary)]" /> {t('profile.email')}
                                         </label>
                                         <input
                                             type="email"
                                             value={profile.email}
                                             onChange={e => setProfile({ ...profile, email: e.target.value })}
-                                            className="w-full bg-slate-50 dark:bg-black/20 border border-slate-100 dark:border-white/5 rounded-2xl px-6 py-5 text-sm font-bold text-[var(--secondary)] dark:text-white focus:border-[var(--primary)] focus:ring-8 focus:ring-[var(--primary)]/5 outline-none transition-all placeholder:text-slate-300 dark:placeholder:text-slate-600"
-                                            placeholder="Email"
+                                            className={`w-full bg-slate-50 dark:bg-black/20 border border-slate-100 dark:border-white/5 rounded-2xl px-6 py-5 text-sm font-bold text-[var(--secondary)] dark:text-white focus:border-[var(--primary)] focus:ring-8 focus:ring-[var(--primary)]/5 outline-none transition-all placeholder:text-slate-300 dark:placeholder:text-slate-600 ${isRtl ? 'text-right' : ''}`}
+                                            placeholder={t('profile.email')}
                                         />
                                     </div>
                                 </div>
@@ -204,7 +207,7 @@ const Profile = () => {
                                         disabled={loading}
                                         className="btn-ista px-12 py-5 rounded-2xl font-black uppercase tracking-[0.2em] shadow-xl flex items-center justify-center gap-4 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50"
                                     >
-                                        {loading ? "ENREGISTREMENT..." : <><Save className="w-4 h-4" /> ENREGISTRER LES MODIFICATIONS</>}
+                                        {loading ? t('common.loading') : <><Save className="w-4 h-4" /> {t('profile.update_button')}</>}
                                     </button>
                                 </div>
                             </form>
@@ -212,64 +215,64 @@ const Profile = () => {
                     ) : (
                         <div className="bg-white dark:bg-[var(--surface)] border border-slate-100 dark:border-white/5 rounded-[48px] p-12 md:p-16 shadow-sm fade-up">
                             <div className="mb-12">
-                                <h3 className="text-3xl font-black italic tracking-tighter text-[var(--secondary)] dark:text-white uppercase leading-none mb-3">SÉCURISATION <span className="text-[var(--primary)] shrink-0">DU COMPTE</span></h3>
-                                <p className="text-[9px] font-bold text-slate-400 tracking-widest uppercase italic">RENFORCEZ LA PROTECTION DE VOTRE ACCÈS</p>
+                                <h3 className={`text-3xl font-black italic tracking-tighter text-[var(--secondary)] dark:text-white uppercase leading-none mb-3 ${isRtl ? 'text-right' : ''}`}>{t('profile.password_section')}</h3>
+                                <p className={`text-[9px] font-bold text-slate-400 tracking-widest uppercase italic ${isRtl ? 'text-right' : ''}`}>{t('profile.password_subtitle')}</p>
                             </div>
 
                             <form onSubmit={handleUpdatePassword} className="space-y-10">
                                 <div className="space-y-4">
-                                    <label className="flex items-center gap-2 text-[10px] font-black tracking-widest text-slate-400 uppercase ml-2">
-                                        <Key className="w-3 h-3 text-red-500" /> MOT DE PASSE ACTUEL
+                                    <label className={`flex items-center gap-2 text-[10px] font-black tracking-widest text-slate-400 uppercase ml-2 ${isRtl ? 'flex-row-reverse' : ''}`}>
+                                        <Key className="w-3 h-3 text-red-500" /> {t('profile.current_password')}
                                     </label>
                                     <input
                                         type="password"
                                         required
                                         value={passwords.currentPassword}
                                         onChange={e => setPasswords({ ...passwords, currentPassword: e.target.value })}
-                                        className="w-full bg-slate-50 dark:bg-black/20 border border-slate-100 dark:border-white/5 rounded-2xl px-6 py-5 text-sm font-bold text-[var(--secondary)] dark:text-white focus:border-red-500 focus:ring-8 focus:ring-red-500/5 outline-none transition-all"
+                                        className={`w-full bg-slate-50 dark:bg-black/20 border border-slate-100 dark:border-white/5 rounded-2xl px-6 py-5 text-sm font-bold text-[var(--secondary)] dark:text-white focus:border-red-500 focus:ring-8 focus:ring-red-500/5 outline-none transition-all ${isRtl ? 'text-right' : ''}`}
                                         placeholder="••••••••"
                                     />
                                 </div>
 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
                                     <div className="space-y-4">
-                                        <label className="flex items-center gap-2 text-[10px] font-black tracking-widest text-slate-400 uppercase ml-2">
-                                            <Lock className="w-3 h-3 text-[var(--primary)]" /> NOUVEAU MOT DE PASSE
+                                        <label className={`flex items-center gap-2 text-[10px] font-black tracking-widest text-slate-400 uppercase ml-2 ${isRtl ? 'flex-row-reverse' : ''}`}>
+                                            <Lock className="w-3 h-3 text-[var(--primary)]" /> {t('profile.new_password')}
                                         </label>
                                         <input
                                             type="password"
                                             required
                                             value={passwords.newPassword}
                                             onChange={e => setPasswords({ ...passwords, newPassword: e.target.value })}
-                                            className="w-full bg-slate-50 dark:bg-black/20 border border-slate-100 dark:border-white/5 rounded-2xl px-6 py-5 text-sm font-bold text-[var(--secondary)] dark:text-white focus:border-[var(--primary)] focus:ring-8 focus:ring-[var(--primary)]/5 outline-none transition-all"
+                                            className={`w-full bg-slate-50 dark:bg-black/20 border border-slate-100 dark:border-white/5 rounded-2xl px-6 py-5 text-sm font-bold text-[var(--secondary)] dark:text-white focus:border-[var(--primary)] focus:ring-8 focus:ring-[var(--primary)]/5 outline-none transition-all ${isRtl ? 'text-right' : ''}`}
                                             placeholder="••••••••"
                                         />
                                     </div>
                                     <div className="space-y-4">
-                                        <label className="flex items-center gap-2 text-[10px] font-black tracking-widest text-slate-400 uppercase ml-2">
-                                            <Lock className="w-3 h-3 text-[var(--primary)]" /> CONFIRMER LE NOUVEAU MOT DE PASSE
+                                        <label className={`flex items-center gap-2 text-[10px] font-black tracking-widest text-slate-400 uppercase ml-2 ${isRtl ? 'flex-row-reverse' : ''}`}>
+                                            <Lock className="w-3 h-3 text-[var(--primary)]" /> {t('profile.confirm_password')}
                                         </label>
                                         <input
                                             type="password"
                                             required
                                             value={passwords.confirmPassword}
                                             onChange={e => setPasswords({ ...passwords, confirmPassword: e.target.value })}
-                                            className="w-full bg-slate-50 dark:bg-black/20 border border-slate-100 dark:border-white/5 rounded-2xl px-6 py-5 text-sm font-bold text-[var(--secondary)] dark:text-white focus:border-[var(--primary)] focus:ring-8 focus:ring-[var(--primary)]/5 outline-none transition-all"
+                                            className={`w-full bg-slate-50 dark:bg-black/20 border border-slate-100 dark:border-white/5 rounded-2xl px-6 py-5 text-sm font-bold text-[var(--secondary)] dark:text-white focus:border-[var(--primary)] focus:ring-8 focus:ring-[var(--primary)]/5 outline-none transition-all ${isRtl ? 'text-right' : ''}`}
                                             placeholder="••••••••"
                                         />
                                     </div>
                                 </div>
 
-                                <div className="pt-10 border-t border-slate-50 dark:border-white/5 flex flex-col md:flex-row gap-6 items-center">
+                                <div className={`pt-10 border-t border-slate-50 dark:border-white/5 flex flex-col md:flex-row gap-6 items-center ${isRtl ? 'md:flex-row-reverse' : ''}`}>
                                     <button 
                                         type="submit"
                                         disabled={loading}
                                         className="w-full md:w-auto px-12 py-5 bg-[var(--secondary)] text-white rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] shadow-xl shadow-[var(--secondary)]/20 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50"
                                     >
-                                        {loading ? "MISE À JOUR..." : "ACTUALISER LE MOT DE PASSE"}
+                                        {loading ? t('profile.sync') : t('profile.change_password')}
                                     </button>
-                                    <p className="text-[10px] font-black uppercase italic text-slate-300 gap-2 flex items-center">
-                                        <Info className="w-4 h-4" /> Utilisation recommandée de 8 caractères minimum
+                                    <p className={`text-[10px] font-black uppercase italic text-slate-300 gap-2 flex items-center ${isRtl ? 'flex-row-reverse' : ''}`}>
+                                        <Info className="w-4 h-4" /> {t('profile.password_hint')}
                                     </p>
                                 </div>
                             </form>

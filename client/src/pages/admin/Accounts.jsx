@@ -23,7 +23,7 @@ import ConfirmationModal from '../../components/ConfirmationModal';
 import { useTranslation } from 'react-i18next';
 
 const Accounts = () => {
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
     const { addNotification } = useNotification();
     const [users, setUsers] = useState([]);
     const [availableGroups, setAvailableGroups] = useState([]);
@@ -145,21 +145,22 @@ const Accounts = () => {
     const formateursList = users.filter(u => u.role === 'formateur');
     
     const [searchFormateur, setSearchFormateur] = useState('');
+    const isRtl = i18n.language === 'ar';
     const filteredFormateurs = formateursList.filter(f => 
         f.name.toLowerCase().includes(searchFormateur.toLowerCase()) ||
         f.email.toLowerCase().includes(searchFormateur.toLowerCase())
     );
 
     return (
-        <div className="space-y-12 fade-up max-w-[1600px] mx-auto">
+        <div className={`space-y-12 fade-up max-w-[1600px] mx-auto ${isRtl ? 'direction-rtl' : ''}`}>
             {/* Header section */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-8 transition-all duration-500">
-                <div className="space-y-2">
+            <div className={`flex flex-col md:flex-row md:items-center justify-between gap-8 transition-all duration-500 ${isRtl ? 'md:flex-row-reverse' : ''}`}>
+                <div className={`space-y-2 ${isRtl ? 'text-right' : ''}`}>
                     <h1 className="text-5xl md:text-[64px] font-black tracking-tighter text-[var(--secondary)] uppercase italic leading-none">
-                        COMPTES
+                        {t('accounts.header_title')}
                     </h1>
                     <p className="text-[10px] text-slate-400 font-bold tracking-[0.3em] uppercase">
-                        GESTION DES UTILISATEURS ISTA
+                        {t('accounts.header_subtitle')}
                     </p>
                 </div>
 
@@ -168,7 +169,7 @@ const Accounts = () => {
                         <svg className="w-4 h-4 text-[var(--primary)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                             <path strokeLinecap="round" strokeLinejoin="round" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
                         </svg>
-                        TOUTES LES FILIÈRES
+                        {t('accounts.all_streams')}
                         <ChevronDown className="w-4 h-4 text-slate-400 ml-2" />
                     </button>
 
@@ -177,12 +178,13 @@ const Accounts = () => {
                         className="flex items-center justify-center gap-3 px-8 py-4 bg-[var(--primary)] hover:bg-[var(--primary-dark)] text-white rounded-2xl shadow-xl shadow-[var(--primary)]/20 transition-all group"
                     >
                         <UserPlus className="w-4 h-4 group-hover:scale-110 transition-transform" />
-                        <span className="text-[10px] uppercase font-black tracking-widest">AJOUTER UN UTILISATEUR</span>
+                        <span className="text-[10px] uppercase font-black tracking-widest">{t('accounts.add_user')}</span>
                     </button>
                 </div>
             </div>
 
-            {/* Class Cards */}            <div className="flex gap-6 overflow-x-auto pb-6 ista-scrollbar">
+            {/* Class Cards */}
+            <div className={`flex gap-6 overflow-x-auto pb-6 ista-scrollbar ${isRtl ? 'flex-row-reverse' : ''}`}>
                 {availableGroups.length > 0 ? (
                     availableGroups.map((grp) => (
                         <div
@@ -194,21 +196,21 @@ const Accounts = () => {
                                     : 'bg-white border-slate-100 hover:border-slate-300 opacity-60 hover:opacity-100'
                             }`}
                         >
-                            <div className="flex justify-between items-center mb-6">
+                            <div className={`flex justify-between items-center mb-6 ${isRtl ? 'flex-row-reverse' : ''}`}>
                                 <span className={`text-[12px] font-black uppercase tracking-widest truncate-text flex-1 ${
                                     selectedGroup === grp.id ? 'text-[var(--primary)]' : 'text-[var(--secondary)]'
-                                }`}>
+                                } ${isRtl ? 'text-right' : ''}`}>
                                     {(grp.id || '').split('-')[0].trim()}
                                 </span>
                                 <div className={`w-2.5 h-2.5 rounded-full outline outline-4 outline-offset-2 ${
                                     selectedGroup === grp.id ? 'bg-[var(--primary)] outline-[var(--primary)]/20' : 'bg-slate-200 outline-slate-100'
-                                }}`}></div>
+                                }`}></div>
                             </div>
-                            <h3 className="text-2xl font-black italic text-[var(--secondary)] uppercase tracking-tight mb-8 truncate-text">
+                            <h3 className={`text-2xl font-black italic text-[var(--secondary)] uppercase tracking-tight mb-8 truncate-text ${isRtl ? 'text-right' : ''}`}>
                                 {grp.id}
                             </h3>
-                            <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">
-                                FILIÈRE: <span className="text-[var(--secondary)] ml-1 truncate-text inline-block align-bottom max-w-[150px]">
+                            <p className={`text-[9px] font-bold text-slate-400 uppercase tracking-widest ${isRtl ? 'text-right' : ''}`}>
+                                {t('accounts.col_filiere')}: <span className="text-[var(--secondary)] ml-1 truncate-text inline-block align-bottom max-w-[150px]">
                                     {grp.filiere || 'GESTION DES ENTREPRISES'}
                                 </span>
                             </p>
@@ -216,29 +218,29 @@ const Accounts = () => {
                     ))
                 ) : (
                     <div className="min-w-[320px] p-8 rounded-[24px] bg-white border border-slate-100 opacity-60 flex items-center justify-center">
-                        <p className="text-[10px] font-black text-slate-400 tracking-widest uppercase">AUCUN GROUPE DISPONIBLE</p>
+                        <p className="text-[10px] font-black text-slate-400 tracking-widest uppercase">{t('accounts.no_groups_available')}</p>
                     </div>
                 )}
             </div>
 
             {/* Students Section */}
             <div className="space-y-6">
-                <h2 className="text-3xl font-black italic tracking-tighter text-[var(--secondary)] uppercase">
-                    STAGIAIRES
+                <h2 className={`text-3xl font-black italic tracking-tighter text-[var(--secondary)] uppercase ${isRtl ? 'text-right' : ''}`}>
+                    {t('accounts.students_section')}
                 </h2>
 
                 <div className="bg-white border border-slate-100 rounded-[32px] p-8 shadow-sm">
-                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
-                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">LISTE DES STAGIAIRES</span>
+                    <div className={`flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8 ${isRtl ? 'md:flex-row-reverse' : ''}`}>
+                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">{t('accounts.students_list')}</span>
                         
-                        <div className="flex items-center bg-slate-50 border border-transparent focus-within:border-slate-200 hover:border-slate-200 rounded-2xl w-full max-w-[400px] px-5 py-4 transition-all">
-                            <Search className="w-4 h-4 text-slate-400 mr-3" />
+                        <div className={`flex items-center bg-slate-50 border border-transparent focus-within:border-slate-200 hover:border-slate-200 rounded-2xl w-full max-w-[400px] px-5 py-4 transition-all ${isRtl ? 'flex-row-reverse' : ''}`}>
+                            <Search className={`w-4 h-4 text-slate-400 ${isRtl ? 'ml-3' : 'mr-3'}`} />
                             <input
                                 type="text"
-                                placeholder="RECHERCHER UN NOM OU ID..."
+                                placeholder={t('accounts.search_stg_placeholder')}
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
-                                className="bg-transparent border-none text-[10px] font-bold w-full tracking-widest focus:ring-0 text-[var(--secondary)] placeholder-slate-300 p-0 uppercase"
+                                className={`bg-transparent border-none text-[10px] font-bold w-full tracking-widest focus:ring-0 text-[var(--secondary)] placeholder-slate-300 p-0 uppercase ${isRtl ? 'text-right' : ''}`}
                             />
                         </div>
                     </div>
@@ -246,12 +248,12 @@ const Accounts = () => {
                     <div className="overflow-x-auto">
                         <table className="w-full text-left min-w-[800px]">
                             <thead>
-                                <tr className="border-b border-slate-100">
-                                    <th className="pb-6 text-[9px] font-black text-slate-300 uppercase tracking-widest w-16">ID</th>
-                                    <th className="pb-6 text-[9px] font-black text-slate-300 uppercase tracking-widest">NOM COMPLET</th>
-                                    <th className="pb-6 text-[9px] font-black text-slate-300 uppercase tracking-widest text-center">FILIÈRE</th>
-                                    <th className="pb-6 text-[9px] font-black text-slate-300 uppercase tracking-widest text-center">GROUPE</th>
-                                    <th className="pb-6 text-[9px] font-black text-slate-300 uppercase tracking-widest text-right">ACTIONS</th>
+                                <tr className={`border-b border-slate-100 ${isRtl ? 'flex-row-reverse' : ''}`}>
+                                    <th className={`pb-6 text-[9px] font-black text-slate-300 uppercase tracking-widest w-16 ${isRtl ? 'text-right' : ''}`}>{t('accounts.col_id')}</th>
+                                    <th className={`pb-6 text-[9px] font-black text-slate-300 uppercase tracking-widest ${isRtl ? 'text-right' : ''}`}>{t('accounts.col_name')}</th>
+                                    <th className="pb-6 text-[9px] font-black text-slate-300 uppercase tracking-widest text-center">{t('accounts.col_filiere')}</th>
+                                    <th className="pb-6 text-[9px] font-black text-slate-300 uppercase tracking-widest text-center">{t('accounts.col_group')}</th>
+                                    <th className={`pb-6 text-[9px] font-black text-slate-300 uppercase tracking-widest ${isRtl ? 'text-left' : 'text-right'}`}>{t('accounts.actions')}</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-50">
@@ -310,7 +312,7 @@ const Accounts = () => {
                                         <td colSpan="6" className="py-24 text-center">
                                             <div className="flex flex-col items-center gap-4 opacity-30">
                                                 <Users className="w-12 h-12 text-slate-300" />
-                                                <p className="text-[10px] font-black uppercase tracking-[0.4em] italic text-slate-400">AUCUN STAGIAIRE TROUVÉ</p>
+                                                <p className="text-[10px] font-black uppercase tracking-[0.4em] italic text-slate-400">{t('accounts.no_students_found')}</p>
                                             </div>
                                         </td>
                                     </tr>
@@ -323,22 +325,22 @@ const Accounts = () => {
 
             {/* Formateurs Section */}
             <div className="space-y-6 pb-20">
-                <h2 className="text-3xl font-black italic tracking-tighter text-[var(--secondary)] uppercase text-right">
-                    FORMATEURS
+                <h2 className={`text-3xl font-black italic tracking-tighter text-[var(--secondary)] uppercase ${isRtl ? 'text-right' : ''}`}>
+                    {t('accounts.formateurs_section')}
                 </h2>
 
                 <div className="bg-white border border-slate-100 rounded-[32px] p-8 shadow-sm">
-                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
-                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">ÉQUIPE PÉDAGOGIQUE ET STAFF</span>
+                    <div className={`flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8 ${isRtl ? 'md:flex-row-reverse' : ''}`}>
+                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">{t('accounts.formateurs_team')}</span>
                         
-                        <div className="flex items-center bg-slate-50 border border-transparent focus-within:border-slate-200 hover:border-slate-200 rounded-2xl w-full max-w-[400px] px-5 py-4 transition-all">
-                            <Search className="w-4 h-4 text-slate-400 mr-3" />
+                        <div className={`flex items-center bg-slate-50 border border-transparent focus-within:border-slate-200 hover:border-slate-200 rounded-2xl w-full max-w-[400px] px-5 py-4 transition-all ${isRtl ? 'flex-row-reverse' : ''}`}>
+                            <Search className={`w-4 h-4 text-slate-400 ${isRtl ? 'ml-3' : 'mr-3'}`} />
                             <input
                                 type="text"
-                                placeholder="RECHERCHER STAFF..."
+                                placeholder={t('accounts.search_staff_placeholder')}
                                 value={searchFormateur}
                                 onChange={(e) => setSearchFormateur(e.target.value)}
-                                className="bg-transparent border-none text-[10px] font-bold w-full tracking-widest focus:ring-0 text-[var(--secondary)] placeholder-slate-300 p-0 uppercase ml-2"
+                                className={`bg-transparent border-none text-[10px] font-bold w-full tracking-widest focus:ring-0 text-[var(--secondary)] placeholder-slate-300 p-0 uppercase ${isRtl ? 'text-right' : 'ml-2'}`}
                             />
                         </div>
                     </div>
@@ -346,12 +348,12 @@ const Accounts = () => {
                     <div className="overflow-x-auto">
                         <table className="w-full text-left min-w-[800px]">
                             <thead>
-                                <tr className="border-b border-slate-100">
-                                    <th className="pb-6 text-[9px] font-black text-slate-300 uppercase tracking-widest">NOM</th>
-                                    <th className="pb-6 text-[9px] font-black text-slate-300 uppercase tracking-widest text-center">GROUPES</th>
-                                    <th className="pb-6 text-[9px] font-black text-slate-300 uppercase tracking-widest text-center">EMAIL</th>
-                                    <th className="pb-6 text-[9px] font-black text-slate-300 uppercase tracking-widest text-center">STATUS</th>
-                                    <th className="pb-6 text-[9px] font-black text-slate-300 uppercase tracking-widest text-right">ACTIONS</th>
+                                <tr className={`border-b border-slate-100 ${isRtl ? 'flex-row-reverse' : ''}`}>
+                                    <th className={`pb-6 text-[9px] font-black text-slate-300 uppercase tracking-widest ${isRtl ? 'text-right' : ''}`}>{t('accounts.col_name')}</th>
+                                    <th className="pb-6 text-[9px] font-black text-slate-300 uppercase tracking-widest text-center">{t('accounts.col_groups')}</th>
+                                    <th className="pb-6 text-[9px] font-black text-slate-300 uppercase tracking-widest text-center">{t('accounts.col_email')}</th>
+                                    <th className="pb-6 text-[9px] font-black text-slate-300 uppercase tracking-widest text-center">{t('accounts.col_status')}</th>
+                                    <th className={`pb-6 text-[9px] font-black text-slate-300 uppercase tracking-widest ${isRtl ? 'text-left' : 'text-right'}`}>{t('accounts.actions')}</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-50">
@@ -376,7 +378,7 @@ const Accounts = () => {
                                                 <div className="flex items-center justify-center gap-2">
                                                     <div className={`w-2 h-2 rounded-full ${u.is_online ? 'bg-green-500 animate-pulse' : 'bg-slate-300'}`}></div>
                                                     <span className={`text-[9px] font-black uppercase tracking-widest ${u.is_online ? 'text-green-500' : 'text-slate-400'}`}>
-                                                        {u.is_online ? 'EN LIGNE' : 'HORS LIGNE'}
+                                                        {u.is_online ? t('accounts.status_online') : t('accounts.status_offline')}
                                                     </span>
                                                 </div>
                                             </td>
@@ -412,7 +414,7 @@ const Accounts = () => {
                                 ) : (
                                     <tr>
                                         <td colSpan="5" className="py-24 text-center">
-                                            <p className="text-[10px] font-black uppercase tracking-[0.4em] italic text-slate-400">AUCUN STAFF TROUVÉ</p>
+                                            <p className="text-[10px] font-black uppercase tracking-[0.4em] italic text-slate-400">{t('accounts.no_staff_found')}</p>
                                         </td>
                                     </tr>
                                 )}

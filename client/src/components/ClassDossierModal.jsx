@@ -99,8 +99,8 @@ const ClassDossierModal = ({ isOpen, onClose, activeSession, students, stats, on
             <div className={`bg-white rounded-[40px] w-full max-w-6xl shadow-2xl relative overflow-hidden flex flex-col h-[90vh] max-h-[850px] ${isRtl ? 'text-right direction-rtl' : ''}`}>
 
                 {/* Fixed Header Section */}
-                <div className={`p-12 pb-8 border-b border-slate-50 flex justify-between items-start bg-white sticky top-0 z-30 ${isRtl ? 'flex-row-reverse' : ''}`}>
-                    <div>
+                <div className={`p-12 pb-8 border-b border-slate-50 flex justify-between items-start bg-white sticky top-0 z-30`}>
+                    <div className={isRtl ? 'text-right' : ''}>
                         <div className={`flex items-center gap-3 mb-2 ${isRtl ? 'flex-row-reverse' : ''}`}>
                             <div className="w-1.5 h-6 bg-[var(--primary)] rounded-full"></div>
                             <h3 className="text-3xl font-black italic tracking-tight text-[var(--secondary)] uppercase leading-none">
@@ -110,7 +110,7 @@ const ClassDossierModal = ({ isOpen, onClose, activeSession, students, stats, on
                         <p className="text-[10px] font-bold text-slate-400 tracking-widest uppercase">{t('modals.dossier.subtitle')}</p>
                     </div>
 
-                    <div className={`flex items-center gap-6 ${isRtl ? 'flex-row-reverse' : ''}`}>
+                    <div className={`flex items-center gap-6`}>
                         <div className={`hidden md:flex flex-col ${isRtl ? 'items-start' : 'items-end'}`}>
                             <span className="text-[9px] font-black text-slate-300 uppercase tracking-[0.2em] mb-1">{t('modals.dossier.unit_label')}</span>
                             <span className="text-xs font-black italic text-[var(--primary)] uppercase">

@@ -72,14 +72,14 @@ const IdentityModal = ({ isOpen, onClose, newUser, setNewUser, handleAddUser, ha
                 <div className="flex-1 bg-white flex flex-col relative overflow-hidden">
 
                     {/* Fixed Header */}
-                    <div className={`p-12 pb-8 border-b border-slate-50 flex justify-between items-start bg-white sticky top-0 z-30 ${isRtl ? 'flex-row-reverse' : ''}`}>
+                    <div className={`p-12 pb-8 border-b border-slate-50 flex justify-between items-start bg-white sticky top-0 z-30`}>
                         <div className={isRtl ? 'text-right' : ''}>
                             <h3 className="text-2xl font-black italic tracking-tight text-[var(--secondary)] uppercase mb-2">{t('modals.identity.title')}</h3>
                             <p className="text-[10px] font-bold text-slate-400 tracking-widest uppercase">{t('modals.identity.subtitle')}</p>
                         </div>
                         <button
                             onClick={onClose}
-                            className={`p-3 hover:bg-slate-50 rounded-2xl transition-all text-slate-300 hover:text-[var(--secondary)] -mt-2 ${isRtl ? '-ml-2' : '-mr-2'}`}
+                            className={`p-3 hover:bg-slate-50 rounded-2xl transition-all text-slate-300 hover:text-[var(--secondary)] -mt-2 -mr-2`}
                         >
                             <X className="w-6 h-6" />
                         </button>
