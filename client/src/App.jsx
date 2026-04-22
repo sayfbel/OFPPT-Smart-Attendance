@@ -15,6 +15,7 @@ import Accounts from './pages/admin/Accounts';
 import Squadrons from './pages/admin/Squadrons';
 import Rapports from './pages/admin/Rapports';
 import AbsenceRegistry from './pages/admin/AbsenceRegistry';
+import StudentProfile from './pages/admin/StudentProfile';
 import Filiere from './pages/admin/Filiere';
 import Salles from './pages/admin/Salles';
 import Divisions from './pages/formateur/Divisions';
@@ -64,6 +65,14 @@ function App() {
                         <Route path="/scanner" element={<Scanner />} />
 
                         <Route path="/" element={<ProtectedRoute><RootRedirect /></ProtectedRoute>} />
+                        
+                        <Route path="/admin/student/:id" element={
+                            <ProtectedRoute roles={['admin', 'formateur']}>
+                                <DashboardLayout>
+                                    <StudentProfile />
+                                </DashboardLayout>
+                            </ProtectedRoute>
+                        } />
 
                         {/* Admin Routes */}
                         <Route path="/admin/*" element={

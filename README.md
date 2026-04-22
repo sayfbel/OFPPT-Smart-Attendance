@@ -26,6 +26,20 @@ The primary purpose of this project is to replace traditional paper-based attend
 - **Live Presence Matrix:** A real-time database table tracking students who are currently present in a specific session.
 - **Digital Reports:** Instructors can review the live attendance, manually override if necessary, digitally sign, and submit the daily attendance report.
 
+## 📊 Attendance Calculation Logic
+
+The system uses a specific logic to determine **Absent** and **Present** states in the Admin Dashboard:
+
+| State | Database Condition | Counting Logic |
+| :--- | :--- | :--- |
+| **ABSENT** 🔴 | `Justifier = 'ABSENCE'` | Total count of unjustified attendance records. |
+| **PRÉSENT** 🟢 | Everything else | `(Theoretical Total Expected)` - `(ABSENT students)` |
+
+### How it works:
+- **Expected Attendance**: For every report generated, the system calculates the total number of students who **should** have been present (the full roster of that group).
+- **Inclusion**: A student is counted as **PRESENT** if they were physically marked as `PRESENT` or `LATE`, or if they were absent but their record was marked as **`'JUSTIFIÉ'`** (Justified) by an administrator.
+- **Unjustified Absence**: Only students whose record remains as **`'ABSENCE'`** (the default state) reduce the global presence rate.
+
 ## 🛠 Tech Stack
 - **Frontend:** React.js, Vite, Tailwind CSS, Lucide Icons, Axios.
 - **Backend:** Node.js, Express.js.

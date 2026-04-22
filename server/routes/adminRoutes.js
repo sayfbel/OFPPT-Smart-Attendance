@@ -9,7 +9,7 @@ const {
     createFiliere, deleteFiliere, updateFiliere,
     getSalles, createSalle, updateSalle, deleteSalle,
     getAbsenceRegistry, justifyAbsence, addDisciplinePenalty, getDisciplineHistory,
-    createUser, updateUser, deleteUser
+    createUser, updateUser, deleteUser, getStudentDetails
 } = require('../controllers/adminController');
 
 // Admin only routes
@@ -41,4 +41,5 @@ router.get('/absence-registry', protect, authorize('admin'), getAbsenceRegistry)
 router.post('/justify-absence', protect, authorize('admin'), justifyAbsence);
 router.post('/discipline', protect, authorize('admin'), addDisciplinePenalty);
 router.get('/discipline/:stagiaireId', protect, authorize('admin'), getDisciplineHistory);
+router.get('/students/:id', protect, authorize('admin', 'formateur'), getStudentDetails);
 module.exports = router;

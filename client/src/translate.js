@@ -157,7 +157,14 @@ const resources = {
                 attendance_rate: 'PRÉSENCES',
                 present: 'PRÉSENT',
                 absent: 'ABSENT',
-                generate_global_report: 'Générer Rapport Global'
+                late: 'RETARD',
+                period_weekly: 'Hebdomadaire',
+                period_monthly: 'Mensuel',
+                ratio: 'Ratio',
+                generate_global_report: 'Générer Rapport Global',
+                critical_absences_title: 'ALERTES ABSENCES CRITIQUES',
+                critical_absences_subtitle: 'STAGIAIRES DÉPASSANT LE SEUIL DE TOLÉRANCE',
+                alerts_active: 'ALERTE(S) ACTIVE(S)'
             },
             accounts: {
                 title: 'Comptes',
@@ -375,6 +382,25 @@ const resources = {
                     cancel: 'ANNULER',
                     confirm: 'CONFIRMER',
                     critical: 'ACTION CRITIQUE'
+                },
+                report: {
+                    title: 'Rapport de',
+                    subtitle: 'Présence',
+                    official: 'ISTA OFPPT - SYSTÈME DIGITAL DE POINTAGE',
+                    doc_code: 'CODE DU DOCUMENT',
+                    status_label: 'ÉTAT DU RAPPORT',
+                    status_validated: 'VALIDÉ',
+                    status_waiting: 'EN ATTENTE',
+                    group_label: 'GROUPE CONCERNÉ',
+                    details_title: 'DÉTAILS DE LA SÉANCE',
+                    details_sub: 'INFORMATIONS ADMINISTRATIVE DU RAPPORT',
+                    module_label: 'MODULE / UNITÉ',
+                    formateur_label: 'FORMATEUR RÉFÉRENT',
+                    date_label: 'DATE DE LA SÉANCE',
+                    schedule_label: 'HORAIRE & LOCALISATION',
+                    list_label: 'LISTE D\'APPEL NUMÉRIQUE',
+                    present_count: '{{present}} / {{total}} PRÉSENTS',
+                    signature_label: 'AUTHENTIFICATION FORMATEUR'
                 }
             },
             common: {
@@ -587,7 +613,14 @@ const resources = {
                 attendance_rate: 'الحضور',
                 present: 'حاضر',
                 absent: 'غائب',
-                generate_global_report: 'إنشاء تقرير عام'
+                late: 'متأخر',
+                period_weekly: 'أسبوعي',
+                period_monthly: 'شهري',
+                ratio: 'نسبة',
+                generate_global_report: 'إنشاء تقرير عام',
+                critical_absences_title: 'تنبيهات الغياب الحرجة',
+                critical_absences_subtitle: 'المتدربون الذين تجاوزوا عتبة التسامح',
+                alerts_active: 'تنبيه(ات) نشطة'
             },
             accounts: {
                 title: 'الحسابات',
@@ -802,10 +835,24 @@ const resources = {
                     select_formateurs: 'اختر المكونين...',
                     create: 'إنشاء المجموعة'
                 },
-                confirm: {
-                    cancel: 'إلغاء',
-                    confirm: 'تأكيد',
-                    critical: 'إجراء حرج'
+                report: {
+                    title: 'تقرير',
+                    subtitle: 'الحضور',
+                    official: 'مكتب التكوين المهني - نظام التنقيط الرقمي',
+                    doc_code: 'رمز الوثيقة',
+                    status_label: 'حالة التقرير',
+                    status_validated: 'تم التصديق',
+                    status_waiting: 'في الانتظار',
+                    group_label: 'المجموعة المعنية',
+                    details_title: 'تفاصيل الحصة',
+                    details_sub: 'المعلومات الإدارية للتقرير',
+                    module_label: 'الوحدة / المجزوءة',
+                    formateur_label: 'المكون المرجعي',
+                    date_label: 'تاريخ الحصة',
+                    schedule_label: 'الوقت والموقع',
+                    list_label: 'قائمة النداء الرقمية',
+                    present_count: '{{present}} / {{total}} حاضرون',
+                    signature_label: 'توقيع المكون'
                 }
             },
             common: {

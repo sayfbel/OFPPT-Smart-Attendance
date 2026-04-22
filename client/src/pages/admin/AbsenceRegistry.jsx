@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import {
     ClipboardCheck,
     Search,
@@ -185,7 +186,7 @@ const AbsenceRegistry = () => {
                                                 {item.student_name.split(' ').map(n => n[0]).join('')}
                                             </div>
                                             <div className="flex flex-col">
-                                                <span className="text-sm font-black italic text-[var(--secondary)] uppercase tracking-tight">{item.student_name}</span>
+                                                <Link to={`/admin/student/${item.student_id}`} className="text-sm font-black italic text-[var(--secondary)] uppercase tracking-tight hover:text-[var(--primary)] transition-colors">{item.student_name}</Link>
                                                 <span className="text-[9px] font-bold text-slate-400 tracking-widest uppercase">ID: {item.student_id} / GROUP: {item.class_id}</span>
                                             </div>
                                         </div>
@@ -227,7 +228,7 @@ const AbsenceRegistry = () => {
                                     </td>
                                     <td className={`p-8 ${isRtl ? 'text-left' : 'text-right'}`}>
                                         {item.status !== 'PRESENT' && (
-                                            <div className={`flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity ${isRtl ? 'flex-row-reverse' : ''}`}>
+                                            <div className={`flex items-center justify-end gap-2 transition-opacity ${isRtl ? 'flex-row-reverse' : ''}`}>
                                                 <button 
                                                     onClick={() => handleJustify(item.record_id, item.justified)}
                                                     className={`px-4 py-2 border rounded-xl text-[9px] font-black tracking-widest uppercase transition-all shadow-sm ${item.justified === 'JUSTIFIÉ' 

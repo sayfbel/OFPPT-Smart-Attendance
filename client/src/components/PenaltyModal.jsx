@@ -107,6 +107,22 @@ const PenaltyModal = ({ isOpen, onClose, student, onConfirm, submitting }) => {
                                             </div>
                                         </div>
                                     </div>
+
+                                    <div className="pt-4 space-y-4">
+                                        <h3 className={`text-[9px] font-black tracking-widest text-slate-400 uppercase flex items-center gap-2 ${isRtl ? 'flex-row-reverse' : ''}`}>
+                                            <History className="w-3.5 h-3.5 text-red-500" /> HISTORIQUE DU STAGIAIRE
+                                        </h3>
+                                        <div className="grid grid-cols-2 gap-3">
+                                            <div className="bg-red-50 p-4 rounded-xl border border-red-100 text-center">
+                                                <p className="text-[20px] font-black italic text-red-600 leading-none mb-1">{student.total_absences || '0'}</p>
+                                                <p className="text-[7px] font-black text-red-400 uppercase tracking-widest">Total Absences</p>
+                                            </div>
+                                            <div className="bg-[var(--secondary)] p-4 rounded-xl border border-slate-700 text-center">
+                                                <p className="text-[20px] font-black italic text-[var(--primary)] leading-none mb-1">{student.total_blames || '0'}</p>
+                                                <p className="text-[7px] font-black text-slate-400 uppercase tracking-widest">Sanctions</p>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
 

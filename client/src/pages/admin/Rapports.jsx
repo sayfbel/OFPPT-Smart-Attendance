@@ -43,7 +43,8 @@ const Rapports = () => {
                     ...r,
                     id: r.report_code,
                     db_id: r.id,
-                    formateur: r.formateur_name
+                    formateur: r.formateur_name,
+                    salle: r.salle_name
                 }));
                 setAllReports(mappedReports);
                 setLoading(false);

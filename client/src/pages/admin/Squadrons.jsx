@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Search, Plus, BookOpen, Layers, Save, X, Filter, ChevronDown, Edit3, Trash2, CheckSquare, Square, Users, Hash, AlertCircle } from 'lucide-react';
 import axios from 'axios';
 import GroupModal from '../../components/GroupModal';
@@ -8,6 +9,7 @@ import { useTranslation } from 'react-i18next';
 
 
 const Squadrons = () => {
+    const navigate = useNavigate();
     const { t, i18n } = useTranslation();
     const isRtl = i18n.language === 'ar';
     const { addNotification } = useNotification();
@@ -296,7 +298,15 @@ const Squadrons = () => {
                                     </button>
                                 </div>
 
-                                <div className="space-y-6 flex-1 text-left overflow-y-auto ista-scrollbar pr-2">
+                                <div className="space-y-6 flex-1 text-left overflow-y-auto ista-scrollbar pr-2 pt-2">
+                                    <button 
+                                        onClick={() => navigate(`/admin/users?group=${grp.id}`)}
+                                        className="w-full py-4 bg-white border border-amber-200 text-amber-600 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-amber-50 hover:border-amber-400 transition-all flex items-center justify-center gap-3 shadow-sm mb-4"
+                                    >
+                                        <Users className="w-4 h-4" />
+                                        VOIR LES STAGIAIRES ({grp.students || 0})
+                                    </button>
+
                                     <div className="space-y-4">
                                         {/* Filière Selector */}
                                         <div className="relative">

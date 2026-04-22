@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import {
     CheckCircle2,
@@ -370,7 +370,7 @@ const FormateurDashboard = () => {
                                                             {student.name.split(' ').map(n => n[0]).join('')}
                                                         </div>
                                                         <div className={`flex flex-col ${isRtl ? 'text-right' : ''}`}>
-                                                            <span className={`text-xs font-bold tracking-tight text-[var(--secondary)] uppercase ${student.status === 'PRESENT' ? '' : 'opacity-40'}`}>{student.name}</span>
+                                                            <Link to={`/admin/student/${student.id}`} className={`text-xs font-bold tracking-tight text-[var(--secondary)] hover:text-[var(--primary)] transition-colors uppercase ${student.status === 'PRESENT' ? '' : 'opacity-40'}`}>{student.name}</Link>
                                                             <span className="text-[9px] text-[var(--text-muted)] font-mono">#{student.id}</span>
                                                         </div>
                                                     </div>
@@ -384,7 +384,7 @@ const FormateurDashboard = () => {
                                                     </span>
                                                 </td>
                                                 <td className={`p-6 ${isRtl ? 'text-left' : 'text-right'}`}>
-                                                    <div className={`flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity ${isRtl ? 'justify-start' : 'justify-end'}`}>
+                                                    <div className={`flex gap-2 transition-opacity ${isRtl ? 'justify-start' : 'justify-end'}`}>
                                                         <button
                                                             onClick={() => handleStatusChange(student.id, 'PRESENT')}
                                                             className={`p-2 rounded-lg border transition-all ${student.status === 'PRESENT' ? 'bg-[var(--primary)] border-[var(--primary)] text-white' : 'border-[var(--border)] text-[var(--text-muted)] hover:border-[var(--primary)] hover:text-[var(--primary)]'}`}

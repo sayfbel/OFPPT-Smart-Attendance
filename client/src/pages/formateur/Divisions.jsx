@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { Search, UserCheck, BookOpen, Layers, Filter, ChevronDown, User, Mail, Activity } from 'lucide-react';
 import axios from 'axios';
 import { useNotification } from '../../context/NotificationContext';
@@ -159,7 +160,7 @@ const Divisions = () => {
                                                     {student.name.split(' ').map(n => n[0]).join('')}
                                                 </div>
                                                 <div className={`flex flex-col ${isRtl ? 'text-right' : ''}`}>
-                                                    <span className="text-sm font-black italic text-[var(--secondary)] uppercase tracking-tight group-hover:text-[var(--primary)] transition-colors">{student.name}</span>
+                                                    <Link to={`/admin/student/${student.id}`} className="text-sm font-black italic text-[var(--secondary)] uppercase tracking-tight hover:text-[var(--primary)] transition-colors">{student.name}</Link>
                                                     <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1">{t('common.matricule')}: {student.id}</span>
                                                 </div>
                                             </div>

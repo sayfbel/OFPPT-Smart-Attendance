@@ -15,17 +15,85 @@ exports.getFormateurs = async (req, res) => {
 
 exports.getDashboardSummary = async (req, res) => {
     try {
+        const periodParam = req.query.period === 'monthly' ? 30 : 7;
+
         const [[{ total_students }]] = await pool.query("SELECT COUNT(*) as total_students FROM stagiaires");
         const [[{ total_formateurs }]] = await pool.query("SELECT COUNT(*) as total_formateurs FROM formateurs");
         const [[{ total_groups }]] = await pool.query("SELECT COUNT(*) as total_groups FROM groups");
         const [[{ total_reports }]] = await pool.query("SELECT COUNT(*) as total_reports FROM reports");
+
+        // Total Theoretical Attendance Records (Total Expected across all reports)
+        const [[{ total_theoretical }]] = await pool.query(`
+            SELECT SUM(group_counts.cnt) as total_theoretical
+            FROM reports r
+            JOIN (SELECT group_id, COUNT(*) as cnt FROM stagiaires GROUP BY group_id) as group_counts 
+            ON r.group_id = group_counts.group_id
+        `);
+
+        // Total Absences based on Justifier='ABSENCE'
+        const [[{ total_absences }]] = await pool.query("SELECT COUNT(*) as total_absences FROM report_attendance WHERE Justifier = 'ABSENCE'");
+
+        // Attendance Evolution based on period
+        const [evolution] = await pool.query(`
+            SELECT 
+                DATE_FORMAT(r.date, '%Y-%m-%d') as date,
+                SUM(group_counts.cnt) as total_expected,
+                SUM(IFNULL(absences.abs_cnt, 0)) as absent_count
+            FROM reports r
+            JOIN (SELECT group_id, COUNT(*) as cnt FROM stagiaires GROUP BY group_id) as group_counts 
+                ON r.group_id = group_counts.group_id
+            LEFT JOIN (
+                SELECT ra.report_id, COUNT(*) as abs_cnt 
+                FROM report_attendance ra 
+                WHERE ra.Justifier = 'ABSENCE' 
+                GROUP BY ra.report_id
+            ) as absences ON r.id = absences.report_id
+            WHERE r.date >= DATE_SUB(CURDATE(), INTERVAL ? DAY)
+            GROUP BY r.date
+            ORDER BY r.date ASC
+        `, [periodParam]);
+
+        // Generate a continuous sequence for the selected period
+        const processedEvolution = [];
+        for (let i = periodParam - 1; i >= 0; i--) {
+            const d = new Date();
+            d.setDate(d.getDate() - i);
+            
+            // Generate local YYYY-MM-DD string to avoid timezone shifts from toISOString()
+            const year = d.getFullYear();
+            const month = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            const dateStr = `${year}-${month}-${day}`;
+            
+            const dayData = evolution.find(e => e.date === dateStr);
+            
+            // For monthly, show date for weekly show day name
+            const label = periodParam > 7 
+                ? d.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' })
+                : d.toLocaleDateString('fr-FR', { weekday: 'short' }).toUpperCase().replace('.', '');
+            
+            processedEvolution.push({
+                name: label,
+                // If there are zero absences, it is 100% presence (even if no reports).
+                // If there are absences, we calculate based on the expected total.
+                rate: (dayData && dayData.absent_count > 0)
+                    ? Math.round(((dayData.total_expected - dayData.absent_count) / dayData.total_expected) * 100) 
+                    : 100
+            });
+        }
 
         res.json({
             summary: {
                 total_students,
                 total_formateurs,
                 total_groups,
-                total_reports
+                total_reports,
+                global_rate: total_theoretical > 0 ? Math.round(((total_theoretical - total_absences) / total_theoretical) * 100) : 100,
+                evolution: processedEvolution,
+                distribution: [
+                    { status: 'PRESENT', count: (total_theoretical || 0) - (total_absences || 0) },
+                    { status: 'ABSENT', count: total_absences || 0 }
+                ]
             }
         });
     } catch (err) {
@@ -412,7 +480,8 @@ exports.deleteUser = async (req, res) => {
 exports.getReports = async (req, res) => {
     try {
         const [reports] = await pool.query(`
-            SELECT r.*, c.id as group_id, u.name as formateur_name
+            SELECT r.*, c.id as group_id, u.name as formateur_name,
+            (SELECT GROUP_CONCAT(sl.nom SEPARATOR ', ') FROM group_salles gs JOIN salles sl ON gs.salle_id = sl.id WHERE gs.group_id = r.group_id) as salle_name
             FROM reports r
             JOIN groups c ON r.group_id = c.id
             JOIN formateurs u ON r.formateur_id = u.id
@@ -462,7 +531,9 @@ exports.getUsers = async (req, res) => {
                 f.nom as filiere_name,
                 c.annee_scolaire,
                 (SELECT COUNT(*) FROM report_attendance ra WHERE ra.student_id = s.NumInscription AND ra.status = 'ABSENT') as absence_count,
-                (SELECT COUNT(*) FROM report_attendance ra WHERE ra.student_id = s.NumInscription AND ra.status = 'LATE') as late_count
+                (SELECT COUNT(*) FROM report_attendance ra WHERE ra.student_id = s.NumInscription AND ra.status = 'LATE') as late_count,
+                (SELECT ra.status FROM report_attendance ra JOIN reports r ON ra.report_id = r.id WHERE ra.student_id = s.NumInscription ORDER BY r.date DESC, r.created_at DESC LIMIT 1) as last_status,
+                (SELECT ra.Justifier FROM report_attendance ra JOIN reports r ON ra.report_id = r.id WHERE ra.student_id = s.NumInscription ORDER BY r.date DESC, r.created_at DESC LIMIT 1) as last_justifier
             FROM stagiaires s
             LEFT JOIN filiere f ON s.filiereId = f.id
             LEFT JOIN groups c ON s.group_id = c.id
@@ -487,7 +558,9 @@ exports.getUsers = async (req, res) => {
                 status: s.Active ? 'ACTIVE' : 'INACTIVE', 
                 lastLogin: 'No Login',
                 absences: s.absence_count,
-                lates: s.late_count
+                lates: s.late_count,
+                last_status: s.last_status,
+                last_justifier: s.last_justifier
             }))
         ];
 
@@ -507,11 +580,13 @@ exports.getAbsenceRegistry = async (req, res) => {
                 ra.Justifier as justified,
                 s.NumInscription as student_id,
                 s.name as student_name,
-                s.group_id,
+                s.group_id as class_id,
                 r.date as session_date,
                 r.subject,
                 r.heure as session_time,
-                f.name as formateur_name
+                f.name as formateur_name,
+                (SELECT COUNT(*) FROM report_attendance WHERE student_id = s.NumInscription AND status = 'ABSENT' AND Justifier != 'JUSTIFIÉ') as total_absences,
+                (SELECT COUNT(*) FROM suivieDisipline WHERE student_id = s.NumInscription) as total_blames
             FROM report_attendance ra
             JOIN stagiaires s ON ra.student_id = s.NumInscription
             JOIN reports r ON ra.report_id = r.id
@@ -711,5 +786,49 @@ exports.deleteSalle = async (req, res) => {
         res.json({ message: 'Salle deleted' });
     } catch (err) {
         res.status(500).json({ message: 'Server Error deleting salle' });
+    }
+};
+
+exports.getStudentDetails = async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        // 1. Basic Info
+        const [student] = await pool.query(`
+            SELECT s.*, f.nom as filiere_name
+            FROM stagiaires s
+            LEFT JOIN filiere f ON s.filiereId = f.id
+            WHERE s.NumInscription = ?
+        `, [id]);
+
+        if (student.length === 0) {
+            return res.status(404).json({ message: 'Stagiaire non trouvé' });
+        }
+
+        // 2. Absence History
+        const [absences] = await pool.query(`
+            SELECT ra.*, r.date, r.subject, r.heure, r.formateur_id
+            FROM report_attendance ra
+            JOIN reports r ON ra.report_id = r.id
+            WHERE ra.student_id = ? AND ra.status = 'ABSENT'
+            ORDER BY r.date DESC
+        `, [id]);
+
+        // 3. Discipline History
+        const [discipline] = await pool.query(`
+            SELECT *
+            FROM suivieDisipline
+            WHERE student_id = ?
+            ORDER BY date DESC
+        `, [id]);
+
+        res.json({
+            student: student[0],
+            absences,
+            discipline
+        });
+    } catch (error) {
+        console.error('Error fetching student details:', error);
+        res.status(500).json({ message: 'Internal Server Error' });
     }
 };

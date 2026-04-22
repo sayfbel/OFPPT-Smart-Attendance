@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import {
     Users,
     Search,
@@ -14,7 +15,9 @@ import {
     Key,
     Activity,
     AlertCircle,
-    Info
+    Info,
+    RefreshCw,
+    FileUp
 } from 'lucide-react';
 import axios from 'axios';
 import { useNotification } from '../../context/NotificationContext';
@@ -23,13 +26,22 @@ import ConfirmationModal from '../../components/ConfirmationModal';
 import { useTranslation } from 'react-i18next';
 
 const Accounts = () => {
+    const location = useLocation();
+    const queryParams = new URLSearchParams(location.search);
+    const groupFilter = queryParams.get('group');
+    
     const { t, i18n } = useTranslation();
     const { addNotification } = useNotification();
     const [users, setUsers] = useState([]);
     const [availableGroups, setAvailableGroups] = useState([]);
     const [availableFilieres, setAvailableFilieres] = useState([]);
 
-    const [selectedGroup, setSelectedGroup] = useState('all');
+    const [selectedGroup, setSelectedGroup] = useState(groupFilter || 'all');
+    const [selectedFiliere, setSelectedFiliere] = useState('all');
+    const [showFiliereDropdown, setShowFiliereDropdown] = useState(false);
+    useEffect(() => {
+        if (groupFilter) setSelectedGroup(groupFilter);
+    }, [groupFilter]);
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -63,7 +75,8 @@ const Accounts = () => {
                 axios.get('/api/admin/filieres', { headers: { Authorization: `Bearer ${token}` } })
             ]);
             setUsers(usersRes.data.users || []);
-            setAvailableGroups(groupsRes.data.groups || []);
+            const groups = groupsRes.data.groups || [];
+            setAvailableGroups(groups);
             setAvailableFilieres(filieresRes.data.filieres || []);
         } catch (err) {
             console.error('Error fetching data:', err);
@@ -71,6 +84,14 @@ const Accounts = () => {
             setLoading(false);
         }
     };
+
+    useEffect(() => {
+        if (!selectedGroup || selectedGroup === 'all') {
+            if (!groupFilter && availableGroups.length > 0) {
+                setSelectedGroup(availableGroups[0].id);
+            }
+        }
+    }, [availableGroups, groupFilter, selectedGroup]);
 
     useEffect(() => {
         fetchData();
@@ -151,6 +172,8 @@ const Accounts = () => {
         f.email.toLowerCase().includes(searchFormateur.toLowerCase())
     );
 
+    const filteredGroups = availableGroups.filter(grp => selectedFiliere === 'all' || grp.filiereId === selectedFiliere);
+
     return (
         <div className={`space-y-12 fade-up max-w-[1600px] mx-auto ${isRtl ? 'direction-rtl' : ''}`}>
             {/* Header section */}
@@ -165,12 +188,47 @@ const Accounts = () => {
                 </div>
 
                 <div className="flex items-center gap-4">
-                    <button className="flex items-center gap-3 px-6 py-4 bg-white border border-slate-200 rounded-2xl hover:border-slate-300 transition-all text-[10px] font-black tracking-widest text-[var(--secondary)] uppercase">
-                        <svg className="w-4 h-4 text-[var(--primary)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
-                        </svg>
-                        {t('accounts.all_streams')}
-                        <ChevronDown className="w-4 h-4 text-slate-400 ml-2" />
+                    <div className="relative">
+                        <button 
+                            onClick={() => setShowFiliereDropdown(!showFiliereDropdown)}
+                            className="flex items-center gap-3 px-6 py-4 bg-white border border-slate-200 rounded-2xl hover:border-slate-300 transition-all text-[10px] font-black tracking-widest text-[var(--secondary)] uppercase"
+                        >
+                            <svg className="w-4 h-4 text-[var(--primary)] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                            </svg>
+                            <span className="truncate max-w-[200px]">
+                                {selectedFiliere === 'all' ? t('accounts.all_streams') : availableFilieres.find(f => f.id === selectedFiliere)?.nom || t('accounts.all_streams')}
+                            </span>
+                            <ChevronDown className={`w-4 h-4 text-slate-400 ml-2 transition-transform ${showFiliereDropdown ? 'rotate-180' : ''}`} />
+                        </button>
+                        
+                        {showFiliereDropdown && (
+                            <div className="absolute top-full mt-2 right-0 w-[280px] max-h-[300px] overflow-y-auto bg-white border border-slate-100 rounded-2xl shadow-xl z-50 overflow-hidden ista-scrollbar">
+                                <button 
+                                    onClick={() => { setSelectedFiliere('all'); setShowFiliereDropdown(false); setSelectedGroup('all'); }}
+                                    className={`w-full text-left px-6 py-4 text-[10px] font-black uppercase tracking-widest transition-colors ${selectedFiliere === 'all' ? 'bg-[var(--primary)]/5 text-[var(--primary)]' : 'text-slate-400 hover:bg-slate-50'}`}
+                                >
+                                    {t('accounts.all_streams')}
+                                </button>
+                                {availableFilieres.map(f => (
+                                    <button 
+                                        key={f.id}
+                                        title={f.nom}
+                                        onClick={() => { setSelectedFiliere(f.id); setShowFiliereDropdown(false); setSelectedGroup('all'); }}
+                                        className={`w-full text-left px-6 py-4 text-[10px] font-black uppercase tracking-widest transition-colors truncate ${selectedFiliere === f.id ? 'bg-[var(--primary)]/5 text-[var(--primary)]' : 'text-[var(--secondary)] hover:bg-slate-50'}`}
+                                    >
+                                        {f.nom}
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+
+                    <button
+                        className="flex items-center justify-center gap-3 px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl shadow-xl shadow-blue-600/20 transition-all group"
+                    >
+                        <FileUp className="w-4 h-4 group-hover:-translate-y-1 transition-transform" />
+                        <span className="text-[10px] uppercase font-black tracking-widest">{t('accounts.import_excel') || 'Importer Excel'}</span>
                     </button>
 
                     <button
@@ -185,8 +243,8 @@ const Accounts = () => {
 
             {/* Class Cards */}
             <div className={`flex gap-6 overflow-x-auto pb-6 ista-scrollbar ${isRtl ? 'flex-row-reverse' : ''}`}>
-                {availableGroups.length > 0 ? (
-                    availableGroups.map((grp) => (
+                {filteredGroups.length > 0 ? (
+                    filteredGroups.map((grp) => (
                         <div
                             key={grp.id}
                             onClick={() => setSelectedGroup(grp.id)}
@@ -264,9 +322,9 @@ const Accounts = () => {
                                                 {user.id}
                                             </td>
                                             <td className="py-6">
-                                                <span className="text-sm font-black italic text-[var(--secondary)] uppercase tracking-tight truncate-text max-w-[150px]">
+                                                <Link to={`/admin/student/${user.id}`} className="text-sm font-black italic text-[var(--secondary)] uppercase tracking-tight truncate-text max-w-[150px] hover:text-[var(--primary)] transition-colors">
                                                     {user.name}
-                                                </span>
+                                                </Link>
                                             </td>
                                             <td className="py-6 text-center">
                                                 <span className="text-[10px] font-black text-[var(--primary)] uppercase tracking-widest truncate-text max-w-[100px] mx-auto">
@@ -279,7 +337,7 @@ const Accounts = () => {
                                                 </span>
                                             </td>
                                             <td className="py-6 text-right">
-                                                <div className="flex justify-end gap-2 opacity-50 group-hover:opacity-100 transition-opacity">
+                                                <div className="flex justify-end gap-2 transition-opacity">
                                                     <button
                                                         onClick={() => {
                                                             const userData = { ...user };
@@ -383,7 +441,7 @@ const Accounts = () => {
                                                 </div>
                                             </td>
                                             <td className="py-6 text-right">
-                                                <div className="flex justify-end gap-2 opacity-50 group-hover:opacity-100 transition-opacity">
+                                                <div className="flex justify-end gap-2 transition-opacity">
                                                     <button
                                                         onClick={() => {
                                                             const userData = { ...u };
