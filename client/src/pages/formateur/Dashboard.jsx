@@ -18,7 +18,6 @@ import {
 import axios from 'axios';
 import { useNotification } from '../../context/NotificationContext';
 import { useTranslation } from 'react-i18next';
-import GroupDossierModal from '../../components/GroupDossierModal';
 
 const FormateurDashboard = () => {
     const { t, i18n } = useTranslation();
@@ -230,7 +229,7 @@ const FormateurDashboard = () => {
 
     return (
         <div className={`relative ${isRtl ? 'text-right' : ''}`}>
-            <div className={`space-y-10 fade-up ${isConfirming ? 'blur-sm scale-[0.99] pointer-events-none' : ''} transition-all duration-500`}>
+            <div className={`space-y-10 fade-up transition-all duration-500`}>
                 {/* Header Section */}
                 <div className={`flex flex-col lg:flex-row lg:items-end justify-between gap-8 border-b border-[var(--border)] pb-10 ${isRtl ? 'lg:flex-row-reverse' : ''}`}>
                     <div className="space-y-4">
@@ -244,7 +243,7 @@ const FormateurDashboard = () => {
                             </div>
                         </div>
                         <div className="flex flex-col">
-                            <h1 className="text-4xl md:text-5xl lg:text-7xl font-black tracking-tight text-[var(--secondary)] uppercase italic leading-[1.1]">
+                            <h1 className="text-3xl md:text-4xl lg:text-5xl font-black tracking-tight text-[var(--secondary)] uppercase italic leading-[1.1]">
                                 {activeSession ? t('formateur.session', { group: activeSession.group }) : t('formateur.welcome', { name: user?.name })}
                             </h1>
                             <div className={`flex items-center gap-3 mt-4 ${isRtl ? 'flex-row-reverse' : ''}`}>
@@ -288,7 +287,7 @@ const FormateurDashboard = () => {
                         {activeSession && (
                             <div className={`flex gap-3 w-full sm:w-auto ${isRtl ? 'flex-row-reverse' : ''}`}>
                                 <button
-                                    onClick={() => setIsConfirming(true)}
+                                    onClick={() => navigate('/formateur/dossier', { state: { activeSession, students, stats } })}
                                     className="flex-1 sm:flex-none btn-ista btn-ista-outline px-6 py-4 flex items-center justify-center gap-2"
                                 >
                                     <ClipboardCheck className="w-4 h-4" />
@@ -326,7 +325,7 @@ const FormateurDashboard = () => {
                     <div className="ista-card p-8 bg-white text-center shadow-sm border-b-4 border-b-amber-500">
                         <Watch className="w-6 h-6 text-amber-500 mx-auto mb-3" />
                         <h2 className="text-4xl font-black text-amber-500">{stats.late?.toString().padStart(2, '0') || '00'}</h2>
-                        <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest mt-1">RETARD</p>
+                        <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest mt-1">{t('dashboard.late')}</p>
                     </div>
                 </div>
 
@@ -355,7 +354,7 @@ const FormateurDashboard = () => {
                                 <thead>
                                     <tr className="bg-[var(--surface-hover)] text-[var(--secondary)] text-[10px] font-black uppercase tracking-widest">
                                         <th className="p-6">{t('accounts.student_name')}</th>
-                                        <th className="p-6">Email / ID</th>
+                                        <th className="p-6">{t('common.email_id')}</th>
                                         <th className="p-6">{t('divisions.state')}</th>
                                         <th className={`p-6 ${isRtl ? 'text-left' : 'text-right'}`}>{t('formateur.manual_actions')}</th>
                                     </tr>
@@ -380,7 +379,7 @@ const FormateurDashboard = () => {
                                                 </td>
                                                 <td className="p-6">
                                                     <span className={`badge ${student.status === 'PRESENT' ? 'badge-present' : student.status === 'LATE' ? 'bg-amber-50 text-amber-500 border-amber-100' : 'badge-absent'}`}>
-                                                        {student.status === 'PRESENT' ? t('dashboard.present') : student.status === 'LATE' ? 'RETARD' : t('dashboard.absent')}
+                                                        {student.status === 'PRESENT' ? t('dashboard.present') : student.status === 'LATE' ? t('dashboard.late') : t('dashboard.absent')}
                                                     </span>
                                                 </td>
                                                 <td className={`p-6 ${isRtl ? 'text-left' : 'text-right'}`}>
@@ -432,16 +431,6 @@ const FormateurDashboard = () => {
                 </div>
             </div>
 
-            {/* Group Dossier Modal */}
-            <GroupDossierModal
-                isOpen={isConfirming}
-                onClose={() => setIsConfirming(false)}
-                activeSession={activeSession}
-                students={students}
-                stats={stats}
-                onConfirm={handleSubmitReport}
-                submitting={submitting}
-            />
             <style>{`
                 .ista-scrollbar::-webkit-scrollbar { width: 4px; height: 4px; }
                 .ista-scrollbar::-webkit-scrollbar-track { background: transparent; }

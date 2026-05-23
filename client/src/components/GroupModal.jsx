@@ -149,7 +149,7 @@ const GroupModal = ({ isOpen, onClose, newGroup, setNewGroup, handleAddGroup, fo
                 <form onSubmit={handleFormSubmit} className="p-8 space-y-8">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="space-y-2">
-                            <label className="text-[10px] font-black tracking-widest text-[var(--text-muted)] uppercase">CODE DU GROUPE</label>
+                            <label className="text-[10px] font-black tracking-widest text-[var(--text-muted)] uppercase">{t('modals.group.group_code')}</label>
                             <input
                                 type="text"
                                 required
@@ -161,7 +161,7 @@ const GroupModal = ({ isOpen, onClose, newGroup, setNewGroup, handleAddGroup, fo
                         </div>
 
                         <div className="space-y-2 relative">
-                            <label className="text-[10px] font-black tracking-widest text-[var(--text-muted)] uppercase">FILIÈRE</label>
+                            <label className="text-[10px] font-black tracking-widest text-[var(--text-muted)] uppercase">{t('modals.group.filiere')}</label>
                             {!isFiliereAutre ? (
                                 <div className="space-y-2">
                                     <div
@@ -171,7 +171,7 @@ const GroupModal = ({ isOpen, onClose, newGroup, setNewGroup, handleAddGroup, fo
                                         <div className="flex items-center gap-3 flex-1 min-w-0">
                                             <BookOpen className="w-4 h-4 text-[var(--primary)] flex-shrink-0" />
                                             <span className="text-sm font-bold text-[var(--secondary)] uppercase tracking-tight truncate-text flex-1">
-                                                {selectedFiliereNom || 'SÉLECTIONNER...'}
+                                                {selectedFiliereNom || t('modals.group.select')}
                                             </span>
                                         </div>
                                         <ChevronDown className={`w-5 h-5 text-[var(--primary)] transition-transform ${isFiliereDropdownOpen ? 'rotate-180' : ''}`} />
@@ -218,7 +218,7 @@ const GroupModal = ({ isOpen, onClose, newGroup, setNewGroup, handleAddGroup, fo
                                                     setIsFiliereDropdownOpen(false);
                                                 }}
                                             >
-                                                <span className="text-xs font-black text-[var(--primary)] uppercase tracking-widest">AUTRE (PERSONNALISÉ)</span>
+                                                <span className="text-xs font-black text-[var(--primary)] uppercase tracking-widest">{t('modals.group.other_custom')}</span>
                                             </div>
                                         </div>
                                     )}
@@ -249,7 +249,7 @@ const GroupModal = ({ isOpen, onClose, newGroup, setNewGroup, handleAddGroup, fo
                     <div className="space-y-6">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div className="space-y-2 relative">
-                                <label className="text-[10px] font-black tracking-widest text-[var(--text-muted)] uppercase">ANNÉE SCOLAIRE</label>
+                                <label className="text-[10px] font-black tracking-widest text-[var(--text-muted)] uppercase">{t('modals.group.school_year')}</label>
                                 <div
                                     onClick={() => setIsAnneeDropdownOpen(!isAnneeDropdownOpen)}
                                     className="w-full bg-slate-50 border border-[var(--border)] rounded-xl p-4 flex justify-between items-center cursor-pointer hover:border-[var(--primary)] transition-all"
@@ -257,7 +257,7 @@ const GroupModal = ({ isOpen, onClose, newGroup, setNewGroup, handleAddGroup, fo
                                     <div className="flex items-center gap-3">
                                         <BookOpen className="w-4 h-4 text-[var(--primary)]" />
                                         <span className="text-sm font-bold text-[var(--secondary)] uppercase tracking-tight">
-                                            {newGroup.année_scolaire || 'SÉLECTIONNER...'}
+                                            {newGroup.année_scolaire || t('modals.group.select')}
                                         </span>
                                     </div>
                                     <ChevronDown className={`w-5 h-5 text-[var(--primary)] transition-transform ${isAnneeDropdownOpen ? 'rotate-180' : ''}`} />
@@ -284,7 +284,7 @@ const GroupModal = ({ isOpen, onClose, newGroup, setNewGroup, handleAddGroup, fo
                                 )}
                             </div>
                             <div className="space-y-2 relative">
-                                <label className="text-[10px] font-black tracking-widest text-[var(--text-muted)] uppercase">SALLE D'ASSIGNATION</label>
+                                <label className="text-[10px] font-black tracking-widest text-[var(--text-muted)] uppercase">{t('modals.group.room_assignment')}</label>
                                 <div
                                     onClick={() => setIsSalleDropdownOpen(!isSalleDropdownOpen)}
                                     className="w-full bg-slate-50 border border-[var(--border)] rounded-xl p-4 flex justify-between items-center cursor-pointer hover:border-[var(--primary)] transition-all"
@@ -294,7 +294,7 @@ const GroupModal = ({ isOpen, onClose, newGroup, setNewGroup, handleAddGroup, fo
                                         <span className={`text-sm font-bold uppercase truncate-text flex-1 ${newGroup.salleIds?.length > 0 ? 'text-[var(--secondary)]' : 'text-slate-400'}`}>
                                             {newGroup.salleIds?.length > 0 
                                                 ? availableSalles.filter(s => newGroup.salleIds.includes(s.id)).map(s => s.nom).join(', ') 
-                                                : 'SÉLECTIONNER...'}
+                                                : t('modals.group.select')}
                                         </span>
                                     </div>
                                     <ChevronDown className={`w-5 h-5 text-[var(--primary)] transition-transform ${isSalleDropdownOpen ? 'rotate-180' : ''}`} />
@@ -308,7 +308,7 @@ const GroupModal = ({ isOpen, onClose, newGroup, setNewGroup, handleAddGroup, fo
                                                 setNewGroup({ ...newGroup, salleIds: [] });
                                             }}
                                         >
-                                            <span className="text-xs font-bold uppercase text-slate-400">DÉSELECTIONNER TOUT</span>
+                                            <span className="text-xs font-bold uppercase text-slate-400">{t('modals.group.deselect_all')}</span>
                                         </div>
                                         {availableSalles.map((s) => {
                                                 const isSelected = newGroup.salleIds?.includes(s.id);
@@ -336,7 +336,7 @@ const GroupModal = ({ isOpen, onClose, newGroup, setNewGroup, handleAddGroup, fo
                         </div>
 
                         <div className="space-y-2 relative">
-                            <label className="text-[10px] font-black tracking-widest text-[var(--text-muted)] uppercase">FORMATEURS / RESPONSABLES</label>
+                            <label className="text-[10px] font-black tracking-widest text-[var(--text-muted)] uppercase">{t('modals.group.leads')}</label>
                             <div
                                 onClick={() => setIsFormateurDropdownOpen(!isFormateurDropdownOpen)}
                                 className="w-full bg-slate-50 border border-[var(--border)] rounded-xl p-4 flex justify-between items-center cursor-pointer hover:border-[var(--primary)] transition-all"
@@ -344,7 +344,7 @@ const GroupModal = ({ isOpen, onClose, newGroup, setNewGroup, handleAddGroup, fo
                                 <div className="flex items-center gap-3">
                                     <UserCheck className="w-4 h-4 text-[var(--primary)]" />
                                     <span className={`text-sm font-bold uppercase truncate-text flex-1 ${newGroup.lead?.length > 0 ? 'text-[var(--secondary)]' : 'text-slate-400'}`}>
-                                        {newGroup.lead?.length > 0 ? newGroup.lead.join(', ') : 'SÉLECTIONNER...'}
+                                        {newGroup.lead?.length > 0 ? newGroup.lead.join(', ') : t('modals.group.select')}
                                     </span>
                                 </div>
                                 <ChevronDown className={`w-5 h-5 text-[var(--primary)] transition-transform ${isFormateurDropdownOpen ? 'rotate-180' : ''}`} />
@@ -385,7 +385,7 @@ const GroupModal = ({ isOpen, onClose, newGroup, setNewGroup, handleAddGroup, fo
                             className="w-full btn-ista py-5 rounded-xl font-black uppercase tracking-widest shadow-xl flex items-center justify-center gap-3 hover:scale-[1.01] active:scale-[0.99] transition-all"
                         >
                             <UserCheck className="w-5 h-5" />
-                            Créer le Groupe
+                            {t('modals.group.create')}
                         </button>
                     </div>
                 </form>

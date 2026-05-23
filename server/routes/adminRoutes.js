@@ -9,8 +9,11 @@ const {
     createFiliere, deleteFiliere, updateFiliere,
     getSalles, createSalle, updateSalle, deleteSalle,
     getAbsenceRegistry, justifyAbsence, addDisciplinePenalty, getDisciplineHistory,
-    createUser, updateUser, deleteUser, getStudentDetails
+    createUser, updateUser, deleteUser, getStudentDetails, importExcel
 } = require('../controllers/adminController');
+
+const multer = require('multer');
+const upload = multer({ storage: multer.memoryStorage() });
 
 // Admin only routes
 router.get('/formateurs', protect, authorize('admin'), getFormateurs);
@@ -34,6 +37,7 @@ router.delete('/salles/:id', protect, authorize('admin'), deleteSalle);
 router.get('/users', protect, authorize('admin'), getUsers);
 router.get('/users/by-group/:groupId', protect, authorize('admin'), getUsersByGroup);
 router.post('/users', protect, authorize('admin'), createUser);
+router.post('/users/import', protect, authorize('admin'), upload.single('file'), importExcel);
 router.put('/users/:id', protect, authorize('admin'), updateUser);
 router.delete('/users/:id', protect, authorize('admin'), deleteUser);
 

@@ -186,12 +186,15 @@ const DashboardLayout = ({ children }) => {
                     fixed top-0 h-screen transition-all duration-300 z-50 bg-white dark:bg-[var(--surface)] border-[var(--border)]
                     flex flex-col
                     ${isRtl ? 'right-0 border-l' : 'left-0 border-r'}
-                    ${isMobileMenuOpen ? 'w-64 translate-x-0 shadow-2xl' : `w-0 ${isRtl ? 'translate-x-full' : '-translate-x-full'} lg:translate-x-0 lg:w-20 xl:w-64`}
+                    ${isMobileMenuOpen ? 'w-64 translate-x-0 shadow-2xl' : `w-0 ${isRtl ? 'translate-x-full' : '-translate-x-full'} lg:translate-x-0 lg:w-16 xl:w-60`}
                     overflow-hidden
                 `}>
                 <div className="p-4 xl:p-8 flex flex-col items-center">
                     <div className={`flex items-center justify-between w-full lg:justify-center mb-8 ${isRtl ? 'flex-row-reverse text-right' : ''}`}>
-                        <img src={ofpptLogo} alt="OFPPT" className="h-10 xl:h-16" />
+                        <div className="flex flex-col items-center">
+                            <img src={ofpptLogo} alt="OFPPT" className="h-10 xl:h-12" />
+                            <span className="text-[10px] xl:text-[12px] font-black text-[#00665c] dark:text-[#00a896] mt-1.5 tracking-[0.3em] uppercase leading-none">OFPPT</span>
+                        </div>
                         <button
                             onClick={() => setIsMobileMenuOpen(false)}
                             className="p-2 hover:bg-slate-100 rounded-xl lg:hidden text-slate-400"
@@ -241,8 +244,8 @@ const DashboardLayout = ({ children }) => {
                 </div>
             </aside>
 
-            <main className={`flex-1 min-h-screen relative min-w-0 transition-all duration-300 ${isRtl ? 'lg:mr-20 xl:mr-64' : 'lg:ml-20 xl:ml-64'}`}>
-                <header className={`h-20 flex items-center justify-between px-4 lg:px-10 bg-white/80 dark:bg-[var(--surface)]/80 backdrop-blur-md sticky top-0 z-40 border-b border-[var(--border)] transition-all duration-300 ${isRtl ? 'flex-row-reverse' : ''}`}>
+            <main className={`flex-1 min-h-screen relative min-w-0 transition-all duration-300 ${isRtl ? 'lg:mr-16 xl:mr-60' : 'lg:ml-16 xl:ml-60'}`}>
+                <header className={`h-16 flex items-center justify-between px-4 lg:px-8 bg-white/80 dark:bg-[var(--surface)]/80 backdrop-blur-md sticky top-0 z-40 border-b border-[var(--border)] transition-all duration-300 ${isRtl ? 'flex-row-reverse' : ''}`}>
                     <div className={`flex items-center gap-3 ${isRtl ? 'flex-row-reverse' : ''}`}>
                         <button
                             onClick={() => setIsMobileMenuOpen(true)}
@@ -251,15 +254,15 @@ const DashboardLayout = ({ children }) => {
                             <Menu className="w-6 h-6" />
                         </button>
 
-                            <Link to={user?.role === 'admin' ? '/admin/profile' : '/formateur/profile'} className={`flex items-center gap-3 hover:opacity-80 transition-opacity ${isRtl ? 'flex-row-reverse text-right' : ''}`}>
-                                <div className="w-8 h-8 lg:w-10 lg:h-10 bg-gradient-to-br from-[var(--primary)] to-[var(--primary-dark)] rounded-xl flex items-center justify-center text-white font-bold text-xs lg:text-sm shadow-md">
-                                    {user?.name?.charAt(0)}
-                                </div>
-                                <div className="hidden sm:block">
-                                    <h3 className="text-[10px] lg:text-[11px] font-black tracking-widest text-[var(--secondary)] uppercase leading-none mb-1">{user?.name}</h3>
-                                    <p className="text-[8px] lg:text-[9px] text-[var(--primary)] uppercase tracking-[0.2em] font-black opacity-70">{user?.role === 'admin' ? t('header.admin_access') : t('header.formateur_access')}</p>
-                                </div>
-                            </Link>
+                        <Link to={user?.role === 'admin' ? '/admin/profile' : '/formateur/profile'} className={`flex items-center gap-3 hover:opacity-80 transition-opacity ${isRtl ? 'flex-row-reverse text-right' : ''}`}>
+                            <div className="w-8 h-8 lg:w-10 lg:h-10 bg-gradient-to-br from-[var(--primary)] to-[var(--primary-dark)] rounded-xl flex items-center justify-center text-white font-bold text-xs lg:text-sm shadow-md">
+                                {user?.name?.charAt(0)}
+                            </div>
+                            <div className="hidden sm:block">
+                                <h3 className="text-[10px] lg:text-[11px] font-black tracking-widest text-[var(--secondary)] uppercase leading-none mb-1">{user?.name}</h3>
+                                <p className="text-[8px] lg:text-[9px] text-[var(--primary)] uppercase tracking-[0.2em] font-black opacity-70">{user?.role === 'admin' ? t('header.admin_access') : t('header.formateur_access')}</p>
+                            </div>
+                        </Link>
                     </div>
 
                     <div className={`flex items-center gap-2 lg:gap-3 relative ${isRtl ? 'flex-row-reverse' : ''}`}>
@@ -305,7 +308,7 @@ const DashboardLayout = ({ children }) => {
                     </div>
                 </header>
 
-                <div className="p-4 sm:p-6 lg:p-10 page-transition pb-20 sm:pb-10">
+                <div className="p-4 sm:p-6 lg:p-8 page-transition pb-20 sm:pb-10">
                     {children}
                 </div>
             </main>

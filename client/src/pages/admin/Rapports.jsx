@@ -4,6 +4,7 @@ import axios from 'axios';
 import CustomDatePicker from '../../components/CustomDatePicker';
 import RapportModal from '../../components/RapportModal';
 import { useTranslation } from 'react-i18next';
+import { getSignatureDataURI } from '../../utils/signatureHelper';
 
 const Rapports = () => {
     const { t, i18n } = useTranslation();
@@ -12,7 +13,6 @@ const Rapports = () => {
     const [searchQuery, setSearchQuery] = useState('');
     const [availableGroups, setAvailableGroups] = useState([]);
     const [groupFilter, setGroupFilter] = useState('ALL');
-    const [isFilterDropdownOpen, setIsFilterDropdownOpen] = useState(false);
     const [selectedRecords, setSelectedRecords] = useState([]);
     const [selectedRapport, setSelectedRapport] = useState(null);
     const [isExporting, setIsExporting] = useState(false);
@@ -39,13 +39,26 @@ const Rapports = () => {
                 if (!token) return;
                 const config = { headers: { Authorization: `Bearer ${token}` } };
                 const res = await axios.get('/api/admin/reports', config);
-                const mappedReports = (res.data.reports || []).map(r => ({
-                    ...r,
-                    id: r.report_code,
-                    db_id: r.id,
-                    formateur: r.formateur_name,
-                    salle: r.salle_name
-                }));
+                const mappedReports = (res.data.reports || []).map(r => {
+                    let formattedDate = r.date;
+                    if (r.date) {
+                        const d = new Date(r.date);
+                        if (!isNaN(d.getTime())) {
+                            const year = d.getFullYear();
+                            const month = String(d.getMonth() + 1).padStart(2, '0');
+                            const day = String(d.getDate()).padStart(2, '0');
+                            formattedDate = `${year}-${month}-${day}`;
+                        }
+                    }
+                    return {
+                        ...r,
+                        date: formattedDate,
+                        id: r.report_code,
+                        db_id: r.id,
+                        formateur: r.formateur_name,
+                        salle: r.salle_name
+                    };
+                });
                 setAllReports(mappedReports);
                 setLoading(false);
             } catch (error) {
@@ -132,50 +145,94 @@ const Rapports = () => {
                     </p>
                 </div>
                 <div className="flex flex-wrap gap-4 justify-end">
-                    <div className="relative">
-                        <button
-                            onClick={() => setIsFilterDropdownOpen(!isFilterDropdownOpen)}
-                            className="bg-white border border-[var(--border)] px-6 py-4 rounded-xl flex items-center gap-4 hover:border-[var(--primary)] transition-all shadow-sm"
-                        >
-                            <Filter className="w-4 h-4 text-[var(--primary)]" />
-                             <span className="text-[10px] font-black tracking-widest uppercase text-[var(--secondary)]">
-                                {groupFilter === 'ALL' ? t('reports.all_groups') : groupFilter}
-                            </span>
-                            <ChevronDown className={`w-4 h-4 text-[var(--primary)] transition-transform ${isFilterDropdownOpen ? 'rotate-180' : ''}`} />
-                        </button>
-
-                        {isFilterDropdownOpen && (
-                            <div className="absolute top-full left-0 mt-3 bg-white border border-[var(--border)] rounded-2xl z-50 shadow-2xl min-w-[240px] overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-                                <div
-                                    className={`px-6 py-4 cursor-pointer text-[10px] font-black tracking-widest uppercase transition-colors ${groupFilter === 'ALL' ? 'bg-[var(--primary)] text-white' : 'text-[var(--secondary)] hover:bg-slate-50'}`}
-                                    onClick={() => { setGroupFilter('ALL'); setIsFilterDropdownOpen(false); }}
-                                >
-                                    {t('reports.all_groups')}
-                                </div>
-                                {availableGroups.map(grp => (
-                                    <div
-                                        key={grp.id}
-                                        className={`px-6 py-4 cursor-pointer text-[10px] font-black tracking-widest uppercase transition-colors ${groupFilter === grp.id ? 'bg-[var(--primary)] text-white' : 'text-[var(--secondary)] hover:bg-slate-50'}`}
-                                        onClick={() => {
-                                            setGroupFilter(grp.id);
-                                            setIsFilterDropdownOpen(false);
-                                        }}
-                                    >
-                                        {grp.id}
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-                    </div>
                     <button
                         onClick={handleExportData}
                         disabled={isExporting || selectedRecords.length === 0}
                         className={`btn-ista px-8 py-4 flex items-center gap-3 transition-all ${selectedRecords.length === 0 ? 'opacity-50 cursor-not-allowed scale-95 shadow-none' : 'shadow-lg hover:scale-[1.02] active:scale-[0.98]'}`}
                     >
                         <Download className={`w-5 h-5 ${isExporting ? 'animate-bounce' : ''}`} />
-                        <span>{isExporting ? t('reports.exporting') : t('reports.export_button')}</span>
+                        <span>
+                            {isExporting 
+                                ? t('reports.exporting') 
+                                : (selectedRecords.length > 0 
+                                    ? `EXPORTER PDF (${selectedRecords.length})` 
+                                    : t('reports.export_button'))}
+                        </span>
                     </button>
                 </div>
+            </div>
+
+            {/* Class Cards */}
+            <div className={`flex gap-6 overflow-x-auto pb-6 ista-scrollbar ${isRtl ? 'flex-row-reverse' : ''}`}>
+                <div
+                    onClick={() => setGroupFilter('ALL')}
+                    className={`min-w-[320px] p-8 rounded-[24px] cursor-pointer transition-all duration-300 border ${
+                        groupFilter === 'ALL' 
+                            ? 'bg-white border-[var(--primary)] shadow-lg shadow-[var(--primary)]/5' 
+                            : 'bg-white border-slate-100 hover:border-slate-300 opacity-60 hover:opacity-100'
+                    }`}
+                >
+                    <div className={`flex justify-between items-center mb-6 ${isRtl ? 'flex-row-reverse' : ''}`}>
+                        <span className={`text-[12px] font-black uppercase tracking-widest truncate-text flex-1 ${
+                            groupFilter === 'ALL' ? 'text-[var(--primary)]' : 'text-[var(--secondary)]'
+                        } ${isRtl ? 'text-right' : ''}`}>
+                            {t('reports.all_groups')}
+                        </span>
+                        <div className={`w-2.5 h-2.5 rounded-full outline outline-4 outline-offset-2 ${
+                            groupFilter === 'ALL' ? 'bg-[var(--primary)] outline-[var(--primary)]/20' : 'bg-slate-200 outline-slate-100'
+                        }`}></div>
+                    </div>
+                    <h3 className={`text-2xl font-black italic text-[var(--secondary)] uppercase tracking-tight mb-8 truncate-text ${isRtl ? 'text-right' : ''}`}>
+                        {t('reports.all_groups')}
+                    </h3>
+                    <p className={`text-[9px] font-bold text-slate-400 uppercase tracking-widest ${isRtl ? 'text-right' : ''}`}>
+                        {t('reports.title')}: <span className="text-[var(--secondary)] ml-1 truncate-text inline-block align-bottom max-w-[150px]">
+                            {allReports.length} {t('reports.export_button')}s
+                        </span>
+                    </p>
+                </div>
+
+                {availableGroups.length > 0 ? (
+                    availableGroups.map((grp) => {
+                        const grpReportsCount = allReports.filter(r => r.group_id === grp.id).length;
+                        return (
+                            <div
+                                key={grp.id}
+                                onClick={() => setGroupFilter(grp.id)}
+                                className={`min-w-[320px] p-8 rounded-[24px] cursor-pointer transition-all duration-300 border ${
+                                    groupFilter === grp.id 
+                                        ? 'bg-white border-[var(--primary)] shadow-lg shadow-[var(--primary)]/5' 
+                                        : 'bg-white border-slate-100 hover:border-slate-300 opacity-60 hover:opacity-100'
+                                }`}
+                            >
+                                <div className={`flex justify-between items-center mb-6 ${isRtl ? 'flex-row-reverse' : ''}`}>
+                                    <span className={`text-[12px] font-black uppercase tracking-widest truncate-text flex-1 ${
+                                        groupFilter === grp.id ? 'text-[var(--primary)]' : 'text-[var(--secondary)]'
+                                    } ${isRtl ? 'text-right' : ''}`}>
+                                        {(grp.id || '').split('-')[0].trim()}
+                                    </span>
+                                    <div className={`w-2.5 h-2.5 rounded-full outline outline-4 outline-offset-2 ${
+                                        groupFilter === grp.id ? 'bg-[var(--primary)] outline-[var(--primary)]/20' : 'bg-slate-200 outline-slate-100'
+                                    }`}></div>
+                                </div>
+                                <h3 className={`text-2xl font-black italic text-[var(--secondary)] uppercase tracking-tight mb-8 truncate-text ${isRtl ? 'text-right' : ''}`}>
+                                    {grp.id}
+                                </h3>
+                                <p className={`text-[9px] font-bold text-slate-400 uppercase tracking-widest ${isRtl ? 'text-right' : ''}`}>
+                                    {t('accounts.col_filiere')}: <span className="text-[var(--secondary)] ml-1 truncate-text inline-block align-bottom max-w-[150px]">
+                                        {grp.filiere || 'GESTION DES ENTREPRISES'}
+                                    </span>
+                                    <span className="mx-2">•</span>
+                                    <span className="text-[var(--primary)] font-black">{grpReportsCount}</span>
+                                </p>
+                            </div>
+                        );
+                    })
+                ) : (
+                    <div className="min-w-[320px] p-8 rounded-[24px] bg-white border border-slate-100 opacity-60 flex items-center justify-center">
+                        <p className="text-[10px] font-black text-slate-400 tracking-widest uppercase">{t('accounts.no_groups_available')}</p>
+                    </div>
+                )}
             </div>
 
             {/* Filters bar */}
@@ -385,7 +442,7 @@ const Rapports = () => {
                                     <label className="text-[9px] font-black tracking-[0.4em] text-[var(--secondary)] uppercase mb-4">{t('modals.dossier.signature_label')}</label>
                                     <div className="w-64 h-32 bg-slate-50 border border-dashed border-slate-200 rounded-2xl flex items-center justify-center p-4">
                                         {rapport.signature ? (
-                                            <img src={rapport.signature} alt="Signature" style={{ maxHeight: '80%' }} />
+                                            <img src={getSignatureDataURI(rapport.signature)} alt="Signature" style={{ maxHeight: '80%' }} />
                                         ) : (
                                             <span className="font-['Brush_Script_MT',cursive] italic text-3xl text-[var(--secondary)] opacity-30">
                                                 {rapport.formateur}

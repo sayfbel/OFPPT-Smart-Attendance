@@ -152,6 +152,35 @@ const Accounts = () => {
         }
     };
 
+    const handleImportExcel = async (file, groupId, filiereId) => {
+        try {
+            const token = localStorage.getItem('token');
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('groupId', groupId);
+            if (filiereId) {
+                formData.append('filiereId', filiereId);
+            }
+
+            const response = await axios.post('/api/admin/users/import', formData, {
+                headers: { 
+                    Authorization: `Bearer ${token}`,
+                    'Content-Type': 'multipart/form-data'
+                }
+            });
+            await fetchData();
+            setIsModalOpen(false);
+            addNotification(
+                t('accounts.import_success', { success: response.data.summary?.success || 0 }) + 
+                (response.data.summary?.errors > 0 ? ` (${response.data.summary.errors} ${isRtl ? 'أخطاء' : 'erreurs'})` : ''),
+                'success'
+            );
+        } catch (err) {
+            addNotification(err.response?.data?.message || 'Error importing file', 'error');
+            throw err;
+        }
+    };
+
     const filteredUsers = users.filter(user => {
         const matchesSearch = user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
             user.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -223,13 +252,6 @@ const Accounts = () => {
                             </div>
                         )}
                     </div>
-
-                    <button
-                        className="flex items-center justify-center gap-3 px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl shadow-xl shadow-blue-600/20 transition-all group"
-                    >
-                        <FileUp className="w-4 h-4 group-hover:-translate-y-1 transition-transform" />
-                        <span className="text-[10px] uppercase font-black tracking-widest">{t('accounts.import_excel') || 'Importer Excel'}</span>
-                    </button>
 
                     <button
                         onClick={() => { setIsEditing(false); setIsModalOpen(true); }}
@@ -489,10 +511,10 @@ const Accounts = () => {
                 setNewUser={setNewUser}
                 handleAddUser={handleAddUser}
                 handleUpdateUser={handleUpdateUser}
+                handleImportExcel={handleImportExcel}
                 selectedGroup={selectedGroup}
                 availableGroups={availableGroups}
                 availableFilieres={availableFilieres}
-
                 isEditing={isEditing}
             />
 

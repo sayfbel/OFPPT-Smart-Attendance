@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import {
     ClipboardCheck,
     Search,
@@ -19,31 +19,55 @@ import {
 import axios from 'axios';
 import { useNotification } from '../../context/NotificationContext';
 import { useTranslation } from 'react-i18next';
-import PenaltyModal from '../../components/PenaltyModal';
 
 const AbsenceRegistry = () => {
+    const location = useLocation();
+    const queryParams = new URLSearchParams(location.search);
+    const groupFilter = queryParams.get('group');
+
     const { t, i18n } = useTranslation();
     const isRtl = i18n.language === 'ar';
     const { addNotification } = useNotification();
+    const navigate = useNavigate();
     const [registry, setRegistry] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
     const [filterStatus, setFilterStatus] = useState('ALL');
     const [filterJustified, setFilterJustified] = useState('ALL');
-    const [selectedStudent, setSelectedStudent] = useState(null);
-    const [isPenaltyModalOpen, setIsPenaltyModalOpen] = useState(false);
-    const [penaltyData, setPenaltyData] = useState({
-        penalty: 'Blâme 1',
-        reason: ''
-    });
+
+    const [isStatusOpen, setIsStatusOpen] = useState(false);
+    const [isJustifOpen, setIsJustifOpen] = useState(false);
+
+    const [availableGroups, setAvailableGroups] = useState([]);
+    const [availableFilieres, setAvailableFilieres] = useState([]);
+    const [selectedGroup, setSelectedGroup] = useState(groupFilter || 'all');
+    const [selectedDate, setSelectedDate] = useState('');
+
+    const statusOptions = [
+        { value: 'ALL', label: t('absence_registry.filter_status') },
+        { value: 'ABSENT', label: t('absence_registry.filter_absences') },
+        { value: 'LATE', label: t('absence_registry.filter_lates') },
+        { value: 'PRESENT', label: t('absence_registry.filter_presences') }
+    ];
+
+    const justifOptions = [
+        { value: 'ALL', label: t('absence_registry.filter_all_justif') },
+        { value: 'JUSTIFIED', label: t('absence_registry.filter_justified') },
+        { value: 'PENDING', label: t('absence_registry.filter_not_justified') },
+        { value: 'ABSENCE', label: t('absence_registry.filter_pending') }
+    ];
 
     const fetchRegistry = async () => {
         try {
             const token = localStorage.getItem('token');
-            const res = await axios.get('/api/admin/absence-registry', {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            setRegistry(res.data.registry || []);
+            const [registryRes, groupsRes, filieresRes] = await Promise.all([
+                axios.get('/api/admin/absence-registry', { headers: { Authorization: `Bearer ${token}` } }),
+                axios.get('/api/admin/groups', { headers: { Authorization: `Bearer ${token}` } }),
+                axios.get('/api/admin/filieres', { headers: { Authorization: `Bearer ${token}` } })
+            ]);
+            setRegistry(registryRes.data.registry || []);
+            setAvailableGroups(groupsRes.data.groups || []);
+            setAvailableFilieres(filieresRes.data.filieres || []);
         } catch (err) {
             console.error("FETCH REGISTRY ERROR:", err);
             addNotification(t('absence_registry.sync_error'), "error");
@@ -54,6 +78,20 @@ const AbsenceRegistry = () => {
 
     useEffect(() => {
         fetchRegistry();
+    }, []);
+
+    useEffect(() => {
+        if (groupFilter) setSelectedGroup(groupFilter);
+    }, [groupFilter]);
+
+    // Close dropdowns on outside click
+    useEffect(() => {
+        const handleClickOutside = () => {
+            setIsStatusOpen(false);
+            setIsJustifOpen(false);
+        };
+        document.addEventListener('click', handleClickOutside);
+        return () => document.removeEventListener('click', handleClickOutside);
     }, []);
 
     const handleJustify = async (recordId, currentJustification) => {
@@ -70,26 +108,6 @@ const AbsenceRegistry = () => {
         }
     };
 
-    const handleAddPenalty = async (data) => {
-        try {
-            const token = localStorage.getItem('token');
-            setLoading(true);
-            await axios.post('/api/admin/discipline', {
-                stagiaireId: selectedStudent.student_id,
-                penalty: data.penalty,
-                reason: data.reason
-            }, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            setIsPenaltyModalOpen(false);
-            setRegistry(prev => prev.map(r => (r.student_id === selectedStudent.student_id && r.justified === 'ABSENCE') ? { ...r, justified: 'NON JUSTIFIÉ' } : r));
-            addNotification(t('absence_registry.penalty_success'), "success");
-        } catch (err) {
-            addNotification(t('absence_registry.penalty_error'), "error");
-        } finally {
-            setLoading(false);
-        }
-    };
 
     const filteredRegistry = registry.filter(item => {
         const matchesSearch = item.student_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -99,7 +117,21 @@ const AbsenceRegistry = () => {
                                 (filterJustified === 'JUSTIFIED' && item.justified === 'JUSTIFIÉ') || 
                                 (filterJustified === 'PENDING' && item.justified === 'NON JUSTIFIÉ') ||
                                 (filterJustified === 'ABSENCE' && item.justified === 'ABSENCE');
-        return matchesSearch && matchesStatus && matchesJustified;
+        const matchesGroup = selectedGroup === 'all' || item.class_id === selectedGroup;
+        
+        let itemDateStr = '';
+        if (item.session_date) {
+            const d = new Date(item.session_date);
+            if (!isNaN(d.getTime())) {
+                const year = d.getFullYear();
+                const month = String(d.getMonth() + 1).padStart(2, '0');
+                const day = String(d.getDate()).padStart(2, '0');
+                itemDateStr = `${year}-${month}-${day}`;
+            }
+        }
+        const matchesDate = !selectedDate || itemDateStr === selectedDate;
+        
+        return matchesSearch && matchesStatus && matchesJustified && matchesGroup && matchesDate;
     });
 
     const statusBadge = (status) => {
@@ -129,6 +161,24 @@ const AbsenceRegistry = () => {
                 </div>
 
                 <div className={`flex items-center gap-4 ${isRtl ? 'flex-row-reverse' : ''}`}>
+                    <div className={`flex items-center bg-white border border-slate-200 rounded-2xl px-5 py-3 hover:border-slate-300 transition-all shadow-sm ${isRtl ? 'flex-row-reverse' : ''}`}>
+                        <Calendar className={`w-4 h-4 text-[var(--primary)] shrink-0 ${isRtl ? 'ml-3' : 'mr-3'}`} />
+                        <input
+                            type="date"
+                            value={selectedDate}
+                            onChange={(e) => setSelectedDate(e.target.value)}
+                            className="bg-transparent border-none text-[10px] font-black tracking-widest focus:ring-0 text-[var(--secondary)] placeholder-slate-300 p-0 uppercase outline-none cursor-pointer"
+                        />
+                        {selectedDate && (
+                            <button 
+                                onClick={() => setSelectedDate('')}
+                                className={`px-2.5 py-1.5 bg-red-50 text-red-500 rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-red-100 hover:text-red-600 transition-colors shadow-sm ${isRtl ? 'mr-3' : 'ml-3'}`}
+                            >
+                                {isRtl ? 'مسح' : 'CLEAR'}
+                            </button>
+                        )}
+                    </div>
+
                     <div className="flex items-center bg-white border border-slate-200 rounded-2xl px-5 py-3 hover:border-slate-300 transition-all shadow-sm">
                         <Search className="w-4 h-4 text-slate-400 mr-3" />
                         <input
@@ -140,28 +190,127 @@ const AbsenceRegistry = () => {
                         />
                     </div>
 
-                    <select 
-                        value={filterStatus}
-                        onChange={(e) => setFilterStatus(e.target.value)}
-                        className="bg-white border border-slate-200 rounded-2xl px-6 py-4 text-[10px] font-black tracking-widest text-[var(--secondary)] uppercase outline-none focus:border-[var(--primary)] shadow-sm cursor-pointer"
-                    >
-                        <option value="ALL">{t('absence_registry.filter_status')}</option>
-                        <option value="ABSENT">{t('absence_registry.filter_absences')}</option>
-                        <option value="LATE">{t('absence_registry.filter_lates')}</option>
-                        <option value="PRESENT">{t('absence_registry.filter_presences')}</option>
-                    </select>
+                    {/* Status Dropdown */}
+                    <div className="relative" onClick={(e) => e.stopPropagation()}>
+                        <button 
+                            onClick={() => { setIsStatusOpen(!isStatusOpen); setIsJustifOpen(false); }}
+                            className={`flex items-center gap-4 bg-white border border-slate-200 rounded-xl px-5 py-2.5 text-[9px] font-black tracking-widest text-[var(--secondary)] uppercase transition-all shadow-sm hover:border-[var(--primary)] ${isStatusOpen ? 'border-[var(--primary)] ring-2 ring-[var(--primary)]/10' : ''}`}
+                        >
+                            <span>{statusOptions.find(o => o.value === filterStatus)?.label}</span>
+                            <ChevronDown className={`w-3 h-3 text-[var(--primary)] transition-transform duration-300 ${isStatusOpen ? 'rotate-180' : ''}`} />
+                        </button>
+                        {isStatusOpen && (
+                            <div className="absolute top-full right-0 mt-2 bg-white border border-slate-100 rounded-xl z-50 shadow-2xl min-w-[180px] overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                                {statusOptions.map(opt => (
+                                    <div 
+                                        key={opt.value}
+                                        onClick={() => { setFilterStatus(opt.value); setIsStatusOpen(false); }}
+                                        className={`px-5 py-3 cursor-pointer text-[9px] font-black tracking-widest uppercase transition-colors ${filterStatus === opt.value ? 'bg-[var(--primary)] text-white' : 'text-slate-400 hover:bg-slate-50 hover:text-[var(--primary)]'}`}
+                                    >
+                                        {opt.label}
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
 
-                    <select 
-                        value={filterJustified}
-                        onChange={(e) => setFilterJustified(e.target.value)}
-                        className="bg-white border border-slate-200 rounded-2xl px-6 py-4 text-[10px] font-black tracking-widest text-[var(--secondary)] uppercase outline-none focus:border-[var(--primary)] shadow-sm cursor-pointer"
-                    >
-                        <option value="ALL">{t('absence_registry.filter_all_justif')}</option>
-                        <option value="JUSTIFIED">{t('absence_registry.filter_justified')}</option>
-                        <option value="PENDING">{t('absence_registry.filter_not_justified')}</option>
-                        <option value="ABSENCE">{t('absence_registry.filter_pending')}</option>
-                    </select>
+                    {/* Justification Dropdown */}
+                    <div className="relative" onClick={(e) => e.stopPropagation()}>
+                        <button 
+                            onClick={() => { setIsJustifOpen(!isJustifOpen); setIsStatusOpen(false); }}
+                            className={`flex items-center gap-4 bg-white border border-slate-200 rounded-xl px-5 py-2.5 text-[9px] font-black tracking-widest text-[var(--secondary)] uppercase transition-all shadow-sm hover:border-[var(--primary)] ${isJustifOpen ? 'border-[var(--primary)] ring-2 ring-[var(--primary)]/10' : ''}`}
+                        >
+                            <span>{justifOptions.find(o => o.value === filterJustified)?.label}</span>
+                            <ChevronDown className={`w-3 h-3 text-[var(--primary)] transition-transform duration-300 ${isJustifOpen ? 'rotate-180' : ''}`} />
+                        </button>
+                        {isJustifOpen && (
+                            <div className="absolute top-full right-0 mt-2 bg-white border border-slate-100 rounded-xl z-50 shadow-2xl min-w-[180px] overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                                {justifOptions.map(opt => (
+                                    <div 
+                                        key={opt.value}
+                                        onClick={() => { setFilterJustified(opt.value); setIsJustifOpen(false); }}
+                                        className={`px-5 py-3 cursor-pointer text-[9px] font-black tracking-widest uppercase transition-colors ${filterJustified === opt.value ? 'bg-[var(--primary)] text-white' : 'text-slate-400 hover:bg-slate-50 hover:text-[var(--primary)]'}`}
+                                    >
+                                        {opt.label}
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
                 </div>
+            </div>
+
+            {/* Class Cards */}
+            <div className={`flex gap-6 overflow-x-auto pb-6 ista-scrollbar ${isRtl ? 'flex-row-reverse' : ''}`}>
+                <div
+                    onClick={() => setSelectedGroup('all')}
+                    className={`min-w-[320px] p-8 rounded-[24px] cursor-pointer transition-all duration-300 border ${
+                        selectedGroup === 'all' 
+                            ? 'bg-white border-[var(--primary)] shadow-lg shadow-[var(--primary)]/5' 
+                            : 'bg-white border-slate-100 hover:border-slate-300 opacity-60 hover:opacity-100'
+                    }`}
+                >
+                    <div className={`flex justify-between items-center mb-6 ${isRtl ? 'flex-row-reverse' : ''}`}>
+                        <span className={`text-[12px] font-black uppercase tracking-widest truncate-text flex-1 ${
+                            selectedGroup === 'all' ? 'text-[var(--primary)]' : 'text-[var(--secondary)]'
+                        } ${isRtl ? 'text-right' : ''}`}>
+                            {t('reports.all_groups')}
+                        </span>
+                        <div className={`w-2.5 h-2.5 rounded-full outline outline-4 outline-offset-2 ${
+                            selectedGroup === 'all' ? 'bg-[var(--primary)] outline-[var(--primary)]/20' : 'bg-slate-200 outline-slate-100'
+                        }`}></div>
+                    </div>
+                    <h3 className={`text-2xl font-black italic text-[var(--secondary)] uppercase tracking-tight mb-8 truncate-text ${isRtl ? 'text-right' : ''}`}>
+                        {t('reports.all_groups')}
+                    </h3>
+                    <p className={`text-[9px] font-bold text-slate-400 uppercase tracking-widest ${isRtl ? 'text-right' : ''}`}>
+                        {t('absence_registry.title')}: <span className="text-[var(--secondary)] ml-1 truncate-text inline-block align-bottom max-w-[150px]">
+                            {registry.length} {t('absence_registry.filter_absences')}
+                        </span>
+                    </p>
+                </div>
+
+                {availableGroups.length > 0 ? (
+                    availableGroups.map((grp) => {
+                            const grpAbsenceCount = registry.filter(item => item.class_id === grp.id).length;
+                            return (
+                                <div
+                                    key={grp.id}
+                                    onClick={() => setSelectedGroup(grp.id)}
+                                    className={`min-w-[320px] p-8 rounded-[24px] cursor-pointer transition-all duration-300 border ${
+                                        selectedGroup === grp.id 
+                                            ? 'bg-white border-[var(--primary)] shadow-lg shadow-[var(--primary)]/5' 
+                                            : 'bg-white border-slate-100 hover:border-slate-300 opacity-60 hover:opacity-100'
+                                    }`}
+                                >
+                                    <div className={`flex justify-between items-center mb-6 ${isRtl ? 'flex-row-reverse' : ''}`}>
+                                        <span className={`text-[12px] font-black uppercase tracking-widest truncate-text flex-1 ${
+                                            selectedGroup === grp.id ? 'text-[var(--primary)]' : 'text-[var(--secondary)]'
+                                        } ${isRtl ? 'text-right' : ''}`}>
+                                            {(grp.id || '').split('-')[0].trim()}
+                                        </span>
+                                        <div className={`w-2.5 h-2.5 rounded-full outline outline-4 outline-offset-2 ${
+                                            selectedGroup === grp.id ? 'bg-[var(--primary)] outline-[var(--primary)]/20' : 'bg-slate-200 outline-slate-100'
+                                        }`}></div>
+                                    </div>
+                                    <h3 className={`text-2xl font-black italic text-[var(--secondary)] uppercase tracking-tight mb-8 truncate-text ${isRtl ? 'text-right' : ''}`}>
+                                        {grp.id}
+                                    </h3>
+                                    <p className={`text-[9px] font-bold text-slate-400 uppercase tracking-widest ${isRtl ? 'text-right' : ''}`}>
+                                        {t('accounts.col_filiere')}: <span className="text-[var(--secondary)] ml-1 truncate-text inline-block align-bottom max-w-[150px]">
+                                            {grp.filiere || 'GESTION DES ENTREPRISES'}
+                                        </span>
+                                        <span className="mx-2">•</span>
+                                        <span className="text-red-500 font-black">{grpAbsenceCount}</span>
+                                    </p>
+                                </div>
+                            );
+                        })
+                ) : (
+                    <div className="min-w-[320px] p-8 rounded-[24px] bg-white border border-slate-100 opacity-60 flex items-center justify-center">
+                        <p className="text-[10px] font-black text-slate-400 tracking-widest uppercase">{t('accounts.no_groups_available')}</p>
+                    </div>
+                )}
             </div>
 
             {/* Registry Table */}
@@ -238,7 +387,7 @@ const AbsenceRegistry = () => {
                                                     {item.justified === 'JUSTIFIÉ' ? t('absence_registry.btn_cancel_justif') : t('absence_registry.btn_justify')}
                                                 </button>
                                                 <button 
-                                                    onClick={() => { setSelectedStudent(item); setIsPenaltyModalOpen(true); }}
+                                                    onClick={() => navigate('/admin/penalty-decision', { state: { student: item } })}
                                                     className="px-4 py-2 bg-red-50 text-red-500 border border-red-100 rounded-xl text-[9px] font-black tracking-widest uppercase hover:bg-red-500 hover:text-white transition-all shadow-sm"
                                                 >
                                                     {t('absence_registry.btn_sanction')}
@@ -253,13 +402,6 @@ const AbsenceRegistry = () => {
                 </div>
             </div>
 
-            <PenaltyModal
-                isOpen={isPenaltyModalOpen}
-                onClose={() => setIsPenaltyModalOpen(false)}
-                student={selectedStudent}
-                onConfirm={handleAddPenalty}
-                submitting={loading && isPenaltyModalOpen}
-            />
             
             <style>{`.ista-scrollbar::-webkit-scrollbar { width: 4px; } .ista-scrollbar::-webkit-scrollbar-track { background: transparent; } .ista-scrollbar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }`}</style>
         </div>

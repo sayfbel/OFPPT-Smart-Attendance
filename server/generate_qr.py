@@ -8,11 +8,13 @@ def generate_student_qr(user_data):
     Generates a QR code image for a student/user and saves it to qrs_folder.
     Expects user_data to have: Name, Group, Institute, Year, Profession
     """
-    # The folder where the QR code will be saved
+    # The folder where the QR code will be saved (organized by group)
     script_dir = os.path.dirname(os.path.abspath(__file__))
-    output_folder = os.path.join(script_dir, "uploads", "card_id")
+    group_name = user_data.get('Group', 'Unknown').replace(' ', '_')
+    output_folder = os.path.join(script_dir, "uploads", "Qr_Id", group_name)
+    
     if not os.path.exists(output_folder):
-        os.makedirs(output_folder)
+        os.makedirs(output_folder, exist_ok=True)
 
     # File name for the output image
     safe_name = user_data['Name'].replace(' ', '_').upper()

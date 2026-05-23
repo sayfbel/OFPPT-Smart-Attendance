@@ -1,16 +1,51 @@
 import React, { useState } from 'react';
 import ReactDOM from 'react-dom';
-import { ChevronRight, X, ChevronDown, CheckSquare, Square, UserPlus, Save, Mail, Shield, GraduationCap, Briefcase, Settings, User, BookOpen, Hash, Layers, Lock } from 'lucide-react';
+import { ChevronRight, X, ChevronDown, CheckSquare, Square, UserPlus, Save, Mail, Shield, GraduationCap, Briefcase, Settings, User, BookOpen, Hash, Layers, Lock, FileUp } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
-const IdentityModal = ({ isOpen, onClose, newUser, setNewUser, handleAddUser, handleUpdateUser, selectedGroup, availableGroups = [], availableFilieres = [], isEditing = false }) => {
+const IdentityModal = ({ isOpen, onClose, newUser, setNewUser, handleAddUser, handleUpdateUser, handleImportExcel, selectedGroup, availableGroups = [], availableFilieres = [], isEditing = false }) => {
     const { t, i18n } = useTranslation();
     const isRtl = i18n.language === 'ar';
     const [isRoleDropdownOpen, setIsRoleDropdownOpen] = useState(false);
     const [isClassDropdownOpen, setIsClassDropdownOpen] = useState(false);
     const [isFiliereDropdownOpen, setIsFiliereDropdownOpen] = useState(false);
+    const [activeTab, setActiveTab] = useState('individual'); // 'individual' or 'excel'
+    const [excelFile, setExcelFile] = useState(null);
+    const [isImporting, setIsImporting] = useState(false);
+    const [errorMessage, setErrorMessage] = useState('');
 
     if (!isOpen) return null;
+
+    const onExcelFileChange = (e) => {
+        if (e.target.files && e.target.files[0]) {
+            setExcelFile(e.target.files[0]);
+            setErrorMessage('');
+        }
+    };
+
+    const handleImportSubmit = async (e) => {
+        e.preventDefault();
+        if (!excelFile) {
+            setErrorMessage(isRtl ? 'الرجاء اختيار ملف Excel.' : 'Veuillez sélectionner un fichier Excel.');
+            return;
+        }
+        if (!newUser.group_id) {
+            setErrorMessage(isRtl ? 'الرجاء تحديد المجموعة.' : 'Veuillez sélectionner un groupe.');
+            return;
+        }
+
+        try {
+            setIsImporting(true);
+            setErrorMessage('');
+            await handleImportExcel(excelFile, newUser.group_id, newUser.filiereId);
+            setExcelFile(null);
+            onClose();
+        } catch (err) {
+            setErrorMessage(err.response?.data?.message || 'Erreur lors de l\'importation');
+        } finally {
+            setIsImporting(false);
+        }
+    };
 
     const handleSubmit = (e) => {
         e.preventDefault();
@@ -86,7 +121,7 @@ const IdentityModal = ({ isOpen, onClose, newUser, setNewUser, handleAddUser, ha
                     </div>
 
                     <div className="flex-1 overflow-y-auto ista-scrollbar p-12 pt-8">
-                        <form onSubmit={handleSubmit} className="space-y-10 flex flex-col min-h-full">
+                        <form onSubmit={newUser.role === 'stagiaire' && !isEditing && activeTab === 'excel' ? handleImportSubmit : handleSubmit} className="space-y-10 flex flex-col min-h-full">
                             <div className="space-y-8">
                                 {/* Rôle */}
                                 <div className="relative space-y-3">
@@ -127,70 +162,100 @@ const IdentityModal = ({ isOpen, onClose, newUser, setNewUser, handleAddUser, ha
                                     )}
                                 </div>
 
+                                {/* Dynamic Tabs for Stagiaire creation */}
+                                {newUser.role === 'stagiaire' && !isEditing && (
+                                    <div className="flex bg-slate-50 p-1.5 rounded-2xl border border-slate-100/50">
+                                        <button
+                                            type="button"
+                                            onClick={() => setActiveTab('individual')}
+                                            className={`flex-1 py-3 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all ${
+                                                activeTab === 'individual'
+                                                    ? 'bg-white text-[var(--secondary)] shadow-sm font-black'
+                                                    : 'text-slate-400 hover:text-slate-600'
+                                            }`}
+                                        >
+                                            {isRtl ? 'فردي' : 'INDIVIDUEL'}
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => setActiveTab('excel')}
+                                            className={`flex-1 py-3 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all ${
+                                                activeTab === 'excel'
+                                                    ? 'bg-white text-[var(--secondary)] shadow-sm font-black'
+                                                    : 'text-slate-400 hover:text-slate-600'
+                                            }`}
+                                        >
+                                            {isRtl ? 'استيراد من EXCEL' : 'IMPORTATION EXCEL'}
+                                        </button>
+                                    </div>
+                                )}
+
                                 {/* Nom Complet */}
-                                <div className="space-y-3">
-                                    <label className={`flex items-center gap-2 text-[10px] font-black tracking-widest text-slate-400 uppercase ${isRtl ? 'flex-row-reverse' : ''}`}>
-                                        <User className="w-3 h-3" />
-                                        {t('modals.identity.full_name')}
-                                    </label>
-                                    <input
-                                        type="text"
-                                        required
-                                        value={newUser.name}
-                                        onChange={e => {
-                                            const name = e.target.value;
-                                            const email = name.trim().toLowerCase().replace(/\s+/g, '.') + '@ofppt.ma';
-                                            setNewUser({ ...newUser, name, email });
-                                        }}
-                                        placeholder={t('modals.identity.name_placeholder')}
-                                        className={`w-full bg-slate-50 border border-slate-100 rounded-2xl px-6 py-4 text-sm font-bold text-[var(--secondary)] focus:border-[var(--primary)] focus:ring-4 focus:ring-green-500/5 outline-none transition-all placeholder:text-slate-300 ${isRtl ? 'text-right' : ''}`}
-                                    />
-                                </div>
+                                {!(newUser.role === 'stagiaire' && !isEditing && activeTab === 'excel') && (
+                                    <div className="space-y-3">
+                                        <label className={`flex items-center gap-2 text-[10px] font-black tracking-widest text-slate-400 uppercase ${isRtl ? 'flex-row-reverse' : ''}`}>
+                                            <User className="w-3 h-3" />
+                                            {t('modals.identity.full_name')}
+                                        </label>
+                                        <input
+                                            type="text"
+                                            required={!(newUser.role === 'stagiaire' && !isEditing && activeTab === 'excel')}
+                                            value={newUser.name}
+                                            onChange={e => {
+                                                const name = e.target.value;
+                                                const email = name.trim().toLowerCase().replace(/\s+/g, '.') + '@ofppt.ma';
+                                                setNewUser({ ...newUser, name, email });
+                                            }}
+                                            placeholder={t('modals.identity.name_placeholder')}
+                                            className={`w-full bg-slate-50 border border-slate-100 rounded-2xl px-6 py-4 text-sm font-bold text-[var(--secondary)] focus:border-[var(--primary)] focus:ring-4 focus:ring-green-500/5 outline-none transition-all placeholder:text-slate-300 ${isRtl ? 'text-right' : ''}`}
+                                        />
+                                    </div>
+                                )}
 
                                 {/* Email & Password (Formateur / Admin only - Read Only) */}
                                 {['formateur', 'admin'].includes(newUser.role) && (
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <div className="space-y-3">
-                                            <label className={`flex items-center gap-2 text-[10px] font-black tracking-widest text-slate-400 uppercase ${isRtl ? 'flex-row-reverse' : ''}`}>
-                                                <Mail className="w-3 h-3" />
-                                                EMAIL
-                                            </label>
-                                            <input
-                                                type="email"
-                                                disabled
-                                                value={newUser.email || `${(newUser.name || 'nom').trim().toLowerCase().replace(/\s+/g, '.')}@ofppt.ma`}
-                                                className={`w-full bg-slate-100/50 border border-slate-100 rounded-2xl px-6 py-4 text-sm font-bold text-slate-400 outline-none transition-all cursor-not-allowed ${isRtl ? 'text-right' : ''}`}
-                                            />
-                                        </div>
-                                        <div className="space-y-3">
-                                            <label className={`flex items-center gap-2 text-[10px] font-black tracking-widest text-slate-400 uppercase ${isRtl ? 'flex-row-reverse' : ''}`}>
-                                                <Lock className="w-3 h-3" />
-                                                MOT DE PASSE PAR DÉFAUT
-                                            </label>
-                                            <input
-                                                type="text"
-                                                disabled
-                                                value={(newUser.email || `${(newUser.name || 'nom').trim().toLowerCase().replace(/\s+/g, '.')}@ofppt.ma`).split('@')[0]}
-                                                className={`w-full bg-slate-100/50 border border-slate-100 rounded-2xl px-6 py-4 text-sm font-bold text-slate-400 outline-none transition-all cursor-not-allowed ${isRtl ? 'text-right' : ''}`}
-                                            />
-                                        </div>
+                                         <div className="space-y-3">
+                                             <label className={`flex items-center gap-2 text-[10px] font-black tracking-widest text-slate-400 uppercase ${isRtl ? 'flex-row-reverse' : ''}`}>
+                                                 <Mail className="w-3 h-3" />
+                                                 {t('modals.identity.email')}
+                                             </label>
+                                             <input
+                                                 type="email"
+                                                 disabled
+                                                 value={newUser.email || `${(newUser.name || 'nom').trim().toLowerCase().replace(/\s+/g, '.')}@ofppt.ma`}
+                                                 className={`w-full bg-slate-100/50 border border-slate-100 rounded-2xl px-6 py-4 text-sm font-bold text-slate-400 outline-none transition-all cursor-not-allowed ${isRtl ? 'text-right' : ''}`}
+                                             />
+                                         </div>
+                                         <div className="space-y-3">
+                                             <label className={`flex items-center gap-2 text-[10px] font-black tracking-widest text-slate-400 uppercase ${isRtl ? 'flex-row-reverse' : ''}`}>
+                                                 <Lock className="w-3 h-3" />
+                                                 {t('modals.identity.default_password')}
+                                             </label>
+                                             <input
+                                                 type="text"
+                                                 disabled
+                                                 value={(newUser.email || `${(newUser.name || 'nom').trim().toLowerCase().replace(/\s+/g, '.')}@ofppt.ma`).split('@')[0]}
+                                                 className={`w-full bg-slate-100/50 border border-slate-100 rounded-2xl px-6 py-4 text-sm font-bold text-slate-400 outline-none transition-all cursor-not-allowed ${isRtl ? 'text-right' : ''}`}
+                                             />
+                                         </div>
                                     </div>
                                 )}
 
                                 {/* NumInscription (Stagiaire only) */}
-                                {newUser.role === 'stagiaire' && (
+                                {newUser.role === 'stagiaire' && !(newUser.role === 'stagiaire' && !isEditing && activeTab === 'excel') && (
                                     <div className="space-y-3">
                                         <label className={`flex items-center gap-2 text-[10px] font-black tracking-widest text-slate-400 uppercase ${isRtl ? 'flex-row-reverse' : ''}`}>
                                             <Hash className="w-3 h-3" />
-                                            {t('modals.identity.num_inscription') || 'Numéro d\'inscription'}
+                                            {t('modals.identity.num_inscription')}
                                         </label>
                                         <input
                                             type="text"
-                                            required
+                                            required={newUser.role === 'stagiaire' && !(newUser.role === 'stagiaire' && !isEditing && activeTab === 'excel')}
                                             disabled={isEditing}
                                             value={newUser.numInsc || newUser.id || ''}
                                             onChange={e => setNewUser({ ...newUser, numInsc: e.target.value.toUpperCase() })}
-                                            placeholder="EX: STG12345..."
+                                            placeholder={t('modals.identity.num_inscription_placeholder')}
                                             className={`w-full bg-slate-50 border border-slate-100 rounded-2xl px-6 py-4 text-sm font-bold text-[var(--secondary)] focus:border-[var(--primary)] focus:ring-4 focus:ring-green-500/5 outline-none transition-all placeholder:text-slate-300 ${isRtl ? 'text-right' : ''} ${isEditing ? 'opacity-50 cursor-not-allowed grayscale' : ''}`}
                                         />
                                     </div>
@@ -202,7 +267,6 @@ const IdentityModal = ({ isOpen, onClose, newUser, setNewUser, handleAddUser, ha
                                         <Briefcase className="w-3 h-3" />
                                         {t('modals.identity.group_assignment')}
                                     </label>
-
 
                                     <div
                                         onClick={() => setIsClassDropdownOpen(!isClassDropdownOpen)}
@@ -236,15 +300,15 @@ const IdentityModal = ({ isOpen, onClose, newUser, setNewUser, handleAddUser, ha
                                                                 setNewUser({ 
                                                                     ...newUser, 
                                                                     group_id: grp.id,
-                                                                    filiereId: grp.filiereId // Auto-sync Filière with Group
+                                                                    filiereId: grp.filiereId
                                                                 });
                                                                 setIsClassDropdownOpen(false);
                                                             } else {
-                                                                const currentIds = newUser.group_ids || [];
-                                                                const newGroupArray = isSelected
-                                                                    ? currentIds.filter(id => id !== grp.id)
-                                                                    : [...currentIds, grp.id];
-                                                                setNewUser({ ...newUser, group_ids: newGroupArray });
+                                                                 const currentIds = newUser.group_ids || [];
+                                                                 const newGroupArray = isSelected
+                                                                     ? currentIds.filter(id => id !== grp.id)
+                                                                     : [...currentIds, grp.id];
+                                                                 setNewUser({ ...newUser, group_ids: newGroupArray });
                                                             }
                                                         }}
                                                     >
@@ -255,27 +319,67 @@ const IdentityModal = ({ isOpen, onClose, newUser, setNewUser, handleAddUser, ha
                                             })}
                                         </div>
                                     )}
+                                </div>
 
-                                </div>                                {/* Filière (Stagiaire only - Auto-calculated) */}
-                                {newUser.role === 'stagiaire' && (
-                                    <div className="space-y-3">
+                                {/* Excel Uploader (Stagiaire only) */}
+                                {newUser.role === 'stagiaire' && !isEditing && activeTab === 'excel' && (
+                                    <div className="space-y-4">
                                         <label className={`flex items-center gap-2 text-[10px] font-black tracking-widest text-slate-400 uppercase ${isRtl ? 'flex-row-reverse' : ''}`}>
-                                            <BookOpen className="w-3 h-3" />
-                                            FILIÈRE (ATTRIBUÉE PAR GROUPE)
+                                            <FileUp className="w-3 h-3 text-[var(--primary)]" />
+                                            {isRtl ? 'ملف Excel' : 'FICHIER EXCEL (XLSX, XLS)'}
                                         </label>
-                                        <div
-                                            className={`w-full bg-slate-100/50 border border-slate-100 rounded-2xl px-6 py-4 flex justify-between items-center transition-all cursor-not-allowed opacity-80 ${isRtl ? 'flex-row-reverse' : ''}`}
-                                        >
-                                            <div className="flex items-center gap-3">
-                                                <Layers className="w-4 h-4 text-slate-300" />
-                                                <span className={`text-sm font-black italic uppercase tracking-tight text-slate-500 truncate`}>
-                                                    {availableFilieres?.find(f => Number(f.id) === Number(newUser.filiereId))?.nom || t('modals.identity.unassigned') || 'AUCUN GROUPE SÉLECTIONNÉ'}
-                                                </span>
+                                        <div className="relative group/uploader">
+                                            <input
+                                                type="file"
+                                                accept=".xlsx, .xls, .csv"
+                                                id="excel-file-input"
+                                                onChange={onExcelFileChange}
+                                                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                                            />
+                                            <div className={`border-2 border-dashed rounded-3xl p-8 flex flex-col items-center justify-center gap-4 transition-all duration-300 ${
+                                                excelFile 
+                                                    ? 'border-[var(--primary)] bg-green-50/10' 
+                                                     : 'border-slate-200 hover:border-[var(--primary)] hover:bg-slate-50/50'
+                                            }`}>
+                                                <div className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all ${
+                                                    excelFile ? 'bg-green-500/10 text-green-600' : 'bg-slate-100 text-slate-400 group-hover/uploader:bg-[var(--primary)]/10 group-hover/uploader:text-[var(--primary)]'
+                                                }`}>
+                                                    <FileUp className="w-6 h-6" />
+                                                </div>
+                                                
+                                                <div className="text-center">
+                                                    <p className="text-sm font-bold text-[var(--secondary)]">
+                                                         {excelFile ? excelFile.name : (isRtl ? 'اسحب وأسقط ملف Excel هنا أو انقر للتصفح' : 'Glissez-déposez le fichier Excel ici ou cliquez pour parcourir')}
+                                                    </p>
+                                                    <p className="text-[10px] font-medium text-slate-400 mt-1 uppercase tracking-wider">
+                                                         {excelFile ? `${(excelFile.size / 1024).toFixed(1)} KB` : (isRtl ? 'يدعم XLSX, XLS, CSV' : 'Formats acceptés : .xlsx, .xls, .csv')}
+                                                    </p>
+                                                </div>
                                             </div>
-                                            <div className="flex items-center gap-2 px-2 py-1 bg-slate-200/50 rounded-lg">
-                                                <Lock className="w-2.5 h-2.5 text-slate-400" />
-                                                <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest leading-none">Auto</span>
-                                            </div>
+                                        </div>
+                                         
+                                        {errorMessage && (
+                                             <p className="text-xs font-black uppercase tracking-widest text-red-500 text-center animate-pulse">
+                                                 {errorMessage}
+                                             </p>
+                                        )}
+
+                                        <div className="bg-slate-50 rounded-2xl p-6 border border-slate-100 flex items-start gap-4">
+                                             <div className="w-8 h-8 rounded-lg bg-amber-500/10 flex items-center justify-center text-amber-600 shrink-0 mt-0.5">
+                                                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                                                     <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                 </svg>
+                                             </div>
+                                             <div className="space-y-1">
+                                                 <h4 className="text-[10px] font-black uppercase tracking-widest text-[var(--secondary)]">
+                                                     {isRtl ? 'تنسيق الملف المتوقع' : 'STRUCTURE DU FICHIER REQUIS'}
+                                                 </h4>
+                                                 <p className="text-[10px] font-bold text-slate-400 leading-relaxed uppercase">
+                                                     {isRtl 
+                                                         ? 'يجب أن يحتوي الملف على الأعمدة التالية كصف أول: NumInscription، Nom Complet (أو Nom)' 
+                                                         : 'Le fichier doit contenir les en-têtes suivants sur la 1ère ligne : "NumInscription" et "Nom Complet" (ou "Nom").'}
+                                                 </p>
+                                             </div>
                                         </div>
                                     </div>
                                 )}
@@ -284,10 +388,24 @@ const IdentityModal = ({ isOpen, onClose, newUser, setNewUser, handleAddUser, ha
                             <div>
                                 <button
                                     type="submit"
-                                    className="w-full btn-ista py-5 rounded-2xl font-black uppercase tracking-widest shadow-xl flex items-center justify-center gap-3 hover:scale-[1.01] active:scale-[0.99] transition-all"
+                                    disabled={newUser.role === 'stagiaire' && !isEditing && activeTab === 'excel' ? isImporting || !excelFile || !newUser.group_id : false}
+                                    className={`w-full btn-ista py-5 rounded-2xl font-black uppercase tracking-widest shadow-xl flex items-center justify-center gap-3 hover:scale-[1.01] active:scale-[0.99] transition-all ${
+                                        newUser.role === 'stagiaire' && !isEditing && activeTab === 'excel' && (isImporting || !excelFile || !newUser.group_id)
+                                             ? 'opacity-50 cursor-not-allowed grayscale'
+                                             : ''
+                                    }`}
                                 >
-                                    {isEditing ? <Save className="w-5 h-5" /> : <UserPlus className="w-5 h-5" />}
-                                    <span>{isEditing ? t('modals.identity.save') : t('modals.identity.create')}</span>
+                                    {newUser.role === 'stagiaire' && !isEditing && activeTab === 'excel' ? (
+                                        <>
+                                            <FileUp className={`w-5 h-5 ${isImporting ? 'animate-bounce' : ''}`} />
+                                            <span>{isImporting ? (isRtl ? 'جاري الاستيراد...' : 'IMPORTATION EN COURS...') : (isRtl ? 'بدء استيراد Excel' : 'COMMENCER L\'IMPORT EXCEL')}</span>
+                                        </>
+                                    ) : (
+                                        <>
+                                            {isEditing ? <Save className="w-5 h-5" /> : <UserPlus className="w-5 h-5" />}
+                                             <span>{isEditing ? t('modals.identity.save') : t('modals.identity.create')}</span>
+                                        </>
+                                    )}
                                 </button>
                             </div>
                         </form>

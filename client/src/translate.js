@@ -20,6 +20,11 @@ const resources = {
                 absence_registry: "Registre d'absences",
                 profile: 'Mon Profil',
             },
+            roles: {
+                stagiaire: 'Stagiaire',
+                formateur: 'Formateur',
+                admin: 'Administrateur'
+            },
             filiere: {
                 title: 'Filières',
                 subtitle: 'ADMINISTRATION DU RÉFÉRENTIEL DES SPÉCIALITÉS ISTA',
@@ -209,6 +214,8 @@ const resources = {
                 create_success: 'Compte créé avec succès.',
                 delete_confirm_title: 'SUPPRESSION DE COMPTE',
                 delete_confirm_message: 'Êtes-vous sûr de vouloir supprimer cet utilisateur ? Cette action est irréversible.',
+                import_excel: 'IMPORTER EXCEL',
+                import_success: 'Importation réussie : {{success}} stagiaire(s) ajouté(s)/mis à jour.',
             },
             groups: {
                 title: 'Groupes',
@@ -304,7 +311,28 @@ const resources = {
                 export_student: 'Nom du Stagiaire',
                 export_id: 'Matricule',
                 export_status: 'Signature/Statut',
-                export_footer: 'Document généré par le Système Digital de Pointage OFPPT'
+                export_footer: 'Document généré par le Système Digital de Pointage OFPPT',
+                export_subtitle_modal: 'Configurez vos paramètres d\'exportation pour générer un rapport PDF complet.',
+                export_step1: 'Sélection du Type',
+                export_step2: 'Filtres de Données',
+                export_step3: 'Génération PDF',
+                export_config_title: 'Configuration d\'Export',
+                export_select_type: 'Type de Données',
+                all_data: 'Tout',
+                weekly: 'Hebdomadaire',
+                by_formateur: 'Par Formateur',
+                custom_range: 'Période',
+                select_formateur: 'Sélectionner Formateur',
+                all_formateurs: 'Tous les Formateurs',
+                start_date: 'Date Début',
+                end_date: 'Date Fin',
+                group_filter: 'Filtrer par Groupe (Optionnel)',
+                generate_pdf: 'Générer le Rapport PDF',
+                absences_list: 'LISTE DES ABSENCES',
+                no_absences_found: 'Aucune absence trouvée pour les critères sélectionnés.',
+                col_subject: 'SUJET / MODULE',
+                col_absent_rate: 'TAUX D\'ABSENCE',
+                absent_label: 'ABSENTS',
             },
             scanner: {
                 digital_tag: 'Système de Pointage Digital',
@@ -349,7 +377,14 @@ const resources = {
                     select_groups: 'SÉLECTIONNER LES GROUPES...',
                     save: 'Enregistrer les modifications',
                     create: 'Créer le profil membre',
-                    name_placeholder: 'Prénom et Nom...'
+                    name_placeholder: 'Prénom et Nom...',
+                    num_inscription: "Numéro d'inscription",
+                    num_inscription_placeholder: "EX: STG12345...",
+                    unassigned: "AUCUN GROUPE SÉLECTIONNÉ",
+                    default_password: "MOT DE PASSE PAR DÉFAUT",
+                    filiere_auto: "FILIÈRE (ATTRIBUÉE PAR GROUPE)",
+                    reason: 'Observations & Motif',
+                    email: 'EMAIL'
                 },
                 roles: {
                     stagiaire: 'Stagiaire',
@@ -368,15 +403,40 @@ const resources = {
                     validating: 'VALIDATION OPÉRATIONNELLE...',
                     sig_req: 'La signature du formateur est requise pour valider le rapport.',
                     enrolled: 'ENROLÉS',
-                    list_title: 'Liste des Stagiaires'
+                    list_title: 'Liste des Stagiaires',
+                    select_seance: 'SÉLECTIONNER SÉANCE',
+                    system_tag: 'SYSTEME DE POINTAGE DIGITAL - OFPPT ISTA',
+                    room_label: 'SALLE'
+                },
+                penalty: {
+                    title: 'DÉCISION DISCIPLINAIRE',
+                    subtitle: 'Protocole de gestion des sanctions — ISTA Digital',
+                    student_profile: 'PROFIL DU STAGIAIRE',
+                    dossier_active: 'DOSSIER ACTIF',
+                    infraction_type: "Type d'Infraction",
+                    incident_details: "Détails de l'incident",
+                    history_title: 'HISTORIQUE DU STAGIAIRE',
+                    total_absences: 'Total Absences',
+                    sanctions: 'Sanctions',
+                    penalty_config: 'CONFIGURATION DE LA SANCTION',
+                    activate_penalty: 'ACTIVER LA SANCTION',
+                    central_tag: 'REGISTRE DISCIPLINAIRE CENTRALISÉ ISTA'
                 },
                 group: {
+                    group_code: 'CODE DU GROUPE',
+                    filiere: 'FILIÈRE',
+                    select: 'SÉLECTIONNER...',
+                    other_custom: 'AUTRE (PERSONNALISÉ)',
+                    school_year: 'ANNÉE SCOLAIRE',
+                    room_assignment: "SALLE D'ASSIGNATION",
+                    deselect_all: 'DÉSELECTIONNER TOUT',
+                    leads: 'FORMATEURS / RESPONSABLES',
+                    create: 'Créer le Groupe',
                     code: 'CODE DU GROUPE',
                     stream: 'FILIÈRE / STREAM',
                     name: 'NOM DU GROUPE / TITRE',
                     formateurs: 'FORMATEURS RÉFÉRENTS',
-                    select_formateurs: 'Sélectionner les formateurs...',
-                    create: 'Créer le Groupe'
+                    select_formateurs: 'Sélectionner les formateurs...'
                 },
                 confirm: {
                     cancel: 'ANNULER',
@@ -410,7 +470,8 @@ const resources = {
                 no_data: 'Aucune donnée trouvée pour ce groupe.',
                 loading: 'Chargement...',
                 cancel: 'ANNULER',
-                confirm: 'CONFIRMER'
+                confirm: 'CONFIRMER',
+                email_id: 'Email / ID'
             },
             formateur: {
                 initializing: 'INITIALISATION DU TERMINAL...',
@@ -475,6 +536,11 @@ const resources = {
                 digital_campus: 'الحرم الرقمي',
                 absence_registry: 'سجل الغياب',
                 profile: 'ملفي الشخصي',
+            },
+            roles: {
+                stagiaire: 'متدرب',
+                formateur: 'مكون',
+                admin: 'مسؤول'
             },
             filiere: {
                 title: 'الشعب',
@@ -666,7 +732,9 @@ const resources = {
                 list_title: 'قائمة الأعضاء النشطين',
                 portal_link: 'مرتبط ببوابة DAD',
                 delete_confirm_title: 'حذف الحساب',
-                delete_confirm_message: 'هل أنت متأكد من رغبتك في حذف هذا العضو من النظام نهائيًا؟'
+                delete_confirm_message: 'هل أنت متأكد من رغبتك في حذف هذا العضو من النظام نهائيًا؟',
+                import_excel: 'استيراد من EXCEL',
+                import_success: 'تم الاستيراد بنجاح: تم إضافة/تحديث {{success}} متدرب(ة).',
             },
             groups: {
                 title: 'المجموعات',
@@ -761,7 +829,28 @@ const resources = {
                 export_student: 'اسم المتدرب',
                 export_id: 'رقم التسجيل',
                 export_status: 'التوقيع/الحالة',
-                export_footer: 'تم إنشاء هذا المستند بواسطة نظام التنقيط الرقمي لـ OFPPT'
+                export_footer: 'تم إنشاء هذا المستند بواسطة نظام التنقيط الرقمي لـ OFPPT',
+                export_subtitle_modal: 'قم بتكوين إعدادات التصدير الخاصة بك لإنشاء تقرير PDF كامل.',
+                export_step1: 'اختيار النوع',
+                export_step2: 'فلاتر البيانات',
+                export_step3: 'إنشاء PDF',
+                export_config_title: 'تكوين التصدير',
+                export_select_type: 'نوع البيانات',
+                all_data: 'الكل',
+                weekly: 'أسبوعي',
+                by_formateur: 'حسب المكون',
+                custom_range: 'فترة محددة',
+                select_formateur: 'اختر المكون',
+                all_formateurs: 'جميع المكونين',
+                start_date: 'تاريخ البدء',
+                end_date: 'تاريخ الانتهاء',
+                group_filter: 'تصفية حسب المجموعة (اختياري)',
+                generate_pdf: 'إنشاء تقرير PDF',
+                absences_list: 'قائمة الغيابات',
+                no_absences_found: 'لم يتم العثور على غيابات للمعايير المختارة.',
+                col_subject: 'الموضوع / الوحدة',
+                col_absent_rate: 'نسبة الغياب',
+                absent_label: 'غائبون',
             },
             scanner: {
                 digital_tag: 'نظام التنقيط الرقمي',
@@ -806,7 +895,14 @@ const resources = {
                     select_groups: 'اختر المجموعات...',
                     save: 'حفظ التعديلات',
                     create: 'إنشاء ملف تعريف العضو',
-                    name_placeholder: 'الاسم والنسب...'
+                    name_placeholder: 'الاسم والنسب...',
+                    num_inscription: "رقم التسجيل",
+                    num_inscription_placeholder: "مثال: STG12345...",
+                    unassigned: "لم يتم اختيار مجموعة",
+                    default_password: "كلمة المرور الافتراضية",
+                    filiere_auto: "الشعبة (تحدد حسب المجموعة)",
+                    reason: 'الملاحظات والسبب',
+                    email: 'البريد الإلكتروني'
                 },
                 roles: {
                     stagiaire: 'متدرب',
@@ -825,15 +921,40 @@ const resources = {
                     validating: 'جاري التحقق التشغيلي...',
                     sig_req: 'توقيع المكون مطلوب للمصادقة على التقرير.',
                     enrolled: 'مسجلين',
-                    list_title: 'قائمة المتدربين'
+                    list_title: 'قائمة المتدربين',
+                    select_seance: 'اختر الحصة',
+                    system_tag: 'نظام التنقيط الرقمي - OFPPT ISTA',
+                    room_label: 'القاعة'
+                },
+                penalty: {
+                    title: 'قرار تأديبي',
+                    subtitle: 'بروتوكول إدارة العقوبات - ISTA Digital',
+                    student_profile: 'ملف المتدرب',
+                    dossier_active: 'ملف نشط',
+                    infraction_type: 'نوع المخالفة',
+                    incident_details: 'تفاصيل الحادث',
+                    history_title: 'سجل المتدرب',
+                    total_absences: 'إجمالي الغيابات',
+                    sanctions: 'العقوبات',
+                    penalty_config: 'إعداد العقوبة',
+                    activate_penalty: 'تفعيل العقوبة',
+                    central_tag: 'سجل التأديب المركزي ISTA'
                 },
                 group: {
+                    group_code: 'رمز المجموعة',
+                    filiere: 'الشعبة',
+                    select: 'اختر...',
+                    other_custom: 'أخرى (مخصص)',
+                    school_year: 'السنة الدراسية',
+                    room_assignment: 'تعيين القاعة',
+                    deselect_all: 'إلغاء تحديد الكل',
+                    leads: 'المكونون / المسؤولون',
+                    create: 'إنشاء المجموعة',
                     code: 'رمز المجموعة',
                     stream: 'الشعبة',
                     name: 'اسم المجموعة / العنوان',
                     formateurs: 'المكونون المرجعيون',
-                    select_formateurs: 'اختر المكونين...',
-                    create: 'إنشاء المجموعة'
+                    select_formateurs: 'اختر المكونين...'
                 },
                 report: {
                     title: 'تقرير',
@@ -862,7 +983,8 @@ const resources = {
                 no_data: 'لم يتم العثور على بيانات لهذه المجموعة.',
                 loading: 'جاري التحميل...',
                 cancel: 'إلغاء',
-                confirm: 'تأكيد'
+                confirm: 'تأكيد',
+                email_id: 'البريد / المعرف'
             },
             formateur: {
                 welcome: 'مرحباً، السيد {{name}}',

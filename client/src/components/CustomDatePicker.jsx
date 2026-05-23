@@ -51,39 +51,43 @@ const CustomDatePicker = ({ selectedDate, onChange, placeholder }) => {
     return (
         <div className="relative" ref={dropdownRef}>
             <div
-                className="flex items-center border-b border-[var(--border)] w-48 group cursor-pointer hover:border-[var(--primary)] transition-colors duration-500 py-3"
+                className={`flex items-center gap-2.5 bg-white border border-slate-100 rounded-lg px-4 py-2 cursor-pointer hover:border-[var(--primary)] hover:shadow-sm transition-all group min-w-[180px] ${isOpen ? 'ring-2 ring-[var(--primary)]/5 border-[var(--primary)]' : ''}`}
                 onClick={() => setIsOpen(!isOpen)}
             >
-                <CalendarIcon className={`w-3 h-3 text-[var(--text-muted)] group-hover:text-[var(--primary)] transition-colors duration-500 mr-4 ${isOpen ? 'text-[var(--primary)]' : ''}`} />
-                <span className="text-[10px] tracking-widest uppercase flex-1 font-bold truncate">
-                    {selectedDate ? <span className="text-[var(--primary)]">{selectedDate}</span> : <span className="text-[var(--text-muted)]">{placeholder || t('datepicker.placeholder')}</span>}
+                <CalendarIcon className={`w-3 h-3 transition-colors duration-300 ${selectedDate || isOpen ? 'text-[var(--primary)]' : 'text-slate-300'}`} />
+                <span className="text-[9px] tracking-[0.15em] uppercase flex-1 font-black truncate">
+                    {selectedDate ? (
+                        <span className="text-[var(--secondary)]">{selectedDate}</span>
+                    ) : (
+                        <span className="text-slate-300">{placeholder || t('datepicker.placeholder')}</span>
+                    )}
                 </span>
-                <ChevronDown className={`w-3 h-3 text-[var(--text-muted)] transition-transform duration-300 ${isOpen ? 'rotate-180 text-[var(--primary)]' : ''}`} />
+                <ChevronDown className={`w-2.5 h-2.5 text-slate-300 transition-transform duration-500 ${isOpen ? 'rotate-180 text-[var(--primary)]' : ''}`} />
             </div>
 
             {isOpen && (
-                <div className="absolute top-full left-0 mt-2 bg-[var(--background)] border border-[var(--border-strong)] z-50 shadow-2xl p-6 min-w-[300px] fade-up">
+                <div className="absolute top-full right-0 mt-2 bg-white border border-slate-100 z-50 shadow-[0_15px_40px_rgba(0,0,0,0.08)] rounded-[20px] p-5 min-w-[260px] animate-in fade-in zoom-in-95 duration-200">
                     <div className="flex justify-between items-center mb-6">
-                        <button onClick={handlePrevMonth} className="p-1 hover:text-[var(--primary)] transition-colors text-[var(--text-muted)] focus:outline-none">
-                            <ChevronLeft className="w-4 h-4" />
+                        <button onClick={handlePrevMonth} className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-slate-50 transition-colors text-slate-400 focus:outline-none">
+                            <ChevronLeft className="w-3.5 h-3.5" />
                         </button>
-                        <span className="text-[10px] font-black tracking-widest text-[var(--primary)] uppercase">
-                            {monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}
+                        <span className="text-[10px] font-black tracking-[0.15em] text-[var(--secondary)] uppercase">
+                            {monthNames[currentDate.getMonth()]} <span className="text-[var(--primary)]">{currentDate.getFullYear()}</span>
                         </span>
-                        <button onClick={handleNextMonth} className="p-1 hover:text-[var(--primary)] transition-colors text-[var(--text-muted)] focus:outline-none">
-                            <ChevronRight className="w-4 h-4" />
+                        <button onClick={handleNextMonth} className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-slate-50 transition-colors text-slate-400 focus:outline-none">
+                            <ChevronRight className="w-3.5 h-3.5" />
                         </button>
                     </div>
 
-                    <div className="grid grid-cols-7 gap-1 text-center mb-2 border-b border-[var(--border-strong)] pb-2">
+                    <div className="grid grid-cols-7 gap-1 text-center mb-3">
                         {dayAbbreviations.map(day => (
-                            <div key={day} className="text-[8px] font-black tracking-widest text-[var(--text-muted)] uppercase">{day}</div>
+                            <div key={day} className="text-[7px] font-black tracking-widest text-slate-300 uppercase">{day}</div>
                         ))}
                     </div>
 
-                    <div className="grid grid-cols-7 gap-1 pt-2">
+                    <div className="grid grid-cols-7 gap-0.5">
                         {Array.from({ length: firstDayOfMonth }).map((_, idx) => (
-                            <div key={`empty-${idx}`} className="p-2"></div>
+                            <div key={`empty-${idx}`} className="p-1"></div>
                         ))}
                         {Array.from({ length: daysInMonth }).map((_, idx) => {
                             const day = idx + 1;
@@ -95,9 +99,10 @@ const CustomDatePicker = ({ selectedDate, onChange, placeholder }) => {
                                     key={day}
                                     onClick={() => handleDateClick(day)}
                                     className={`
-                                        cursor-pointer text-center text-[10px] font-bold py-2 transition-colors duration-300
-                                        hover:bg-[var(--surface-hover)] hover:text-[var(--primary)]
-                                        ${isSelected ? 'bg-[var(--primary)] text-[var(--background)] hover:bg-[var(--primary)] hover:text-[var(--background)]' : 'text-[var(--text-muted)]'}
+                                        cursor-pointer text-center text-[9px] font-bold h-7 w-7 flex items-center justify-center rounded-lg transition-all duration-300
+                                        ${isSelected 
+                                            ? 'bg-[var(--primary)] text-white shadow-md shadow-green-500/10' 
+                                            : 'text-slate-400 hover:bg-slate-50 hover:text-[var(--primary)]'}
                                     `}
                                 >
                                     {day}
@@ -107,10 +112,10 @@ const CustomDatePicker = ({ selectedDate, onChange, placeholder }) => {
                     </div>
 
                     {selectedDate && (
-                        <div className="mt-4 pt-4 border-t border-[var(--border-strong)] text-center">
+                        <div className="mt-4 pt-4 border-t border-slate-50 text-center">
                             <button
                                 onClick={(e) => { e.stopPropagation(); onChange(''); setIsOpen(false); }}
-                                className="text-[8px] font-black tracking-[0.2em] text-[var(--text-muted)] hover:text-red-500 transition-colors uppercase"
+                                className="text-[7px] font-black tracking-[0.3em] text-slate-300 hover:text-red-500 transition-colors uppercase"
                             >
                                 {t('datepicker.clear')}
                             </button>

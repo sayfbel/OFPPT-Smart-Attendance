@@ -2,6 +2,7 @@ const pool = require('../config/db');
 const fs = require('fs');
 const path = require('path');
 const { spawn } = require('child_process');
+const xlsx = require('xlsx');
 
 exports.getFormateurs = async (req, res) => {
     try {
@@ -114,6 +115,12 @@ exports.createGroup = async (req, res, next) => {
             'INSERT INTO groups (id, filiereId, annee_scolaire) VALUES (?, ?, ?)',
             [id, filiereId, année_scolaire || '2025/2026']
         );
+
+        // Create group folder for QRs
+        const groupFolder = path.join(__dirname, '..', 'uploads', 'Qr_Id', id.replace(/ /g, '_'));
+        if (!fs.existsSync(groupFolder)) {
+            fs.mkdirSync(groupFolder, { recursive: true });
+        }
 
         // Sync supervisors
         const leads = Array.isArray(lead) ? lead : (lead ? lead.split(',').map(s => s.trim()) : []);
@@ -277,6 +284,7 @@ exports.createUser = async (req, res, next) => {
                 Name: name,
                 Group: group_id || "Unassigned",
                 Institute: "OFPPT ISTA",
+                Year: "2025/2026",
                 Profession: "stagiaire"
             };
 
@@ -288,7 +296,8 @@ exports.createUser = async (req, res, next) => {
             let newQrPath = '';
             pythonProcess.stdout.on('data', (data) => {
                 const qrPathStr = data.toString().trim();
-                newQrPath = '/uploads/card_id/' + path.basename(qrPathStr);
+                const relativePath = path.relative(path.join(__dirname, '..'), qrPathStr).replace(/\\/g, '/');
+                newQrPath = relativePath.startsWith('/') ? relativePath : '/' + relativePath;
             });
 
             pythonProcess.stderr.on('data', (data) => {
@@ -392,6 +401,7 @@ exports.updateUser = async (req, res, next) => {
                 Name: name,
                 Group: group_id || "Unassigned",
                 Institute: "OFPPT ISTA",
+                Year: "2025/2026",
                 Profession: "stagiaire"
             };
 
@@ -403,7 +413,8 @@ exports.updateUser = async (req, res, next) => {
             let newQrPath = '';
             pythonProcess.stdout.on('data', (data) => {
                 const qrPathStr = data.toString().trim();
-                newQrPath = '/uploads/card_id/' + path.basename(qrPathStr);
+                const relativePath = path.relative(path.join(__dirname, '..'), qrPathStr).replace(/\\/g, '/');
+                newQrPath = relativePath.startsWith('/') ? relativePath : '/' + relativePath;
             });
 
             pythonProcess.stderr.on('data', (data) => {
@@ -481,6 +492,7 @@ exports.getReports = async (req, res) => {
     try {
         const [reports] = await pool.query(`
             SELECT r.*, c.id as group_id, u.name as formateur_name,
+            (SELECT COUNT(*) FROM stagiaires st WHERE st.group_id = c.id) as total_group_students,
             (SELECT GROUP_CONCAT(sl.nom SEPARATOR ', ') FROM group_salles gs JOIN salles sl ON gs.salle_id = sl.id WHERE gs.group_id = r.group_id) as salle_name
             FROM reports r
             JOIN groups c ON r.group_id = c.id
@@ -575,23 +587,31 @@ exports.getAbsenceRegistry = async (req, res) => {
     try {
         const [registry] = await pool.query(`
             SELECT 
-                ra.id as record_id,
-                ra.status,
-                ra.Justifier as justified,
+                MIN(ra.id) as record_id,
+                CASE 
+                    WHEN SUM(CASE WHEN ra.status = 'ABSENT' THEN 1 ELSE 0 END) > 0 THEN 'ABSENT'
+                    ELSE 'LATE'
+                END as status,
+                CASE 
+                    WHEN SUM(CASE WHEN ra.Justifier = 'ABSENCE' THEN 1 ELSE 0 END) > 0 THEN 'ABSENCE'
+                    WHEN SUM(CASE WHEN ra.Justifier = 'NON JUSTIFIÉ' THEN 1 ELSE 0 END) > 0 THEN 'NON JUSTIFIÉ'
+                    ELSE 'JUSTIFIÉ'
+                END as justified,
                 s.NumInscription as student_id,
                 s.name as student_name,
                 s.group_id as class_id,
                 r.date as session_date,
-                r.subject,
-                r.heure as session_time,
-                f.name as formateur_name,
+                GROUP_CONCAT(DISTINCT r.subject ORDER BY r.heure SEPARATOR ', ') as subject,
+                GROUP_CONCAT(DISTINCT r.heure ORDER BY r.heure SEPARATOR ', ') as session_time,
+                GROUP_CONCAT(DISTINCT f.name SEPARATOR ', ') as formateur_name,
                 (SELECT COUNT(*) FROM report_attendance WHERE student_id = s.NumInscription AND status = 'ABSENT' AND Justifier != 'JUSTIFIÉ') as total_absences,
                 (SELECT COUNT(*) FROM suivieDisipline WHERE student_id = s.NumInscription) as total_blames
             FROM report_attendance ra
             JOIN stagiaires s ON ra.student_id = s.NumInscription
             JOIN reports r ON ra.report_id = r.id
             JOIN formateurs f ON r.formateur_id = f.id
-            ORDER BY r.date DESC, r.created_at DESC, ra.id DESC
+            GROUP BY s.NumInscription, r.date
+            ORDER BY r.date DESC, MIN(r.created_at) DESC, MIN(ra.id) DESC
         `);
         res.json({ registry });
     } catch (err) {
@@ -604,7 +624,28 @@ exports.justifyAbsence = async (req, res) => {
     try {
         const { recordId, justified } = req.body;
         const newStatus = justified ? "JUSTIFIÉ" : "ABSENCE";
-        await pool.query('UPDATE report_attendance SET Justifier = ? WHERE id = ?', [newStatus, recordId]);
+        
+        // 1. Retrieve the student_id and session date associated with this record
+        const [[record]] = await pool.query(`
+            SELECT ra.student_id, r.date 
+            FROM report_attendance ra
+            JOIN reports r ON ra.report_id = r.id
+            WHERE ra.id = ?
+        `, [recordId]);
+
+        if (record) {
+            // 2. Update all attendance records for this student on this day
+            await pool.query(`
+                UPDATE report_attendance ra
+                JOIN reports r ON ra.report_id = r.id
+                SET ra.Justifier = ?
+                WHERE ra.student_id = ? AND r.date = ?
+            `, [newStatus, record.student_id, record.date]);
+        } else {
+            // Fallback in case record is not found
+            await pool.query('UPDATE report_attendance SET Justifier = ? WHERE id = ?', [newStatus, recordId]);
+        }
+        
         res.json({ message: `Absence marquée comme ${newStatus}.` });
     } catch (err) {
         console.error("JUSTIFY ABSENCE ERROR:", err);
@@ -830,5 +871,124 @@ exports.getStudentDetails = async (req, res) => {
     } catch (error) {
         console.error('Error fetching student details:', error);
         res.status(500).json({ message: 'Internal Server Error' });
+    }
+};
+
+exports.importExcel = async (req, res) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({ message: 'Veuillez uploader un fichier Excel.' });
+        }
+
+        const { groupId, filiereId } = req.body;
+        if (!groupId) {
+            return res.status(400).json({ message: 'Le groupe de destination est obligatoire.' });
+        }
+
+        const workbook = xlsx.read(req.file.buffer, { type: 'buffer' });
+        const sheetName = workbook.SheetNames[0];
+        const sheet = workbook.Sheets[sheetName];
+        const data = xlsx.utils.sheet_to_json(sheet);
+
+        if (data.length === 0) {
+            return res.status(400).json({ message: 'Le fichier Excel est vide.' });
+        }
+
+        let importedCount = 0;
+        let errorCount = 0;
+
+        // Case-insensitive key retriever
+        const getRowValue = (row, possibleKeys) => {
+            const keys = Object.keys(row);
+            for (const key of keys) {
+                const cleanKey = key.trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+                for (const pk of possibleKeys) {
+                    const cleanPk = pk.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+                    if (cleanKey === cleanPk || cleanKey.includes(cleanPk)) {
+                        return row[key];
+                    }
+                }
+            }
+            return null;
+        };
+
+        for (const row of data) {
+            let numInsc = getRowValue(row, ['NumInscription', 'num_inscription', 'inscription', 'id', 'matricule', 'code', 'num', 'n°']);
+            let name = getRowValue(row, ['Nom Complet', 'nom_complet', 'nom complet', 'nom', 'name', 'stagiaire', 'fullname', 'prenom']);
+
+            if (numInsc) {
+                numInsc = String(numInsc).trim().toUpperCase();
+            } else {
+                // Generate a unique NumInscription if missing
+                numInsc = 'STG' + Date.now().toString().slice(-6) + Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+            }
+
+            if (name) {
+                name = String(name).trim();
+            } else {
+                errorCount++;
+                continue;
+            }
+
+            try {
+                // 1. Insert or Update Stagiaire (save data like the details form, using NumInscription as the generated unique key)
+                await pool.query(
+                    'INSERT INTO stagiaires (NumInscription, name, group_id, filiereId) VALUES (?, ?, ?, ?) ON DUPLICATE KEY UPDATE name = VALUES(name), group_id = VALUES(group_id), filiereId = VALUES(filiereId)',
+                    [numInsc, name, groupId, filiereId || null]
+                );
+
+                // 2. Generate QR Code (buffered stdout to avoid chunking issues)
+                const qrData = {
+                    Name: name,
+                    Group: groupId,
+                    Institute: "OFPPT ISTA",
+                    Year: "2025/2026",
+                    Profession: "stagiaire"
+                };
+
+                const pythonProcess = spawn('py', [
+                    path.join(__dirname, '../generate_qr.py'),
+                    JSON.stringify(qrData)
+                ]);
+
+                let stdoutData = '';
+                pythonProcess.stdout.on('data', (data) => {
+                    stdoutData += data.toString();
+                });
+
+                await new Promise((resolve) => {
+                    pythonProcess.on('close', resolve);
+                });
+
+                const qrPathStr = stdoutData.trim();
+                let newQrPath = '';
+                if (qrPathStr) {
+                    const relativePath = path.relative(path.join(__dirname, '..'), qrPathStr).replace(/\\/g, '/');
+                    newQrPath = relativePath.startsWith('/') ? relativePath : '/' + relativePath;
+                }
+
+                if (newQrPath) {
+                    await pool.query('UPDATE stagiaires SET qr_path = ? WHERE NumInscription = ?', [newQrPath, numInsc]);
+                }
+
+                importedCount++;
+            } catch (err) {
+                console.error(`Error importing row ${numInsc}:`, err);
+                errorCount++;
+            }
+        }
+
+        res.json({
+            message: 'Importation terminée.',
+            summary: {
+                total: data.length,
+                success: importedCount,
+                errors: errorCount
+            }
+        });
+
+    } catch (err) {
+        console.error("IMPORT EXCEL ERROR:", err);
+        res.status(500).json({ message: 'Erreur lors de l\'importation du fichier Excel.' });
     }
 };

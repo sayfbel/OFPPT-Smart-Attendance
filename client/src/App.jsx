@@ -8,6 +8,7 @@ import Login from './pages/Login';
 import DashboardLayout from './layouts/DashboardLayout';
 import AdminDashboard from './pages/admin/Dashboard';
 import FormateurDashboard from './pages/formateur/Dashboard';
+import ClassDossier from './pages/formateur/ClassDossier';
 import Scanner from './pages/Scanner';
 
 // Admin Subpages
@@ -15,6 +16,7 @@ import Accounts from './pages/admin/Accounts';
 import Squadrons from './pages/admin/Squadrons';
 import Rapports from './pages/admin/Rapports';
 import AbsenceRegistry from './pages/admin/AbsenceRegistry';
+import PenaltyDecision from './pages/admin/PenaltyDecision';
 import StudentProfile from './pages/admin/StudentProfile';
 import Filiere from './pages/admin/Filiere';
 import Salles from './pages/admin/Salles';
@@ -84,6 +86,7 @@ function App() {
                                         <Route path="groups" element={<Squadrons />} />
                                         <Route path="reports" element={<Rapports />} />
                                         <Route path="absence-registry" element={<AbsenceRegistry />} />
+                                        <Route path="penalty-decision" element={<PenaltyDecision />} />
                                         <Route path="filieres" element={<Filiere />} />
                                         <Route path="salles" element={<Salles />} />
                                         <Route path="profile" element={<Profile />} />
@@ -99,6 +102,7 @@ function App() {
                                     <Routes>
                                         <Route index element={<FormateurDashboard />} />
                                         <Route path="groups" element={<Divisions />} />
+                                        <Route path="dossier" element={<ClassDossier />} />
                                         <Route path="profile" element={<Profile />} />
                                         <Route path="force-update-password" element={<ForceUpdatePassword />} />
                                     </Routes>

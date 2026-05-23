@@ -52,6 +52,10 @@
   --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.3);
 }
 
+html {
+  font-size: 90%;
+}
+
 * {
   margin: 0;
   padding: 0;
@@ -106,7 +110,7 @@ body {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  padding: 1.5rem;
+  padding: 1.25rem;
   box-shadow: var(--shadow-sm);
   transition: var(--transition-base);
 }
@@ -184,7 +188,7 @@ h2 {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 0.75rem 1.75rem;
+  padding: 0.6rem 1.5rem;
   background: linear-gradient(135deg, var(--primary), var(--primary-dark));
   color: white;
   border-radius: var(--radius);
@@ -234,7 +238,7 @@ textarea {
   border: 1.5px solid var(--border);
   border-radius: 8px;
   color: var(--text);
-  padding: 0.8rem 1rem;
+  padding: 0.65rem 0.9rem;
   outline: none;
   transition: var(--transition-base);
   width: 100%;

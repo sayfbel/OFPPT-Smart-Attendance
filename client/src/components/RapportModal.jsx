@@ -2,6 +2,7 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import { X, ChevronDown, FileText, Calendar, User, MapPin, Clock, Search } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { getSignatureDataURI } from '../utils/signatureHelper';
 
 const RapportModal = ({ isOpen, onClose, rapport }) => {
     const { t } = useTranslation();
@@ -143,7 +144,7 @@ const RapportModal = ({ isOpen, onClose, rapport }) => {
                                 <div className="w-64 h-32 bg-slate-50 border border-dashed border-slate-200 rounded-[24px] flex items-center justify-center p-6 shadow-inner relative overflow-hidden">
                                     <div className="absolute inset-0 opacity-[0.03] bg-[url('https://www.transparenttextures.com/patterns/graphy.png')]"></div>
                                     {rapport.signature ? (
-                                        <img src={rapport.signature} alt="Signature" className="max-h-full relative z-10" />
+                                        <img src={getSignatureDataURI(rapport.signature)} alt="Signature" className="max-h-full relative z-10" />
                                     ) : (
                                         <span className="font-['Brush_Script_MT',cursive] italic text-3xl text-[var(--secondary)] opacity-10 relative z-10">
                                             {rapport.formateur}
