@@ -13,8 +13,6 @@ const {
     clearCheckins,
     getProfile,
     updateProfile,
-    startExternalScanner,
-    stopExternalScanner,
     updateCheckinStatus
 } = require('../controllers/formateurController');
 
@@ -31,10 +29,6 @@ router.get('/active-checkins/:groupId', protect, authorize('formateur'), getActi
 router.post('/clear-checkins', protect, authorize('formateur'), clearCheckins);
 router.post('/update-checkin-status', protect, authorize('formateur'), updateCheckinStatus);
 
-
-// Python Scanner Bridge Control
-router.post('/start-external-scanner', protect, authorize('formateur'), startExternalScanner);
-router.post('/stop-external-scanner', protect, authorize('formateur'), stopExternalScanner);
 
 // Profile and Security
 const { updateFormateurProfile, updatePassword, forceUpdatePassword } = require('../controllers/formateurController');

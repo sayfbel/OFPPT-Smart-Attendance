@@ -2,100 +2,7 @@ const pool = require('../config/db');
 const { spawn } = require('child_process');
 const path = require('path');
 
-// Neural Scanner Matrix: Active External Processes
-const activeScanners = new Map();
 
-exports.startExternalScanner = async (req, res) => {
-    try {
-        const { groupId } = req.body;
-        if (!groupId) return res.status(400).json({ message: 'Target cluster id is required.' });
-
-        if (activeScanners.has(groupId)) {
-            return res.json({ message: `Scanner for Cluster ${groupId} is already active.` });
-        }
-
-        const scriptPath = path.join(__dirname, '../scaning_qr.py');
-        const camIdx = process.env.QR_CAMERA_INDEX || '1';
-        // Spawn Python process with both cluster id and camera index
-        const scannerProc = spawn('py', [scriptPath, groupId, camIdx]);
-
-        activeScanners.set(groupId, scannerProc);
-
-        scannerProc.stdout.on('data', async (data) => {
-            const rawOutput = data.toString();
-            console.log(`[PYTHON_SCANNER_${groupId}]: ${rawOutput}`);
-
-            // Neural Link: Parse scan notification marker
-            // Match format: NAME: {name} : present
-            const match = rawOutput.match(/NAME:\s+(.*?)\s+:\s+present/);
-            if (match) {
-                const studentName = match[1].trim();
-                console.log(`[BRIDGE_LOCK]: Synchronizing ${studentName} for Cluster ${groupId}...`);
-
-                try {
-                    // Look up student by name in the specified group
-                    const [students] = await pool.query('SELECT NumInscription as id FROM stagiaires WHERE name = ? AND group_id = ?', [studentName, groupId]);
-                    if (students.length > 0) {
-                        const studentId = students[0].id;
-                        await pool.query('INSERT IGNORE INTO active_checkins (student_id, group_id) VALUES (?, ?)', [studentId, groupId]);
-                        console.log(`[SYNC_COMPLETE]: ${studentName} registered.`);
-                    }
-                } catch (dbErr) {
-                    console.error("[SCAN_SYNC_FAILURE]:", dbErr);
-                }
-            }
-        });
-
-        scannerProc.stderr.on('data', (data) => {
-            console.error(`[PYTHON_SCANNER_ERROR_${groupId}]: ${data}`);
-        });
-
-        scannerProc.on('close', (code) => {
-            console.log(`[SCANNER_DISCONNECTED]: Process for ${groupId} exited with code ${code}.`);
-            activeScanners.delete(groupId);
-        });
-
-        res.json({ message: `Neural Bridge established for Cluster ${groupId}. Scanner initialized.` });
-
-    } catch (err) {
-        console.error("EXTERNAL_SCANNER_START_ERROR:", err);
-        res.status(500).json({ message: 'Internal Server Error: Bridge initialization failed.' });
-    }
-};
-
-exports.stopExternalScanner = async (req, res) => {
-    try {
-        const { groupId } = req.body;
-        console.log(`[BRIDGE_CONTROL]: Shutdown request for Cluster ${groupId}`);
-
-        const proc = activeScanners.get(groupId);
-
-        if (proc) {
-            console.log(`[BRIDGE_CONTROL]: Terminating process tree for Cluster ${groupId}...`);
-
-            if (process.platform === 'win32') {
-                // Forcefully kill the process tree on Windows to ensure CV2 window closes
-                const { exec } = require('child_process');
-                exec(`taskkill /pid ${proc.pid} /f /t`, (err) => {
-                    if (err) console.error(`[BRIDGE_CONTROL]: Taskkill failed for ${proc.pid}:`, err);
-                });
-            } else {
-                proc.kill('SIGTERM');
-            }
-
-            activeScanners.delete(groupId);
-            console.log(`[BRIDGE_CONTROL]: Synchronized shutdown complete for Cluster ${groupId}`);
-            return res.json({ message: `Neural Bridge for Cluster ${groupId} disconnected.` });
-        }
-
-        // Return 200 even if not found to avoid noisy AxiosErrors in frontend cleanup
-        console.log(`[BRIDGE_CONTROL]: No active process found for ${groupId}. Status: Idle.`);
-        res.json({ message: `Neural Bridge for Cluster ${groupId} is already inactive.` });
-    } catch (err) {
-        console.error("EXTERNAL_SCANNER_STOP_ERROR:", err);
-        res.status(500).json({ message: 'Internal Server Error: Bridge disconnect failed.' });
-    }
-};
 
 exports.submitReport = async (req, res) => {
     try {
@@ -244,7 +151,11 @@ exports.processCheckinByQR = async (req, res) => {
         }
 
         // Look up student id from name and group
-        const [students] = await pool.query('SELECT NumInscription as id FROM stagiaires WHERE name = ? AND group_id = ?', [name, group]);
+        const normalizedName = name.replace(/_/g, ' ');
+        const [students] = await pool.query(
+            'SELECT NumInscription as id FROM stagiaires WHERE (name = ? OR REPLACE(name, " ", "_") = ?) AND group_id = ?', 
+            [normalizedName, name, group]
+        );
         if (students.length === 0) {
             return res.status(404).json({ message: 'Entity not found in the manifest.' });
         }

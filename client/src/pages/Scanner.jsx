@@ -3,6 +3,7 @@ import { Shield, Camera, Cpu, Zap, X, Check, Search, AlertCircle, CheckCircle, S
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useNotification } from '../context/NotificationContext';
+import { Html5QrcodeScanner } from 'html5-qrcode';
 import { useTranslation } from 'react-i18next';
 
 const Scanner = () => {
@@ -33,7 +34,11 @@ const Scanner = () => {
                 const token = localStorage.getItem('token');
                 const config = { headers: { Authorization: `Bearer ${token}` } };
                 const checkinRes = await axios.get(`/api/formateur/active-checkins/${groupId}`, config);
-                const currentIds = checkinRes.data.checkins || [];
+                
+                // The API returns [{ student_id, status }]. We need an array of string IDs for 'PRESENT' students.
+                const currentIds = (checkinRes.data.checkins || [])
+                    .filter(c => c.status === 'PRESENT' || c.status === undefined)
+                    .map(c => c.student_id !== undefined ? c.student_id : c);
 
                 if (currentIds.length > prevCheckinsRef.current.length) {
                     const newId = currentIds.find(id => !prevCheckinsRef.current.includes(id));
@@ -61,27 +66,58 @@ const Scanner = () => {
         return () => clearInterval(interval);
     }, [groupId, activeStudents]);
 
-    // 2. Start Bridge
+    // 2. Start HTML5 QR Scanner
     useEffect(() => {
+        let scanner = null;
         let isInstanceMounted = true;
-        const startBridge = async () => {
-            try {
-                const token = localStorage.getItem('token');
-                const config = { headers: { Authorization: `Bearer ${token}` } };
-                await axios.post('/api/formateur/start-external-scanner', { groupId }, config);
-            } catch (err) {
-                if (isInstanceMounted) setError("SCANNER_OFFLINE");
-            }
-        };
 
-        if (groupId) startBridge();
+        if (groupId) {
+            scanner = new Html5QrcodeScanner(
+                "qr-reader",
+                { fps: 10, qrbox: { width: 250, height: 250 } },
+                /* verbose= */ false
+            );
+
+            scanner.render(async (decodedText) => {
+                // on scan success
+                if (submitting) return; // Ignore scans while submitting report
+                
+                try {
+                    const token = localStorage.getItem('token');
+                    const config = { headers: { Authorization: `Bearer ${token}` } };
+                    
+                    const res = await axios.post('/api/formateur/process-checkin-qr', { 
+                        qrContent: decodedText, 
+                        groupId 
+                    }, config);
+
+                    if (isInstanceMounted) {
+                        setLastScan({
+                            name: res.data.name || decodedText,
+                            alreadyScanned: false,
+                            time: new Date().toLocaleTimeString(),
+                            success: true
+                        });
+                        setTimeout(() => setLastScan(null), 3500);
+                        addNotification(t('scanner.success_msg', 'QR Code scanné avec succès'), 'success');
+                    }
+                } catch (err) {
+                    if (err.response?.status === 403 || err.response?.status === 404) {
+                        addNotification(err.response?.data?.message || 'Erreur lors du scan', 'error');
+                    }
+                }
+            }, (errorMessage) => {
+                // Ignore general scan errors (happens every frame when no QR is visible)
+            });
+        }
 
         return () => {
             isInstanceMounted = false;
-            const token = localStorage.getItem('token');
-            const config = { headers: { Authorization: `Bearer ${token}` } };
-            axios.post('/api/formateur/stop-external-scanner', { groupId }, config)
-                .catch(e => console.error("Bridge Shutdown Error:", e));
+            if (scanner) {
+                scanner.clear().catch(error => {
+                    console.error("Failed to clear html5QrcodeScanner. ", error);
+                });
+            }
         };
     }, [groupId]);
 
@@ -127,12 +163,6 @@ const Scanner = () => {
 
             await axios.post('/api/formateur/submit-report', reportData, config);
 
-            try {
-                await axios.post('/api/formateur/stop-external-scanner', { groupId }, config);
-            } catch (stopErr) {
-                console.warn("[BRIDGE_STOP_SILENT]:", stopErr.message);
-            }
-
             addNotification(t('scanner.success_msg'), 'success');
             navigate(`/formateur?selectedGroup=${groupId}`);
         } catch (err) {
@@ -143,9 +173,38 @@ const Scanner = () => {
         }
     };
 
+    const toggleManualStatus = async (studentId, currentStatus) => {
+        try {
+            const newStatus = currentStatus === 'PRESENT' ? 'ABSENT' : 'PRESENT';
+            const token = localStorage.getItem('token');
+            const config = { headers: { Authorization: `Bearer ${token}` } };
+            
+            await axios.post('/api/formateur/active-checkins/update', {
+                studentId,
+                groupId,
+                status: newStatus
+            }, config);
+
+            // Optimistically update
+            if (newStatus === 'PRESENT') {
+                setCheckedInIds(prev => {
+                    if (!prev.includes(studentId)) return [...prev, studentId];
+                    return prev;
+                });
+            } else {
+                setCheckedInIds(prev => prev.filter(id => id !== studentId));
+            }
+        } catch (err) {
+            console.error("Manual toggle failed:", err);
+            addNotification("Erreur lors de la mise à jour", "error");
+        }
+    };
+
+    const checkedInStudents = activeStudents.filter(s => checkedInIds.includes(s.id));
+
     return (
-        <div className="min-h-screen bg-[var(--background)] flex items-center justify-center p-6 lg:p-12 font-sans overflow-hidden transition-all duration-500">
-            <div className="w-full max-w-5xl relative fade-up">
+        <div className="min-h-screen bg-[var(--background)] flex flex-col items-center justify-center p-4 lg:p-8 font-sans overflow-hidden transition-all duration-500">
+            <div className="w-full max-w-6xl relative fade-up">
                 <div className="relative bg-white border border-[var(--border)] rounded-3xl overflow-hidden shadow-2xl">
 
                     {/* Header Bar */}
@@ -202,7 +261,7 @@ const Scanner = () => {
                     </div>
 
                     {/* Viewport Area */}
-                    <div className="aspect-video relative bg-slate-900 overflow-hidden flex items-center justify-center">
+                    <div className="relative bg-slate-900 overflow-hidden flex flex-col items-center justify-center p-4 min-h-[400px]">
                         {error ? (
                             <div className="flex flex-col items-center gap-4 text-red-400">
                                 <AlertCircle className="w-16 h-16 animate-pulse" />
@@ -210,25 +269,11 @@ const Scanner = () => {
                             </div>
                         ) : (
                             <>
-                                <div className="flex flex-col items-center gap-8 text-white/20">
-                                    <div className="relative">
-                                        <Camera className="w-32 h-32" strokeWidth={0.5} />
-                                        <div className="absolute inset-0 border-2 border-dashed border-white/10 rounded-full scale-125 animate-spin-slow"></div>
-                                    </div>
-                                    <div className="flex flex-col items-center gap-2 text-center px-10">
-                                        <span className="text-xs font-black tracking-[0.5em] uppercase animate-pulse">{t('scanner.active_message')}</span>
-                                        <p className="text-[10px] text-white/40 uppercase tracking-widest mt-2 max-w-xs leading-relaxed">
-                                            {t('scanner.description')}
-                                        </p>
-                                    </div>
-                                </div>
-
-                                {/* Scanning Line */}
-                                <div className="absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-transparent via-[var(--primary)] to-transparent opacity-50 shadow-[0_0_20px_var(--primary)] animate-scan"></div>
+                                <div id="qr-reader" className="w-full max-w-md mx-auto bg-black rounded-2xl overflow-hidden border-2 border-white/10 shadow-2xl"></div>
 
                                 {/* Result Overlay */}
                                 {lastScan && (
-                                    <div className={`absolute bottom-20 left-1/2 -translate-x-1/2 px-12 py-6 shadow-2xl border-2 flex items-center gap-6 animate-in slide-in-from-bottom-10 duration-500 rounded-3xl backdrop-blur-xl ${!lastScan.success ? 'bg-red-500/90 border-red-400' :
+                                    <div className={`absolute bottom-6 left-1/2 -translate-x-1/2 px-12 py-6 shadow-2xl border-2 flex items-center gap-6 animate-in slide-in-from-bottom-10 duration-500 rounded-3xl backdrop-blur-xl z-50 ${!lastScan.success ? 'bg-red-500/90 border-red-400' :
                                         lastScan.alreadyScanned ? 'bg-amber-500/90 border-amber-400' : 'bg-green-500/90 border-green-400'
                                         }`}>
                                         <div className="bg-white rounded-full p-2">
@@ -251,17 +296,60 @@ const Scanner = () => {
                                         </div>
                                     </div>
                                 )}
-
-                                <div className="absolute top-10 right-10 flex gap-1 items-center">
-                                    <Zap className="w-3 h-3 text-[var(--accent)]" />
-                                    <span className="text-[9px] font-black text-white/40 tracking-widest">LIVE_FEED_SYS</span>
-                                </div>
                             </>
                         )}
                     </div>
 
+                    {/* Detailed Students Table */}
+                    <div className="bg-white border-t border-[var(--border)]">
+                        <div className="px-8 py-4 bg-slate-50 border-b border-[var(--border)] flex justify-between items-center">
+                            <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider">Liste des Stagiaires ({checkedInStudents.length} / {activeStudents.length} Présents)</h3>
+                        </div>
+                        <div className="max-h-64 overflow-y-auto">
+                            {activeStudents.length === 0 ? (
+                                <div className="text-center text-slate-400 py-6 text-sm italic">{t('scanner.no_scans', 'Aucun étudiant trouvé...')}</div>
+                            ) : (
+                                <table className="w-full text-left text-sm text-slate-600">
+                                    <thead className="bg-slate-50 text-xs uppercase text-slate-500 sticky top-0 border-b border-[var(--border)] z-10">
+                                        <tr>
+                                            <th className="px-6 py-3 font-bold">NOM</th>
+                                            <th className="px-6 py-3 font-bold">Email / ID</th>
+                                            <th className="px-6 py-3 font-bold text-center">État</th>
+                                            <th className="px-6 py-3 font-bold text-center">ACTIONS MANUELLES</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-slate-100">
+                                        {activeStudents.map(student => {
+                                            const isPresent = checkedInIds.includes(student.id);
+                                            return (
+                                                <tr key={student.id} className="hover:bg-slate-50 transition-colors">
+                                                    <td className="px-6 py-3 font-bold text-slate-800">{student.name}</td>
+                                                    <td className="px-6 py-3 text-slate-500 text-xs">{student.id}</td>
+                                                    <td className="px-6 py-3 text-center">
+                                                        <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-black tracking-widest ${isPresent ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                                                            {isPresent ? 'PRÉSENT' : 'ABSENT'}
+                                                        </span>
+                                                    </td>
+                                                    <td className="px-6 py-3 text-center">
+                                                        <button 
+                                                            onClick={() => toggleManualStatus(student.id, isPresent ? 'PRESENT' : 'ABSENT')}
+                                                            disabled={submitting}
+                                                            className={`px-4 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-colors disabled:opacity-50 ${isPresent ? 'bg-red-50 text-red-600 hover:bg-red-100 border border-red-200' : 'bg-green-50 text-green-600 hover:bg-green-100 border border-green-200'}`}
+                                                        >
+                                                            {isPresent ? 'Marquer Absent' : 'Marquer Présent'}
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                            );
+                                        })}
+                                    </tbody>
+                                </table>
+                            )}
+                        </div>
+                    </div>
+
                     {/* Status Bar */}
-                    <div className="px-8 py-5 bg-slate-50 border-t border-[var(--border)] flex items-center justify-between">
+                    <div className="px-8 py-4 bg-slate-50 border-t border-[var(--border)] flex items-center justify-between">
                         <div className="flex items-center gap-8">
                             <div className="flex items-center gap-3">
                                 <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>

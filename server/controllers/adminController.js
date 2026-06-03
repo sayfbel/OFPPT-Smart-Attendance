@@ -273,9 +273,10 @@ exports.createUser = async (req, res, next) => {
             if (!numInsc) return res.status(400).json({ message: 'NumInscription est obligatoire pour les stagiaires.' });
 
             // 1. Create Stagiaire
+            const email = name.replace(/\s+/g, '').toLowerCase() + '@ofppt-edu.ma';
             await pool.query(
-                'INSERT INTO stagiaires (NumInscription, name, group_id, filiereId) VALUES (?, ?, ?, ?)',
-                [numInsc, name, group_id || null, filiereId || null]
+                'INSERT INTO stagiaires (NumInscription, name, group_id, filiereId, email) VALUES (?, ?, ?, ?, ?)',
+                [numInsc, name, group_id || null, filiereId || null, email]
             );
             const stagiaireId = numInsc;
 
@@ -391,9 +392,10 @@ exports.updateUser = async (req, res, next) => {
             }
 
             // 2. Update basic info
+            const email = name.replace(/\s+/g, '').toLowerCase() + '@ofppt-edu.ma';
             await pool.query(
-                'UPDATE stagiaires SET name = ?, group_id = ?, filiereId = ? WHERE NumInscription = ?',
-                [name, group_id || null, filiereId || null, id]
+                'UPDATE stagiaires SET name = ?, group_id = ?, filiereId = ?, email = ? WHERE NumInscription = ?',
+                [name, group_id || null, filiereId || null, email, id]
             );
 
             // 3. Generate New QR Code
@@ -562,7 +564,7 @@ exports.getUsers = async (req, res) => {
             })),
             ...stagiaires.map(s => ({ 
                 ...s, 
-                email: s.name ? String(s.name).replace(/\s/g, '').toLowerCase() + '@ofppt.ma' : 'student@ofppt.ma', 
+                email: s.email || (s.name ? String(s.name).replace(/\s/g, '').toLowerCase() + '@ofppt-edu.ma' : 'student@ofppt-edu.ma'), 
                 role: 'stagiaire', 
                 filiere: s.filiere_name,
                 group_id: s.group_id,
@@ -915,6 +917,8 @@ exports.importExcel = async (req, res) => {
         for (const row of data) {
             let numInsc = getRowValue(row, ['NumInscription', 'num_inscription', 'inscription', 'id', 'matricule', 'code', 'num', 'n°']);
             let name = getRowValue(row, ['Nom Complet', 'nom_complet', 'nom complet', 'nom', 'name', 'stagiaire', 'fullname', 'prenom']);
+            let tele = getRowValue(row, ['tele', 'telephone', 'phone', 'tel']);
+            let cin = getRowValue(row, ['cin', 'c.i.n', 'id_card', 'c.i.n.']);
 
             if (numInsc) {
                 numInsc = String(numInsc).trim().toUpperCase();
@@ -932,9 +936,10 @@ exports.importExcel = async (req, res) => {
 
             try {
                 // 1. Insert or Update Stagiaire (save data like the details form, using NumInscription as the generated unique key)
+                const email = name.replace(/\s+/g, '').toLowerCase() + '@ofppt-edu.ma';
                 await pool.query(
-                    'INSERT INTO stagiaires (NumInscription, name, group_id, filiereId) VALUES (?, ?, ?, ?) ON DUPLICATE KEY UPDATE name = VALUES(name), group_id = VALUES(group_id), filiereId = VALUES(filiereId)',
-                    [numInsc, name, groupId, filiereId || null]
+                    'INSERT INTO stagiaires (NumInscription, name, group_id, filiereId, tele, cin, email) VALUES (?, ?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE name = VALUES(name), group_id = VALUES(group_id), filiereId = VALUES(filiereId), tele = VALUES(tele), cin = VALUES(cin), email = VALUES(email)',
+                    [numInsc, name, groupId, filiereId || null, tele || null, cin || null, email]
                 );
 
                 // 2. Generate QR Code (buffered stdout to avoid chunking issues)

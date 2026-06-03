@@ -19,6 +19,7 @@ import {
 import axios from 'axios';
 import { useNotification } from '../../context/NotificationContext';
 import { useTranslation } from 'react-i18next';
+import CustomDatePicker from '../../components/CustomDatePicker';
 
 const AbsenceRegistry = () => {
     const location = useLocation();
@@ -161,23 +162,11 @@ const AbsenceRegistry = () => {
                 </div>
 
                 <div className={`flex items-center gap-4 ${isRtl ? 'flex-row-reverse' : ''}`}>
-                    <div className={`flex items-center bg-white border border-slate-200 rounded-2xl px-5 py-3 hover:border-slate-300 transition-all shadow-sm ${isRtl ? 'flex-row-reverse' : ''}`}>
-                        <Calendar className={`w-4 h-4 text-[var(--primary)] shrink-0 ${isRtl ? 'ml-3' : 'mr-3'}`} />
-                        <input
-                            type="date"
-                            value={selectedDate}
-                            onChange={(e) => setSelectedDate(e.target.value)}
-                            className="bg-transparent border-none text-[10px] font-black tracking-widest focus:ring-0 text-[var(--secondary)] placeholder-slate-300 p-0 uppercase outline-none cursor-pointer"
-                        />
-                        {selectedDate && (
-                            <button 
-                                onClick={() => setSelectedDate('')}
-                                className={`px-2.5 py-1.5 bg-red-50 text-red-500 rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-red-100 hover:text-red-600 transition-colors shadow-sm ${isRtl ? 'mr-3' : 'ml-3'}`}
-                            >
-                                {isRtl ? 'مسح' : 'CLEAR'}
-                            </button>
-                        )}
-                    </div>
+                    <CustomDatePicker
+                        selectedDate={selectedDate}
+                        onChange={setSelectedDate}
+                        placeholder={t('absence_registry.filter_date') || 'FILTRER PAR DATE'}
+                    />
 
                     <div className="flex items-center bg-white border border-slate-200 rounded-2xl px-5 py-3 hover:border-slate-300 transition-all shadow-sm">
                         <Search className="w-4 h-4 text-slate-400 mr-3" />

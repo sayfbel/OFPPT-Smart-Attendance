@@ -16,6 +16,7 @@ const Rapports = () => {
     const [selectedRecords, setSelectedRecords] = useState([]);
     const [selectedRapport, setSelectedRapport] = useState(null);
     const [isExporting, setIsExporting] = useState(false);
+    const [showExportMenu, setShowExportMenu] = useState(false);
     const [allReports, setAllReports] = useState([]);
     const [loading, setLoading] = useState(true);
 
@@ -97,22 +98,22 @@ const Rapports = () => {
         }
     };
 
-    const handleExportData = () => {
+    const handleExportPDF = () => {
         if (selectedRecords.length === 0) return;
         setIsExporting(true);
         if (!window.html2pdf) {
             const script = document.createElement('script');
             script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
             script.onload = () => {
-                executeExport();
+                executeExportPDF();
             };
             document.body.appendChild(script);
         } else {
-            executeExport();
+            executeExportPDF();
         }
     };
 
-    const executeExport = async () => {
+    const executeExportPDF = async () => {
         for (const recordId of selectedRecords) {
             const element = document.getElementById(`pdf-export-${recordId}`);
             if (element) {
@@ -122,11 +123,108 @@ const Rapports = () => {
                     filename: `Rapport_ISTA_${recordId}.pdf`,
                     image: { type: 'jpeg', quality: 0.98 },
                     html2canvas: { scale: 1.5, useCORS: true, backgroundColor: '#ffffff' },
-                    jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
+                    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
                 };
                 await window.html2pdf().set(opt).from(element).save();
                 element.style.display = 'none';
             }
+        }
+        setIsExporting(false);
+        setSelectedRecords([]);
+    };
+
+    const handleExportExcel = () => {
+        if (selectedRecords.length === 0) return;
+        setIsExporting(true);
+        if (!window.XLSX || !window.XLSX.utils.book_new) {
+            const script = document.createElement('script');
+            // Use xlsx-js-style to support cell styling (borders, background colors)
+            script.src = 'https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js';
+            script.onload = () => {
+                executeExportExcel();
+            };
+            document.body.appendChild(script);
+        } else {
+            executeExportExcel();
+        }
+    };
+
+    const executeExportExcel = () => {
+        try {
+            for (const recordId of selectedRecords) {
+                const rapport = displayedAbsences.find(r => r.id === recordId);
+                if (!rapport) continue;
+
+                const absents = (rapport.stagiaires || []).filter(s => s.status === 'ABSENT');
+                const total = (rapport.stagiaires || []).length;
+                const taux = total > 0 ? Math.round((absents.length / total) * 100) : 0;
+
+                const ws_data = [
+                    ["RAPPORT D'ABSENCE"],
+                    ["Modèle professionnel (version modernisée)"],
+                    [],
+                    ["Groupe", rapport.group_id],
+                    ["Salle", rapport.salle || 'N/A'],
+                    ["Date", rapport.date],
+                    ["Horaire", rapport.heure || 'N/A'],
+                    ["Formateur", rapport.formateur],
+                    [],
+                    ["Nombre total", total],
+                    ["Absents", absents.length],
+                    ["Taux d'absence", `${taux}%`],
+                    [],
+                    ["N°", "Nom du stagiaire", "Matricule", "Statut"],
+                    ...absents.map((s, i) => [i + 1, s.name, s.id, 'Absent'])
+                ];
+
+                const ws = window.XLSX.utils.aoa_to_sheet(ws_data);
+                
+                // Apply styles to all cells
+                for (let i in ws) {
+                    if (i[0] === '!') continue;
+                    
+                    const col = i.replace(/[0-9]/g, '');
+                    const row = parseInt(i.replace(/[A-Z]/g, ''), 10);
+                    
+                    let cellStyle = {
+                        border: {
+                            top: { style: "thin", color: { auto: 1 } },
+                            bottom: { style: "thin", color: { auto: 1 } },
+                            left: { style: "thin", color: { auto: 1 } },
+                            right: { style: "thin", color: { auto: 1 } }
+                        },
+                        font: { name: "Arial", sz: 10 }
+                    };
+
+                    // Title
+                    if (row === 1 || row === 2) {
+                        cellStyle.border = {}; // No border for title
+                        if (row === 1) cellStyle.font = { name: "Arial", sz: 14, bold: true };
+                    }
+                    
+                    // Table Headers (Row 14) or Summary Headers (Left col of summary tables)
+                    if (row === 14 || (col === 'A' && ((row >= 4 && row <= 8) || (row >= 10 && row <= 12)))) {
+                        cellStyle.fill = { fgColor: { rgb: "E5E7EB" } }; // gray-200 background
+                        cellStyle.font = { name: "Arial", sz: 10, bold: true };
+                    }
+
+                    ws[i].s = cellStyle;
+                }
+
+                // Add column widths to make it look professional like the PDF
+                ws['!cols'] = [
+                    { wch: 15 }, // A: N° / Labels
+                    { wch: 30 }, // B: Nom du stagiaire / Values
+                    { wch: 20 }, // C: Matricule
+                    { wch: 15 }  // D: Statut
+                ];
+
+                const wb = window.XLSX.utils.book_new();
+                window.XLSX.utils.book_append_sheet(wb, ws, "Rapport");
+                window.XLSX.writeFile(wb, `Rapport_ISTA_${recordId}.xlsx`);
+            }
+        } catch (error) {
+            console.error("Export Excel error", error);
         }
         setIsExporting(false);
         setSelectedRecords([]);
@@ -145,20 +243,7 @@ const Rapports = () => {
                     </p>
                 </div>
                 <div className="flex flex-wrap gap-4 justify-end">
-                    <button
-                        onClick={handleExportData}
-                        disabled={isExporting || selectedRecords.length === 0}
-                        className={`btn-ista px-8 py-4 flex items-center gap-3 transition-all ${selectedRecords.length === 0 ? 'opacity-50 cursor-not-allowed scale-95 shadow-none' : 'shadow-lg hover:scale-[1.02] active:scale-[0.98]'}`}
-                    >
-                        <Download className={`w-5 h-5 ${isExporting ? 'animate-bounce' : ''}`} />
-                        <span>
-                            {isExporting 
-                                ? t('reports.exporting') 
-                                : (selectedRecords.length > 0 
-                                    ? `EXPORTER PDF (${selectedRecords.length})` 
-                                    : t('reports.export_button'))}
-                        </span>
-                    </button>
+                    {/* Button moved to filters bar */}
                 </div>
             </div>
 
@@ -252,12 +337,46 @@ const Rapports = () => {
                     </div>
                 </div>
                 <div className={`flex items-center gap-4 w-full md:w-auto ${isRtl ? 'flex-row-reverse' : ''}`}>
-                    <Calendar className="w-4 h-4 text-[var(--primary)]" />
                     <CustomDatePicker
                         selectedDate={selectedDate}
                         onChange={setSelectedDate}
                         placeholder={t('reports.filter_date')}
                     />
+                    
+                    <div className="relative">
+                        <button
+                            onClick={() => setShowExportMenu(!showExportMenu)}
+                            disabled={isExporting || selectedRecords.length === 0}
+                            className={`btn-ista px-6 py-3 flex items-center gap-2 transition-all ${selectedRecords.length === 0 ? 'opacity-50 cursor-not-allowed scale-95 shadow-none' : 'shadow-lg hover:scale-[1.02] active:scale-[0.98]'}`}
+                        >
+                            <Download className={`w-4 h-4 ${isExporting ? 'animate-bounce' : ''}`} />
+                            <span className="text-[10px] uppercase font-bold tracking-widest">
+                                {isExporting 
+                                    ? t('reports.exporting') 
+                                    : (selectedRecords.length > 0 
+                                        ? `EXPORTER (${selectedRecords.length})` 
+                                        : 'EXPORTER')}
+                            </span>
+                            <ChevronDown className="w-3 h-3 ml-1" />
+                        </button>
+
+                        {showExportMenu && selectedRecords.length > 0 && (
+                            <div className="absolute right-0 top-full mt-2 w-48 bg-white border border-slate-100 rounded-xl shadow-xl z-50 overflow-hidden">
+                                <button 
+                                    onClick={() => { setShowExportMenu(false); handleExportPDF(); }}
+                                    className="w-full text-left px-4 py-3 text-xs font-bold text-slate-600 hover:bg-slate-50 transition-colors border-b border-slate-50"
+                                >
+                                    Format PDF
+                                </button>
+                                <button 
+                                    onClick={() => { setShowExportMenu(false); handleExportExcel(); }}
+                                    className="w-full text-left px-4 py-3 text-xs font-bold text-slate-600 hover:bg-slate-50 transition-colors"
+                                >
+                                    Format EXCEL
+                                </button>
+                            </div>
+                        )}
+                    </div>
                 </div>
             </div>
 
@@ -357,103 +476,118 @@ const Rapports = () => {
 
             {/* Hidden export components (REBRANDED FOR ISTA) */}
             <div className="hidden">
-                {displayedAbsences.map(rapport => (
+                {displayedAbsences.map(rapport => {
+                    const absents = (rapport.stagiaires || []).filter(s => s.status === 'ABSENT');
+                    const total = (rapport.stagiaires || []).length;
+                    const taux = total > 0 ? Math.round((absents.length / total) * 100) : 0;
+
+                    return (
                     <div
                         key={`export-${rapport.id}`}
                         id={`pdf-export-${rapport.id}`}
                         dir={isRtl ? 'rtl' : 'ltr'}
-                        style={{ display: 'none', width: '297mm', height: '210mm', backgroundColor: '#ffffff', color: '#005596' }}
-                        className="flex items-center justify-center p-12 relative"
+                        style={{ display: 'none', width: '210mm', backgroundColor: '#ffffff', color: '#000000', fontFamily: 'Helvetica, Arial, sans-serif' }}
+                        className="px-8 py-8 relative"
                     >
-                        <div className="w-full h-full flex flex-col border-[8px] border-[var(--secondary)] p-12 relative">
-                            {/* Header Section */}
-                            <div className="flex justify-between items-start border-b-4 border-[var(--primary)] pb-12 mb-12">
-                                <div className={isRtl ? 'text-right' : ''}>
-                                    <h4 className="text-[10px] font-black tracking-[0.4em] text-[var(--primary)] uppercase mb-4">{t('reports.export_republic')}</h4>
-                                    <h2 className="text-6xl font-black italic tracking-tighter text-[var(--secondary)] leading-none mb-2">{t('reports.export_title')} <br /><span className="text-[var(--primary)]">{t('reports.export_presence')}</span></h2>
-                                    <p className="text-xs font-bold tracking-widest text-slate-400 uppercase italic">{t('reports.export_code')}: {rapport.id}</p>
-                                </div>
-                                <div className={isRtl ? 'text-left' : 'text-right'}>
-                                    <div className="bg-[var(--primary)] text-white px-8 py-4 mb-4 inline-block rounded-xl">
-                                        <span className="text-xl font-black italic uppercase tracking-tight">{rapport.group_id}</span>
-                                    </div>
-                                    <p className="text-xs font-black tracking-widest text-[var(--secondary)] uppercase">{rapport.date}</p>
-                                </div>
-                            </div>
+                        <div className="w-full flex flex-col bg-white">
+                            {/* Title */}
+                            <h1 className="text-xl font-bold text-center mb-4 uppercase text-black">RAPPORT D'ABSENCE</h1>
+                            <h2 className="text-sm font-bold mb-4 text-black">Modèle professionnel (version modernisée)</h2>
 
-                            {/* Info Section */}
-                            <div className="grid grid-cols-2 gap-16 mb-16">
-                                <div className="space-y-8">
-                                    <div>
-                                        <label className={`block text-[10px] font-black tracking-[0.4em] text-slate-400 uppercase mb-3 ${isRtl ? 'text-right' : ''}`}>{t('reports.export_module')}</label>
-                                        <p className={`text-2xl font-black italic uppercase text-[var(--secondary)] border-b-2 border-slate-100 pb-3 ${isRtl ? 'text-right' : ''}`}>{rapport.subject}</p>
-                                    </div>
-                                    <div>
-                                        <label className={`block text-[10px] font-black tracking-[0.4em] text-slate-400 uppercase mb-3 ${isRtl ? 'text-right' : ''}`}>{t('reports.export_formateur')}</label>
-                                        <p className={`text-2xl font-black italic uppercase text-[var(--secondary)] border-b-2 border-slate-100 pb-3 ${isRtl ? 'text-right' : ''}`}>{rapport.formateur}</p>
-                                    </div>
-                                </div>
-                                <div className="bg-slate-50 p-8 rounded-3xl border border-slate-100">
-                                    <h5 className="text-[10px] font-black tracking-[0.4em] text-slate-400 uppercase mb-6 text-center">{t('reports.export_stats')}</h5>
-                                    <div className={`flex justify-around items-center h-full ${isRtl ? 'flex-row-reverse' : ''}`}>
-                                        <div className="text-center">
-                                            <p className="text-5xl font-black text-[var(--primary)] mb-2">{(rapport.stagiaires || []).filter(s => s.status === 'PRESENT').length}</p>
-                                            <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">{t('dashboard.present')}</p>
-                                        </div>
-                                        <div className="w-px h-12 bg-slate-200"></div>
-                                        <div className="text-center">
-                                            <p className="text-5xl font-black text-red-500 mb-2">{(rapport.stagiaires || []).filter(s => s.status === 'ABSENT').length}</p>
-                                            <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">{t('dashboard.absent')}</p>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Table Section */}
-                            <div className="flex-1 overflow-hidden border border-slate-200 rounded-2xl mb-12">
-                                <table className={`w-full text-left border-collapse ${isRtl ? 'text-right' : ''}`}>
-                                    <thead className="bg-slate-50 border-b-2 border-slate-200">
-                                        <tr className="text-[10px] font-black uppercase tracking-widest text-slate-400">
-                                            <th className="p-6">{t('reports.export_student')}</th>
-                                            <th className="p-6">{t('reports.export_id')}</th>
-                                            <th className={`p-6 ${isRtl ? 'text-left' : 'text-right'}`}>{t('reports.export_status')}</th>
+                            {/* Summary Tables Container */}
+                            <div className="w-full flex flex-col items-center mb-4 space-y-4">
+                                {/* Table 1 */}
+                                <table className="w-[80%] border-collapse border border-black text-xs">
+                                    <tbody>
+                                        <tr>
+                                            <td className="border border-black bg-gray-200 p-1 font-bold w-1/3">Groupe</td>
+                                            <td className="border border-black p-1">{rapport.group_id}</td>
                                         </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-slate-100">
-                                        {(rapport.stagiaires || []).map((stagiaire, idx) => (
-                                            <tr key={idx}>
-                                                <td className="p-6 text-sm font-black text-[var(--secondary)] uppercase italic">{stagiaire.name}</td>
-                                                <td className="p-6 text-xs font-bold text-slate-400 font-mono tracking-widest">{stagiaire.id}</td>
-                                                <td className={`p-6 ${isRtl ? 'text-left' : 'text-right'}`}>
-                                                    <span className={`text-[10px] font-black tracking-widest px-4 py-1.5 rounded-lg border ${stagiaire.status === 'ABSENT' ? 'border-red-500 text-red-500' : 'border-[var(--primary)] text-[var(--primary)]'}`}>
-                                                        {t(`modals.report.status_${stagiaire.status.toLowerCase()}`)}
-                                                    </span>
-                                                </td>
-                                            </tr>
-                                        ))}
+                                        <tr>
+                                            <td className="border border-black bg-gray-200 p-1 font-bold">Salle</td>
+                                            <td className="border border-black p-1">{rapport.salle || 'N/A'}</td>
+                                        </tr>
+                                        <tr>
+                                            <td className="border border-black bg-gray-200 p-1 font-bold">Date</td>
+                                            <td className="border border-black p-1">{rapport.date}</td>
+                                        </tr>
+                                        <tr>
+                                            <td className="border border-black bg-gray-200 p-1 font-bold">Horaire</td>
+                                            <td className="border border-black p-1">{rapport.heure || 'N/A'}</td>
+                                        </tr>
+                                        <tr>
+                                            <td className="border border-black bg-gray-200 p-1 font-bold">Formateur</td>
+                                            <td className="border border-black p-1">{rapport.formateur}</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+
+                                {/* Table 2 */}
+                                <table className="w-[60%] border-collapse border border-black text-xs">
+                                    <tbody>
+                                        <tr>
+                                            <td className="border border-black bg-gray-200 p-1 font-bold w-1/2">Nombre total</td>
+                                            <td className="border border-black p-1">{total}</td>
+                                        </tr>
+                                        <tr>
+                                            <td className="border border-black bg-gray-200 p-1 font-bold">Absents</td>
+                                            <td className="border border-black p-1">{absents.length}</td>
+                                        </tr>
+                                        <tr>
+                                            <td className="border border-black bg-gray-200 p-1 font-bold">Taux d'absence</td>
+                                            <td className="border border-black p-1">{taux}%</td>
+                                        </tr>
                                     </tbody>
                                 </table>
                             </div>
 
-                            {/* Footer / Signature */}
-                            <div className={`flex justify-between items-end mt-auto pt-8 border-t-2 border-slate-100 ${isRtl ? 'flex-row-reverse' : ''}`}>
-                                <div className="text-[10px] font-bold text-slate-300 tracking-[0.3em] uppercase">{t('reports.export_footer')}</div>
-                                <div className="flex flex-col items-center">
-                                    <label className="text-[9px] font-black tracking-[0.4em] text-[var(--secondary)] uppercase mb-4">{t('modals.dossier.signature_label')}</label>
-                                    <div className="w-64 h-32 bg-slate-50 border border-dashed border-slate-200 rounded-2xl flex items-center justify-center p-4">
-                                        {rapport.signature ? (
-                                            <img src={getSignatureDataURI(rapport.signature)} alt="Signature" style={{ maxHeight: '80%' }} />
-                                        ) : (
-                                            <span className="font-['Brush_Script_MT',cursive] italic text-3xl text-[var(--secondary)] opacity-30">
-                                                {rapport.formateur}
-                                            </span>
+                            {/* Main Table */}
+                            <div className="w-full flex justify-center mb-6">
+                                <table className="w-[90%] border-collapse border border-black text-[10px]">
+                                    <thead className="bg-gray-200">
+                                        <tr>
+                                            <th className="border border-black px-1 py-0.5 text-left w-8 text-black">N°</th>
+                                            <th className="border border-black px-1 py-0.5 text-left text-black">Nom du stagiaire</th>
+                                            <th className="border border-black px-1 py-0.5 text-left w-40 text-black">Matricule</th>
+                                            <th className="border border-black px-1 py-0.5 text-left w-24 text-black">Statut</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {absents.map((stagiaire, idx) => (
+                                            <tr key={idx}>
+                                                <td className="border border-black px-1 py-0.5 text-black">{idx + 1}</td>
+                                                <td className="border border-black px-1 py-0.5 text-black">{stagiaire.name}</td>
+                                                <td className="border border-black px-1 py-0.5 text-black">{stagiaire.id}</td>
+                                                <td className="border border-black px-1 py-0.5 text-black">Absent</td>
+                                            </tr>
+                                        ))}
+                                        {absents.length === 0 && (
+                                            <tr>
+                                                <td colSpan="4" className="border border-black px-1 py-0.5 text-center italic text-black">Aucune absence signalée.</td>
+                                            </tr>
                                         )}
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            {/* Signature */}
+                            <div className="w-full mt-auto pt-2">
+                                <h3 className="text-sm font-bold italic mb-2">Signature du formateur</h3>
+                                {rapport.signature ? (
+                                    <div className="h-16 flex items-start mt-2">
+                                        <img 
+                                            src={getSignatureDataURI(rapport.signature)} 
+                                            alt="Signature" 
+                                            className="max-h-16 object-contain grayscale contrast-200 mix-blend-multiply"
+                                        />
                                     </div>
-                                </div>
+                                ) : (
+                                    <div className="border-b border-black w-48 mt-10"></div>
+                                )}
                             </div>
                         </div>
                     </div>
-                ))}
+                )})}
             </div>
             <style>{`
                 .ista-scrollbar::-webkit-scrollbar { width: 4px; height: 4px; }

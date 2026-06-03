@@ -109,7 +109,15 @@ const StudentProfile = () => {
                                 </div>
                                 <div className="px-4 py-2 bg-slate-50 rounded-xl border border-slate-100">
                                     <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Email</p>
-                                    <p className="text-xs font-black text-[var(--secondary)] lowercase">{student.email}</p>
+                                    <p className="text-xs font-black text-[var(--secondary)] lowercase">{student.email || (student.name ? student.name.replace(/\s+/g, '').toLowerCase() + '@ofppt-edu.ma' : 'N/A')}</p>
+                                </div>
+                                <div className="px-4 py-2 bg-slate-50 rounded-xl border border-slate-100">
+                                    <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Téléphone</p>
+                                    <p className="text-xs font-black text-[var(--secondary)]">{student.tele || 'N/A'}</p>
+                                </div>
+                                <div className="px-4 py-2 bg-slate-50 rounded-xl border border-slate-100">
+                                    <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">CIN</p>
+                                    <p className="text-xs font-black text-[var(--secondary)] uppercase">{student.cin || 'N/A'}</p>
                                 </div>
                             </div>
                         </div>
