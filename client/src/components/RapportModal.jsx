@@ -4,7 +4,7 @@ import { X, ChevronDown, FileText, Calendar, User, MapPin, Clock, Search } from 
 import { useTranslation } from 'react-i18next';
 import { getSignatureDataURI } from '../utils/signatureHelper';
 
-const RapportModal = ({ isOpen, onClose, rapport }) => {
+const RapportModal = ({ isOpen, onClose, rapport, onExportPDF, onExportExcel, isExporting }) => {
     const { t } = useTranslation();
     if (!isOpen || !rapport) return null;
 
@@ -14,7 +14,7 @@ const RapportModal = ({ isOpen, onClose, rapport }) => {
                 <button
                     type="button"
                     onClick={onClose}
-                    className="absolute top-8 right-8 p-3 hover:bg-slate-50 rounded-2xl transition-all text-slate-300 hover:text-[var(--secondary)] z-10"
+                    className="absolute top-8 right-8 p-3 hover:bg-slate-50 rounded-2xl transition-all text-slate-300 hover:text-[var(--secondary)] z-50"
                 >
                     <X className="w-6 h-6" />
                 </button>
@@ -51,37 +51,60 @@ const RapportModal = ({ isOpen, onClose, rapport }) => {
                         </div>
                     </div>
 
-                    <div className="mt-auto hidden md:block">
-                        <p className="text-[8px] font-bold text-white/30 tracking-[0.4em] uppercase">ISTA_OFPPT_D.A.D_ARCHIVE_v3</p>
+                    <div className="mt-auto flex flex-col gap-4 pt-8">
+                        <div className="flex flex-col gap-2">
+                            <p className="text-[9px] font-black text-white/40 tracking-widest uppercase mb-1">{t('reports.export_button') || 'EXPORTER'}</p>
+                            <button
+                                onClick={onExportPDF}
+                                disabled={isExporting}
+                                className="w-full flex items-center justify-between bg-white/10 hover:bg-white/20 border border-white/20 p-3 rounded-xl transition-all disabled:opacity-50"
+                            >
+                                <span className="text-[11px] font-bold tracking-widest">FORMAT PDF</span>
+                                <FileText className={`w-4 h-4 ${isExporting ? 'animate-bounce' : ''}`} />
+                            </button>
+                            <button
+                                onClick={onExportExcel}
+                                disabled={isExporting}
+                                className="w-full flex items-center justify-between bg-white/10 hover:bg-white/20 border border-white/20 p-3 rounded-xl transition-all disabled:opacity-50"
+                            >
+                                <span className="text-[11px] font-bold tracking-widest">FORMAT EXCEL</span>
+                                <FileText className={`w-4 h-4 ${isExporting ? 'animate-bounce' : ''}`} />
+                            </button>
+                        </div>
+                        <p className="text-[8px] font-bold text-white/30 tracking-[0.4em] uppercase hidden md:block mt-2">ISTA_OFPPT_D.A.D_ARCHIVE_v3</p>
                     </div>
                 </div>
 
                 {/* Right Side (Content) */}
-                <div className="flex-1 bg-white p-12 flex flex-col relative overflow-y-auto ista-scrollbar">
-                    <div className="mb-12">
-                        <h3 className="text-2xl font-black italic tracking-tight text-[var(--secondary)] uppercase mb-2">{t('modals.report.details_title')}</h3>
-                        <p className="text-[10px] font-bold text-slate-400 tracking-widest uppercase">{t('modals.report.details_sub')}</p>
+                <div className="flex-1 bg-white flex flex-col relative overflow-hidden rounded-r-[40px]">
+                    {/* Fixed Header Section */}
+                    <div className="p-8 md:p-12 pb-6 bg-white z-20 flex-shrink-0 border-b border-slate-100 shadow-[0_5px_15px_-10px_rgba(0,0,0,0.05)]">
+                        <div>
+                            <h3 className="text-2xl font-black italic tracking-tight text-[var(--secondary)] uppercase mb-2">{t('modals.report.details_title')}</h3>
+                            <p className="text-[10px] font-bold text-slate-400 tracking-widest uppercase">{t('modals.report.details_sub')}</p>
+                        </div>
                     </div>
 
-                    <div className="space-y-10">
+                    {/* Scrollable Content Section */}
+                    <div className="flex-1 overflow-y-auto ista-scrollbar p-8 md:p-12 pt-8 flex flex-col space-y-10">
                         {/* Header Info Grid */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                            <div className="space-y-1 border-l-4 border-[var(--primary)] pl-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
+                            <div className="space-y-1 border-l-4 border-[var(--primary)] pl-4 md:pl-6">
                                 <p className="text-[9px] font-black text-slate-400 tracking-widest uppercase">{t('modals.report.module_label')}</p>
                                 <p className="text-lg font-black italic text-[var(--secondary)] uppercase">{rapport.subject}</p>
                             </div>
-                            <div className="space-y-1 border-l-4 border-slate-100 pl-6">
+                            <div className="space-y-1 border-l-4 border-slate-100 pl-4 md:pl-6">
                                 <p className="text-[9px] font-black text-slate-400 tracking-widest uppercase">{t('modals.report.formateur_label')}</p>
                                 <p className="text-lg font-black italic text-[var(--secondary)] uppercase">{rapport.formateur}</p>
                             </div>
-                            <div className="space-y-1 border-l-4 border-slate-100 pl-6">
+                            <div className="space-y-1 border-l-4 border-slate-100 pl-4 md:pl-6">
                                 <p className="text-[9px] font-black text-slate-400 tracking-widest uppercase">{t('modals.report.date_label')}</p>
                                 <div className="flex items-center gap-2">
                                     <Calendar className="w-3 h-3 text-[var(--primary)]" />
                                     <p className="text-sm font-bold text-[var(--secondary)] uppercase font-mono">{rapport.date}</p>
                                 </div>
                             </div>
-                            <div className="space-y-1 border-l-4 border-slate-100 pl-6">
+                            <div className="space-y-1 border-l-4 border-slate-100 pl-4 md:pl-6">
                                 <p className="text-[9px] font-black text-slate-400 tracking-widest uppercase">{t('modals.report.schedule_label')}</p>
                                 <div className="flex items-center gap-4">
                                     <div className="flex items-center gap-2">
@@ -95,37 +118,36 @@ const RapportModal = ({ isOpen, onClose, rapport }) => {
                                 </div>
                             </div>
                         </div>
-
                         {/* Student List */}
                         <div className="space-y-4">
-                            <div className="flex items-center justify-between">
+                            <div className="flex items-center justify-between sticky top-0 bg-white z-10 pb-4">
                                 <label className="flex items-center gap-2 text-[10px] font-black tracking-widest text-slate-400 uppercase">
                                     <Search className="w-3 h-3 text-[var(--primary)]" />
                                     {t('modals.report.list_label')}
                                 </label>
                                 <span className="text-[10px] font-black text-[var(--primary)] uppercase">
-                                    {t('modals.report.present_count', { present: (rapport.stagiaires || []).filter(s => s.status === 'PRESENT').length, total: (rapport.stagiaires || []).length })}
+                                    {t('modals.report.present_count', { present: (rapport.total_group_students || (rapport.stagiaires || []).length) - (rapport.stagiaires || []).length, total: rapport.total_group_students || (rapport.stagiaires || []).length })}
                                 </span>
                             </div>
                             <div className="border border-slate-100 rounded-3xl overflow-hidden bg-slate-50/30">
                                 <table className="w-full text-left border-collapse">
                                     <thead>
-                                        <tr className="bg-slate-50 text-[9px] font-black uppercase tracking-widest text-slate-400">
-                                            <th className="p-6">{t('accounts.student_name')}</th>
-                                            <th className="p-6">{t('common.matricule')}</th>
-                                            <th className="p-6 text-right">Statut</th>
+                                        <tr className="bg-slate-50 text-[9px] font-black uppercase tracking-widest text-slate-400 sticky top-0 z-10">
+                                            <th className="p-4 md:p-6">{t('accounts.student_name')}</th>
+                                            <th className="p-4 md:p-6">{t('common.matricule')}</th>
+                                            <th className="p-4 md:p-6 text-right">Statut</th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-slate-100">
                                         {(rapport.stagiaires || []).map((stagiaire, idx) => (
                                             <tr key={idx} className="hover:bg-white transition-colors">
-                                                <td className="p-6">
+                                                <td className="p-4 md:p-6">
                                                     <span className="text-sm font-black italic text-[var(--secondary)] uppercase">{stagiaire.name}</span>
                                                 </td>
-                                                <td className="p-6">
+                                                <td className="p-4 md:p-6">
                                                     <span className="text-[10px] font-bold text-slate-400 font-mono tracking-widest">{stagiaire.id}</span>
                                                 </td>
-                                                <td className="p-6 text-right">
+                                                <td className="p-4 md:p-6 text-right">
                                                     <span className={`text-[9px] font-black tracking-widest px-4 py-1.5 rounded-lg border ${stagiaire.status === 'ABSENT' ? 'border-red-500 text-red-500 bg-red-50' : 'border-[var(--primary)] text-[var(--primary)] bg-green-50'}`}>
                                                         {stagiaire.status === 'PRESENT' ? t('dashboard.present') : t('dashboard.absent')}
                                                     </span>
@@ -138,7 +160,7 @@ const RapportModal = ({ isOpen, onClose, rapport }) => {
                         </div>
 
                         {/* Signature */}
-                        <div className="pt-8 flex justify-end">
+                        <div className="pt-8 flex justify-end mt-auto">
                             <div className="flex flex-col items-center">
                                 <label className="text-[9px] font-black tracking-[0.3em] text-[var(--secondary)] uppercase mb-4">{t('modals.report.signature_label')}</label>
                                 <div className="w-64 h-32 bg-slate-50 border border-dashed border-slate-200 rounded-[24px] flex items-center justify-center p-6 shadow-inner relative overflow-hidden">

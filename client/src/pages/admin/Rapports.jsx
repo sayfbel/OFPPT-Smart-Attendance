@@ -98,23 +98,24 @@ const Rapports = () => {
         }
     };
 
-    const handleExportPDF = () => {
-        if (selectedRecords.length === 0) return;
+    const handleExportPDF = (ids = selectedRecords) => {
+        const targetIds = Array.isArray(ids) ? ids : selectedRecords;
+        if (targetIds.length === 0) return;
         setIsExporting(true);
         if (!window.html2pdf) {
             const script = document.createElement('script');
             script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
             script.onload = () => {
-                executeExportPDF();
+                executeExportPDF(targetIds);
             };
             document.body.appendChild(script);
         } else {
-            executeExportPDF();
+            executeExportPDF(targetIds);
         }
     };
 
-    const executeExportPDF = async () => {
-        for (const recordId of selectedRecords) {
+    const executeExportPDF = async (targetIds) => {
+        for (const recordId of targetIds) {
             const element = document.getElementById(`pdf-export-${recordId}`);
             if (element) {
                 element.style.display = 'flex';
@@ -130,33 +131,36 @@ const Rapports = () => {
             }
         }
         setIsExporting(false);
-        setSelectedRecords([]);
+        if (targetIds === selectedRecords) {
+            setSelectedRecords([]);
+        }
     };
 
-    const handleExportExcel = () => {
-        if (selectedRecords.length === 0) return;
+    const handleExportExcel = (ids = selectedRecords) => {
+        const targetIds = Array.isArray(ids) ? ids : selectedRecords;
+        if (targetIds.length === 0) return;
         setIsExporting(true);
         if (!window.XLSX || !window.XLSX.utils.book_new) {
             const script = document.createElement('script');
             // Use xlsx-js-style to support cell styling (borders, background colors)
             script.src = 'https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js';
             script.onload = () => {
-                executeExportExcel();
+                executeExportExcel(targetIds);
             };
             document.body.appendChild(script);
         } else {
-            executeExportExcel();
+            executeExportExcel(targetIds);
         }
     };
 
-    const executeExportExcel = () => {
+    const executeExportExcel = (targetIds) => {
         try {
-            for (const recordId of selectedRecords) {
+            for (const recordId of targetIds) {
                 const rapport = displayedAbsences.find(r => r.id === recordId);
                 if (!rapport) continue;
 
                 const absents = (rapport.stagiaires || []).filter(s => s.status === 'ABSENT');
-                const total = (rapport.stagiaires || []).length;
+                const total = rapport.total_group_students || (rapport.stagiaires || []).length;
                 const taux = total > 0 ? Math.round((absents.length / total) * 100) : 0;
 
                 const ws_data = [
@@ -227,7 +231,9 @@ const Rapports = () => {
             console.error("Export Excel error", error);
         }
         setIsExporting(false);
-        setSelectedRecords([]);
+        if (targetIds === selectedRecords) {
+            setSelectedRecords([]);
+        }
     };
 
     return (
@@ -446,7 +452,7 @@ const Rapports = () => {
                                         <td className="py-6 px-4">
                                             <div className="flex flex-col">
                                                 <span className="text-xs font-black italic text-[var(--primary)] uppercase">
-                                                    {(record.stagiaires || []).filter(s => s.status === 'ABSENT').length} / {(record.stagiaires || []).length}
+                                                    {(record.stagiaires || []).filter(s => s.status === 'ABSENT').length} / {record.total_group_students || (record.stagiaires || []).length}
                                                 </span>
                                                 <span className="text-[8px] font-bold text-slate-300 uppercase tracking-widest">{t('reports.absent_label')}</span>
                                             </div>
@@ -472,6 +478,9 @@ const Rapports = () => {
                 isOpen={!!selectedRapport}
                 onClose={() => setSelectedRapport(null)}
                 rapport={selectedRapport}
+                onExportPDF={() => handleExportPDF([selectedRapport.id])}
+                onExportExcel={() => handleExportExcel([selectedRapport.id])}
+                isExporting={isExporting}
             />
 
             {/* Hidden export components (REBRANDED FOR ISTA) */}
@@ -571,14 +580,14 @@ const Rapports = () => {
                             </div>
 
                             {/* Signature */}
-                            <div className="w-full mt-auto pt-2">
+                            <div className="w-full mt-auto pt-2 pb-8">
                                 <h3 className="text-sm font-bold italic mb-2">Signature du formateur</h3>
                                 {rapport.signature ? (
-                                    <div className="h-16 flex items-start mt-2">
+                                    <div className="h-24 flex items-start mt-2">
                                         <img 
                                             src={getSignatureDataURI(rapport.signature)} 
                                             alt="Signature" 
-                                            className="max-h-16 object-contain grayscale contrast-200 mix-blend-multiply"
+                                            className="max-h-24 w-auto object-contain grayscale contrast-200 mix-blend-multiply"
                                         />
                                     </div>
                                 ) : (

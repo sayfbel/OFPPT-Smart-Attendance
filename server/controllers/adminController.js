@@ -385,7 +385,8 @@ exports.updateUser = async (req, res, next) => {
             const [[oldRecord]] = await pool.query('SELECT qr_path FROM stagiaires WHERE NumInscription = ?', [id]);
 
             if (oldRecord && oldRecord.qr_path) {
-                const absoluteOldPath = path.join(__dirname, '..', oldRecord.qr_path);
+                const relativeOldPath = oldRecord.qr_path.startsWith('/') ? oldRecord.qr_path.substring(1) : oldRecord.qr_path;
+                const absoluteOldPath = path.join(__dirname, '..', relativeOldPath);
                 if (fs.existsSync(absoluteOldPath)) {
                     fs.unlinkSync(absoluteOldPath);
                 }
@@ -471,7 +472,8 @@ exports.deleteUser = async (req, res) => {
         if (role === 'stagiaire') {
             const [[user]] = await pool.query('SELECT qr_path FROM stagiaires WHERE NumInscription = ?', [id]);
             if (user && user.qr_path) {
-                const absolutePath = path.join(__dirname, '..', user.qr_path);
+                const relativePath = user.qr_path.startsWith('/') ? user.qr_path.substring(1) : user.qr_path;
+                const absolutePath = path.join(__dirname, '..', relativePath);
                 if (fs.existsSync(absolutePath)) {
                     fs.unlinkSync(absolutePath);
                 }

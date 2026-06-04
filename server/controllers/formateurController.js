@@ -48,6 +48,9 @@ exports.submitReport = async (req, res) => {
             );
         }
 
+        // 4. Clear active checkins since session is concluded
+        await pool.query('DELETE FROM active_checkins WHERE group_id = ?', [group_id]);
+
         res.status(201).json({ message: 'Report submitted successfully', reportId });
     } catch (err) {
         console.error("SUBMIT REPORT ERROR:", err);
@@ -143,8 +146,8 @@ exports.processCheckinByQR = async (req, res) => {
             return res.status(400).json({ message: 'Invalid signal format. Cluster mismatch.' });
         }
 
-        const name = namePart.split(':')[1];
-        const group = groupPart.split(':')[1];
+        const name = namePart.substring(5).trim();
+        const group = groupPart.substring(6).trim();
 
         if (group !== groupId) {
             return res.status(403).json({ message: `Access Denied: Node ${name} belongs to Cluster ${group}.` });
@@ -153,19 +156,36 @@ exports.processCheckinByQR = async (req, res) => {
         // Look up student id from name and group
         const normalizedName = name.replace(/_/g, ' ');
         const [students] = await pool.query(
-            'SELECT NumInscription as id FROM stagiaires WHERE (name = ? OR REPLACE(name, " ", "_") = ?) AND group_id = ?', 
+            'SELECT NumInscription as id FROM stagiaires WHERE (LOWER(TRIM(name)) = LOWER(?) OR LOWER(REPLACE(name, " ", "_")) = LOWER(?)) AND group_id = ?', 
             [normalizedName, name, group]
         );
         if (students.length === 0) {
-            return res.status(404).json({ message: 'Entity not found in the manifest.' });
+            return res.status(404).json({ message: `L'étudiant "${name}" n'a pas été trouvé dans le groupe ${group}. Veuillez vérifier le code QR.` });
         }
 
         const studentId = students[0].id;
 
+        // Check if student is locked as ABSENT for the day
+        const [locked] = await pool.query(`
+            SELECT 1 FROM report_attendance ra
+            JOIN reports r ON ra.report_id = r.id
+            WHERE r.group_id = ? AND ra.student_id = ? AND DATE(r.date) = CURDATE() AND ra.status = 'ABSENT'
+        `, [groupId, studentId]);
+
+        if (locked.length > 0) {
+            return res.status(403).json({ message: "L'étudiant est verrouillé comme ABSENT pour aujourd'hui.", name, lockedOut: true });
+        }
+
+        // Check if already in active_checkins
+        const [existing] = await pool.query('SELECT * FROM active_checkins WHERE student_id = ? AND group_id = ?', [studentId, groupId]);
+        if (existing.length > 0) {
+            return res.status(200).json({ message: 'Already scanned.', name, alreadyScanned: true });
+        }
+
         // Register in active_checkins
         await pool.query('INSERT IGNORE INTO active_checkins (student_id, group_id) VALUES (?, ?)', [studentId, groupId]);
 
-        res.json({ message: 'Signal Captured: Syncing node...', name });
+        res.json({ message: 'Signal Captured: Syncing node...', name, alreadyScanned: false });
     } catch (err) {
         console.error("QR CHECKIN ERROR:", err);
         res.status(500).json({ message: 'Neural link interrupted.' });
@@ -179,15 +199,10 @@ exports.getActiveCheckins = async (req, res) => {
             SELECT id, status FROM (
                 SELECT id, status, ROW_NUMBER() OVER(PARTITION BY id ORDER BY priority ASC) as rank_idx
                 FROM (
-                    SELECT ra.student_id as id, 'PRESENT' as status, 1 as priority
-                    FROM report_attendance ra
-                    JOIN reports r ON ra.report_id = r.id
-                    WHERE r.group_id = ? AND DATE(r.date) = CURDATE() AND (ra.Justifier = 'JUSTIFIÉ' OR ra.Justifier = 'NON JUSTIFIÉ')
-                    UNION
                     SELECT ra.student_id as id, 'ABSENT' as status, 1 as priority
                     FROM report_attendance ra
                     JOIN reports r ON ra.report_id = r.id
-                    WHERE r.group_id = ? AND DATE(r.date) = CURDATE() AND ra.Justifier = 'ABSENCE'
+                    WHERE r.group_id = ? AND DATE(r.date) = CURDATE() AND ra.status = 'ABSENT'
                     UNION
                     SELECT student_id as id, status, 2 as priority 
                     FROM active_checkins 
@@ -195,8 +210,8 @@ exports.getActiveCheckins = async (req, res) => {
                 ) as raw_data
             ) as ranked_data
             WHERE rank_idx = 1
-        `, [groupId, groupId, groupId]);
-        res.json({ checkins: checkins.map(c => ({ student_id: c.id, status: c.status })) });
+        `, [groupId, groupId]);
+        res.json({ checkins: checkins.map(c => ({ student_id: c.id, status: c.status || 'PRESENT' })) });
     } catch (err) {
         console.error("GET CHECKINS ERROR:", err);
         res.status(500).json({ message: 'Telemetry fetch failure.' });
@@ -220,11 +235,23 @@ exports.updateCheckinStatus = async (req, res) => {
     try {
         const { studentId, groupId, status } = req.body;
 
-            await pool.query('DELETE FROM active_checkins WHERE student_id = ? AND group_id = ?', [studentId, groupId]);
-            await pool.query(
-                'INSERT INTO active_checkins (student_id, group_id, status) VALUES (?, ?, ?)',
-                [studentId, groupId, status]
-            );
+        if (status === 'PRESENT') {
+            const [locked] = await pool.query(`
+                SELECT 1 FROM report_attendance ra
+                JOIN reports r ON ra.report_id = r.id
+                WHERE r.group_id = ? AND ra.student_id = ? AND DATE(r.date) = CURDATE() AND ra.status = 'ABSENT'
+            `, [groupId, studentId]);
+
+            if (locked.length > 0) {
+                return res.status(403).json({ message: "L'étudiant est verrouillé comme ABSENT pour aujourd'hui." });
+            }
+        }
+
+        await pool.query('DELETE FROM active_checkins WHERE student_id = ? AND group_id = ?', [studentId, groupId]);
+        await pool.query(
+            'INSERT INTO active_checkins (student_id, group_id, status) VALUES (?, ?, ?)',
+            [studentId, groupId, status]
+        );
 
         res.json({ message: `Status synchronized for entity ${studentId}.` });
     } catch (err) {

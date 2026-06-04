@@ -24,6 +24,7 @@ const Scanner = () => {
     const [submitting, setSubmitting] = useState(false);
 
     const prevCheckinsRef = useRef([]);
+    const isFirstSyncRef = useRef(true);
 
     // 1. Sync Checkins
     useEffect(() => {
@@ -40,7 +41,9 @@ const Scanner = () => {
                     .filter(c => c.status === 'PRESENT' || c.status === undefined)
                     .map(c => c.student_id !== undefined ? c.student_id : c);
 
-                if (currentIds.length > prevCheckinsRef.current.length) {
+                if (isFirstSyncRef.current) {
+                    isFirstSyncRef.current = false;
+                } else if (currentIds.length > prevCheckinsRef.current.length) {
                     const newId = currentIds.find(id => !prevCheckinsRef.current.includes(id));
                     const student = activeStudents.find(s => s.id === newId);
 
@@ -62,64 +65,87 @@ const Scanner = () => {
             }
         };
 
+        // Run immediately on mount to establish baseline without triggering popup
+        syncCheckins();
+        
         const interval = setInterval(syncCheckins, 1500);
         return () => clearInterval(interval);
     }, [groupId, activeStudents]);
+
+    const lastScanTimeRef = useRef(0);
 
     // 2. Start HTML5 QR Scanner
     useEffect(() => {
         let scanner = null;
         let isInstanceMounted = true;
+        let initTimeout = null;
 
         if (groupId) {
-            scanner = new Html5QrcodeScanner(
-                "qr-reader",
-                { fps: 10, qrbox: { width: 250, height: 250 } },
-                /* verbose= */ false
-            );
+            initTimeout = setTimeout(() => {
+                scanner = new Html5QrcodeScanner(
+                    "qr-reader",
+                    { fps: 10, qrbox: { width: 250, height: 250 } },
+                    /* verbose= */ false
+                );
 
-            scanner.render(async (decodedText) => {
-                // on scan success
-                if (submitting) return; // Ignore scans while submitting report
-                
-                try {
-                    const token = localStorage.getItem('token');
-                    const config = { headers: { Authorization: `Bearer ${token}` } };
+                scanner.render(async (decodedText) => {
+                    // Check if 5 seconds have passed since last scan
+                    const now = Date.now();
+                    if (now - lastScanTimeRef.current < 5000) {
+                        return; // Ignore scan
+                    }
+                    lastScanTimeRef.current = now;
+
+                    // on scan success
+                    if (submitting) return; // Ignore scans while submitting report
                     
-                    const res = await axios.post('/api/formateur/process-checkin-qr', { 
-                        qrContent: decodedText, 
-                        groupId 
-                    }, config);
+                    try {
+                        const token = localStorage.getItem('token');
+                        const config = { headers: { Authorization: `Bearer ${token}` } };
+                        
+                        const res = await axios.post('/api/formateur/process-checkin-qr', { 
+                            qrContent: decodedText, 
+                            groupId 
+                        }, config);
 
-                    if (isInstanceMounted) {
-                        setLastScan({
-                            name: res.data.name || decodedText,
-                            alreadyScanned: false,
-                            time: new Date().toLocaleTimeString(),
-                            success: true
-                        });
-                        setTimeout(() => setLastScan(null), 3500);
-                        addNotification(t('scanner.success_msg', 'QR Code scanné avec succès'), 'success');
+                        if (isInstanceMounted) {
+                            setLastScan({
+                                name: res.data.name || decodedText,
+                                alreadyScanned: res.data.alreadyScanned || false,
+                                time: new Date().toLocaleTimeString(),
+                                success: true
+                            });
+                            setTimeout(() => setLastScan(null), 3500);
+                            
+                            if (res.data.alreadyScanned) {
+                                addNotification(t('scanner.already_scanned', 'Ce stagiaire est déjà présent'), 'warning');
+                            } else {
+                                addNotification(t('scanner.success_msg', 'QR Code scanné avec succès'), 'success');
+                            }
+                        }
+                    } catch (err) {
+                        if (err.response?.status === 403 || err.response?.status === 404) {
+                            addNotification(err.response?.data?.message || 'Erreur lors du scan', 'error');
+                        }
                     }
-                } catch (err) {
-                    if (err.response?.status === 403 || err.response?.status === 404) {
-                        addNotification(err.response?.data?.message || 'Erreur lors du scan', 'error');
-                    }
-                }
-            }, (errorMessage) => {
-                // Ignore general scan errors (happens every frame when no QR is visible)
-            });
+                }, (errorMessage) => {
+                    // Ignore general scan errors (happens every frame when no QR is visible)
+                });
+            }, 100);
         }
 
         return () => {
             isInstanceMounted = false;
+            if (initTimeout) {
+                clearTimeout(initTimeout);
+            }
             if (scanner) {
                 scanner.clear().catch(error => {
                     console.error("Failed to clear html5QrcodeScanner. ", error);
                 });
             }
         };
-    }, [groupId]);
+    }, [groupId, submitting]);
 
     // 3. Initial Data
     useEffect(() => {
@@ -136,41 +162,49 @@ const Scanner = () => {
         if (groupId) fetchMainData();
     }, [groupId]);
 
-    const handleExit = () => {
-        navigate('/formateur');
+    const handleExit = async () => {
+        try {
+            if (groupId) {
+                const token = localStorage.getItem('token');
+                const config = { headers: { Authorization: `Bearer ${token}` } };
+                await axios.post('/api/formateur/clear-checkins', { groupId }, config);
+            }
+        } catch (err) {
+            console.error("Failed to clear checkins on exit:", err);
+        } finally {
+            navigate('/formateur');
+        }
     };
 
-    const handleConfirm = async () => {
+    const handleConfirm = () => {
         if (submitting) return;
-        setLastScan(null);
-        setSubmitting(true);
-        try {
-            const token = localStorage.getItem('token');
-            const config = { headers: { Authorization: `Bearer ${token}` } };
+        
+        const activeSession = {
+            group: groupId,
+            subject: decodeURIComponent(subject || 'COURS'),
+            room: room || 'ROOM',
+            time: sessionTime || new Date().toLocaleTimeString()
+        };
 
-            const reportData = {
-                report_code: `REP-${groupId}-${new Date().toISOString().split('T')[0]}-${Date.now().toString().slice(-4)}`,
-                group_id: groupId,
-                date: new Date().toISOString().split('T')[0],
-                subject: decodeURIComponent(subject || 'COURS'),
-                heure: sessionTime || new Date().toLocaleTimeString(),
-                stagiaires: activeStudents.map(s => ({
-                    id: s.id,
-                    status: checkedInIds.includes(s.id) ? 'PRESENT' : 'ABSENT'
-                })),
-                signature: "SCANNER_AUTO_ISTA"
-            };
+        const studentsWithStatus = activeStudents.map(s => ({
+            ...s,
+            status: checkedInIds.includes(s.id) ? 'PRESENT' : 'ABSENT'
+        }));
 
-            await axios.post('/api/formateur/submit-report', reportData, config);
+        const stats = {
+            total: activeStudents.length,
+            present: checkedInIds.length,
+            absent: activeStudents.length - checkedInIds.length,
+            late: 0
+        };
 
-            addNotification(t('scanner.success_msg'), 'success');
-            navigate(`/formateur?selectedGroup=${groupId}`);
-        } catch (err) {
-            console.error("Submission error:", err);
-            addNotification(t('scanner.save_error'), "error");
-        } finally {
-            setSubmitting(false);
-        }
+        navigate('/formateur/dossier', { 
+            state: { 
+                activeSession, 
+                students: studentsWithStatus, 
+                stats 
+            } 
+        });
     };
 
     const toggleManualStatus = async (studentId, currentStatus) => {
@@ -179,7 +213,7 @@ const Scanner = () => {
             const token = localStorage.getItem('token');
             const config = { headers: { Authorization: `Bearer ${token}` } };
             
-            await axios.post('/api/formateur/active-checkins/update', {
+            await axios.post('/api/formateur/update-checkin-status', {
                 studentId,
                 groupId,
                 status: newStatus
