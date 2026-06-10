@@ -118,13 +118,18 @@ const Rapports = () => {
         for (const recordId of targetIds) {
             const element = document.getElementById(`pdf-export-${recordId}`);
             if (element) {
-                element.style.display = 'flex';
+                element.style.display = 'block';
+                
+                // Allow browser to calculate layout and styles before capturing
+                await new Promise(resolve => setTimeout(resolve, 150));
+                
                 const opt = {
                     margin: 0,
                     filename: `Rapport_ISTA_${recordId}.pdf`,
                     image: { type: 'jpeg', quality: 0.98 },
-                    html2canvas: { scale: 1.5, useCORS: true, backgroundColor: '#ffffff' },
-                    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+                    html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff', scrollY: 0 },
+                    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+                    pagebreak: { mode: ['css', 'legacy'] }
                 };
                 await window.html2pdf().set(opt).from(element).save();
                 element.style.display = 'none';
@@ -484,7 +489,7 @@ const Rapports = () => {
             />
 
             {/* Hidden export components (REBRANDED FOR ISTA) */}
-            <div className="hidden">
+            <div className="absolute left-[-9999px] top-[-9999px] w-0 h-0 overflow-hidden">
                 {displayedAbsences.map(rapport => {
                     const absents = (rapport.stagiaires || []).filter(s => s.status === 'ABSENT');
                     const total = (rapport.stagiaires || []).length;
@@ -495,8 +500,8 @@ const Rapports = () => {
                         key={`export-${rapport.id}`}
                         id={`pdf-export-${rapport.id}`}
                         dir={isRtl ? 'rtl' : 'ltr'}
-                        style={{ display: 'none', width: '210mm', backgroundColor: '#ffffff', color: '#000000', fontFamily: 'Helvetica, Arial, sans-serif' }}
-                        className="px-8 py-8 relative"
+                        style={{ display: 'none', width: '210mm', backgroundColor: '#ffffff', color: '#000000', fontFamily: 'Helvetica, Arial, sans-serif', overflow: 'visible' }}
+                        className="px-8 py-8 relative pdf-export-element"
                     >
                         <div className="w-full flex flex-col bg-white">
                             {/* Title */}
@@ -602,6 +607,8 @@ const Rapports = () => {
                 .ista-scrollbar::-webkit-scrollbar { width: 4px; height: 4px; }
                 .ista-scrollbar::-webkit-scrollbar-track { background: transparent; }
                 .ista-scrollbar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
+                .pdf-export-element { overflow: visible !important; }
+                .pdf-export-element * { overflow: visible !important; }
             `}</style>
         </div>
     );

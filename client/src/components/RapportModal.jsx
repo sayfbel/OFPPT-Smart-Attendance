@@ -20,7 +20,7 @@ const RapportModal = ({ isOpen, onClose, rapport, onExportPDF, onExportExcel, is
                 </button>
 
                 {/* Left Side (Branding & Status) */}
-                <div className="w-full md:w-[35%] bg-gradient-to-br from-[var(--secondary)] to-[#003d6b] text-white p-12 flex flex-col">
+                <div className="w-full md:w-[35%] bg-gradient-to-br from-[var(--secondary)] to-[#003d6b] text-white p-12 flex flex-col overflow-y-auto ista-scrollbar">
                     <div className="mb-auto">
                         <div className="w-16 h-16 bg-white/10 rounded-2xl flex items-center justify-center border border-white/20 mb-8">
                             <FileText className="w-8 h-8 text-white" />
