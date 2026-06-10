@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../hooks/useAuth';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import {
     LayoutDashboard,
@@ -27,8 +27,8 @@ import {
     MapPin
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import axios from 'axios';
-import NotificationPanel from '../components/NotificationPanel';
+import api from '../services/api';
+import { NotificationPanel } from '../components/UI';
 import ofpptLogo from '../assets/OFPPT.png';
 
 const DashboardLayout = ({ children }) => {
@@ -44,11 +44,7 @@ const DashboardLayout = ({ children }) => {
 
     const fetchNotifications = async () => {
         try {
-            const token = localStorage.getItem('token');
-            if (!token) return;
-            const res = await axios.get('/api/notifications', {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            const res = await api.get('/notifications');
 
             const formatted = res.data.notifications.map(n => {
                 const date = new Date(n.created_at);
@@ -82,10 +78,7 @@ const DashboardLayout = ({ children }) => {
 
     const handleMarkRead = async (id) => {
         try {
-            const token = localStorage.getItem('token');
-            await axios.put(`/api/notifications/${id}/read`, {}, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            await api.put(`/notifications/${id}/read`);
             setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
         } catch (err) {
             console.error("MARK READ ERROR:", err);
@@ -94,10 +87,7 @@ const DashboardLayout = ({ children }) => {
 
     const handleMarkAllRead = async () => {
         try {
-            const token = localStorage.getItem('token');
-            await axios.put('/api/notifications/read-all', {}, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            await api.put('/notifications/read-all');
             setNotifications(prev => prev.map(n => ({ ...n, read: true })));
         } catch (err) {
             console.error("MARK ALL READ ERROR:", err);

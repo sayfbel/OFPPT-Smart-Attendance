@@ -1,0 +1,10 @@
+.ista-scrollbar::-webkit-scrollbar {
+    width: 4px;
+}
+.ista-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+}
+.ista-scrollbar::-webkit-scrollbar-thumb {
+    background: #e2e8f0;
+    border-radius: 10px;
+}

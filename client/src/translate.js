@@ -105,6 +105,7 @@ const resources = {
                 justif_error: "Erreur lors de la mise à jour de la justification",
                 penalty_success: "Sanction attribuée avec succès",
                 penalty_error: "Erreur lors de l'attribution de la sanction",
+                filter_date: "FILTRER PAR DATE",
             },
             profile: {
                 title: "MON PROFIL",
@@ -622,6 +623,7 @@ const resources = {
                 justif_error: "خطأ أثناء تحديث التبرير",
                 penalty_success: "تم تعيين العقوبة بنجاح",
                 penalty_error: "خطأ أثناء تعيين العقوبة",
+                filter_date: "تصفية حسب التاريخ",
             },
             profile: {
                 title: "ملفي الشخصي",

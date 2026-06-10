@@ -1,0 +1,15 @@
+.accounts-card {
+  transition: var(--transition-smooth);
+}
+
+.accounts-card-selected {
+  border-color: var(--color-active-border) !important;
+  background-color: var(--color-bg-card) !important;
+  box-shadow: var(--shadow-hover) !important;
+  opacity: 1 !important;
+}
+
+.accounts-card-active-dot {
+  background-color: var(--color-active-border) !important;
+  box-shadow: 0 0 0 4px rgba(0, 135, 90, 0.2);
+}

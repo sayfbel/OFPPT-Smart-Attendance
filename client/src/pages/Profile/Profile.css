@@ -1,0 +1,20 @@
+.profile-tab-btn {
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+  transition: var(--transition-smooth);
+}
+
+.profile-tab-btn.active-tab {
+  background-color: var(--color-bg-main);
+  color: var(--color-secondary-green) !important;
+}
+
+html:not([dir="rtl"]) .profile-tab-btn.active-tab {
+  border-left-color: var(--color-secondary-green);
+  border-right-color: transparent;
+}
+
+html[dir="rtl"] .profile-tab-btn.active-tab {
+  border-right-color: var(--color-secondary-green);
+  border-left-color: transparent;
+}

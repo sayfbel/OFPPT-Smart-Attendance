@@ -6,39 +6,66 @@
 @tailwind utilities;
 
 :root {
-  /* OFPPT Brand Colors */
-  --primary: #00843D;
-  /* OFPPT Green */
-  --primary-light: #00A651;
-  --primary-dark: #006837;
-  --secondary: #005596;
-  /* OFPPT Blue */
-  --secondary-light: #006DB1;
+  /* --- Brand Color Palette (OFPPT Inspired) --- */
+  --color-primary-blue: #0A5593;     /* Deep Royal Blue for Headers and Branding */
+  --color-primary-blue-dark: #084373;/* Darker Royal Blue for brand gradients */
+  --color-secondary-green: #00875A;  /* Professional Emerald Green for Primary Actions & Accents */
+  --color-primary-hover: #006644;
+  --color-text-dark: #1E293B;        /* High-contrast Charcoal Slate for Main Text */
+  --color-text-muted: #64748B;       /* Medium Slate for Captions and Subtext */
+  --color-bg-main: #F8FAFC;          /* Clean Light Gray Canvas */
+  --color-bg-card: #FFFFFF;          /* Pure White for Elevated Paper Cards */
+  --color-border: #E2E8F0;           /* Subtle Borders */
+  --gradient-brand: linear-gradient(135deg, var(--color-primary-blue), var(--color-primary-blue-dark));
+  
+  /* --- Interactive & Validation Statuses --- */
+  --color-active-bg: rgba(0, 135, 90, 0.06); 
+  --color-active-border: #00875A;
+  --color-error: #D32F2F;
+  --color-warning: #ED6C02;
+
+  /* --- Typography System --- */
+  --font-family-base: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+
+  /* --- Component Sizing Scale --- */
+  --radius-sm: 6px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --transition-smooth: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  --shadow-subtle: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+  --shadow-hover: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -2px rgba(0, 0, 0, 0.04);
+
+  /* --- Backward Compatibility Mappings --- */
+  --primary: var(--color-secondary-green);
+  --primary-light: #00a672;
+  --primary-dark: var(--color-primary-hover);
+  --secondary: var(--color-primary-blue);
+  --secondary-light: #0d6dbb;
   --accent: #FDB913;
-  /* OFPPT Yellow/Gold */
 
-  /* UI Colors */
-  --background: #f8fafc;
-  --surface: #ffffff;
-  --surface-hover: #f1f5f9;
-  --text: #1e293b;
-  --text-muted: #64748b;
-  --border: #e2e8f0;
-  --border-strong: #cbd5e1;
+  --background: var(--color-bg-main);
+  --surface: var(--color-bg-card);
+  --surface-hover: #F1F5F9;
+  --text: var(--color-text-dark);
+  --text-muted: var(--color-text-muted);
+  --border: var(--color-border);
+  --border-strong: #CBD5E1;
 
-  /* Status Colors */
-  --success: #10b981;
-  --error: #ef4444;
-  --warning: #f59e0b;
+  --success: var(--color-secondary-green);
+  --error: var(--color-error);
+  --warning: var(--color-warning);
 
-  /* Smoothness */
+  --radius: var(--radius-md);
+  --shadow-sm: var(--shadow-subtle);
+  --shadow-md: var(--shadow-subtle);
+  --shadow-lg: var(--shadow-hover);
   --ease-out-expo: cubic-bezier(0.19, 1, 0.22, 1);
   --transition-slow: 0.6s var(--ease-out-expo);
   --transition-base: 0.3s var(--ease-out-expo);
-  --radius: 12px;
-  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
 }
 
 .dark {
@@ -63,20 +90,21 @@ html {
 }
 
 body {
-  font-family: 'Outfit', sans-serif;
-  background-color: var(--background);
-  color: var(--text);
+  font-family: var(--font-family-base);
+  background-color: var(--color-bg-main);
+  color: var(--color-text-dark);
   min-height: 100vh;
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
 }
 
 [dir="rtl"] {
-  font-family: 'Tajawal', sans-serif;
+  --font-family-base: 'Tajawal', sans-serif;
+  font-family: var(--font-family-base);
 }
 
 [dir="rtl"] body {
-  font-family: 'Tajawal', sans-serif;
+  font-family: var(--font-family-base);
 }
 
 .font-arabic {
@@ -247,8 +275,12 @@ textarea {
 input:focus,
 select:focus,
 textarea:focus {
-  border-color: var(--primary);
-  box-shadow: 0 0 0 4px rgba(0, 132, 61, 0.1);
+  border-color: var(--color-active-border);
+  box-shadow: 0 0 0 4px rgba(0, 135, 90, 0.1);
+}
+
+.bg-brand-gradient {
+  background: var(--gradient-brand);
 }
 
 /* Gradient Text */

@@ -1,0 +1,31 @@
+.ista-scrollbar::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+}
+.ista-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+}
+.ista-scrollbar::-webkit-scrollbar-thumb {
+    background: #e2e8f0;
+    border-radius: 10px;
+}
+
+.divisions-card {
+  transition: var(--transition-smooth);
+}
+
+.divisions-card-selected {
+  border-color: var(--color-active-border) !important;
+  background-color: var(--color-active-bg) !important;
+  box-shadow: var(--shadow-hover) !important;
+}
+
+.divisions-card-icon-selected {
+  background-color: var(--color-active-border) !important;
+  border-color: var(--color-active-border) !important;
+  color: #ffffff !important;
+}
+
+.divisions-card-dot-selected {
+  background-color: var(--color-active-border) !important;
+}

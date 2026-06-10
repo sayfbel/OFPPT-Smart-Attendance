@@ -1,0 +1,9 @@
+export { default as ClassDossierModal } from './ClassDossierModal';
+export { default as ConfirmationModal } from './ConfirmationModal';
+export { default as ExportReportsModal } from './ExportReportsModal';
+export { default as GroupDossierModal } from './GroupDossierModal';
+export { default as GroupModal } from './GroupModal';
+export { default as IdentityModal } from './IdentityModal';
+export { default as PenaltyModal } from './PenaltyModal';
+export { default as RapportModal } from './RapportModal';
+export { default as SeanceDossierModal } from './SeanceDossierModal';

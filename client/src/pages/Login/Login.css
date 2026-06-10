@@ -1,0 +1,5 @@
+.login-bg-pattern {
+  background-image: url("/bg_pattern.png");
+  background-size: cover;
+  background-position: center;
+}
