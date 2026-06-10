@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import ReactDOM from 'react-dom';
 import { ChevronRight, X, ChevronDown, CheckSquare, Square, UserPlus, Save, Mail, Shield, GraduationCap, Briefcase, Settings, User, BookOpen, Hash, Layers, Lock, FileUp } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import './IdentityModal.css';
 
 const IdentityModal = ({ isOpen, onClose, newUser, setNewUser, handleAddUser, handleUpdateUser, handleImportExcel, selectedGroup, availableGroups = [], availableFilieres = [], isEditing = false }) => {
     const { t, i18n } = useTranslation();
@@ -64,98 +65,96 @@ const IdentityModal = ({ isOpen, onClose, newUser, setNewUser, handleAddUser, ha
     const currentRole = roles.find(r => r.value === newUser.role) || roles[0];
 
     return ReactDOM.createPortal(
-        <div className="fixed inset-0 z-[9999] bg-black/60 backdrop-blur-md flex items-center justify-center p-4 sm:p-8 animate-in fade-in duration-300">
-            <div className={`bg-white rounded-[40px] w-full max-w-5xl shadow-2xl relative overflow-hidden flex flex-col md:flex-row h-[90vh] max-h-[800px] ${isRtl ? 'md:flex-row-reverse' : ''}`}>
+        <div className="identity-modal-overlay">
+            <div className={`identity-modal-content ${isRtl ? 'rtl' : ''}`}>
 
                 {/* Left side (Info/Status) */}
-                <div className="w-full md:w-[35%] bg-gradient-to-b from-[var(--secondary)] to-[#003d6b] text-white p-12 flex flex-col">
-                    <div className="mb-auto">
-                        <div className="w-16 h-16 bg-white/10 rounded-2xl flex items-center justify-center border border-white/20 mb-8">
-                            <Settings className="w-8 h-8 text-white" />
+                <div className="identity-modal-info-panel">
+                    <div className="identity-modal-info-top">
+                        <div className="identity-modal-icon-wrapper">
+                            <Settings className="identity-modal-icon" />
                         </div>
-                        <h2 className={`text-4xl lg:text-5xl font-black italic tracking-tighter leading-[0.9] mb-4 uppercase ${isRtl ? 'text-right' : ''}`}>
+                        <h2 className={`identity-modal-panel-title ${isRtl ? 'rtl' : ''}`}>
                             {isEditing ? t('modals.identity.editing') : t('modals.identity.new')} <br />
-                            <span className="text-[var(--primary)] text-5xl lg:text-6xl">{t('modals.identity.label')}</span>
+                            <span className="identity-modal-panel-highlight">{t('modals.identity.label')}</span>
                         </h2>
-                        <p className={`text-[10px] font-bold text-white/50 tracking-[0.3em] uppercase ${isRtl ? 'text-right' : ''}`}>{t('modals.identity.service_tag')}</p>
+                        <p className={`identity-modal-panel-subtitle ${isRtl ? 'rtl' : ''}`}>{t('modals.identity.service_tag')}</p>
                     </div>
 
-                    <div className="space-y-8 mt-12 bg-black/10 p-8 rounded-3xl border border-white/5">
-                        <div className={`space-y-1 ${isRtl ? 'text-right' : ''}`}>
-                            <p className="text-[9px] font-black text-white/40 tracking-widest uppercase">{t('modals.identity.system_id')}</p>
-                            <p className="text-sm font-black italic uppercase tracking-tight">{isEditing ? `ID_${newUser.id.toString().padStart(4, '0')}` : t('modals.identity.auto_gen')}</p>
+                    <div className="identity-modal-status-box">
+                        <div className={`identity-modal-status-item ${isRtl ? 'rtl' : ''}`}>
+                            <p className="identity-modal-status-label">{t('modals.identity.system_id')}</p>
+                            <p className="identity-modal-status-value">{isEditing ? `ID_${newUser.id.toString().padStart(4, '0')}` : t('modals.identity.auto_gen')}</p>
                         </div>
-                        <div className={`space-y-1 ${isRtl ? 'text-right' : ''}`}>
-                            <p className="text-[9px] font-black text-white/40 tracking-widest uppercase">{t('modals.identity.group_label')}</p>
-                            <p className="text-sm font-black italic uppercase tracking-tight text-[var(--primary)]">{selectedGroup || t('modals.identity.global_access')}</p>
+                        <div className={`identity-modal-status-item ${isRtl ? 'rtl' : ''}`}>
+                            <p className="identity-modal-status-label">{t('modals.identity.group_label')}</p>
+                            <p className="identity-modal-status-value primary">{selectedGroup || t('modals.identity.global_access')}</p>
                         </div>
-                        <div className={`space-y-1 ${isRtl ? 'text-right' : ''}`}>
-                            <p className="text-[9px] font-black text-white/40 tracking-widest uppercase">{t('modals.identity.updating')}</p>
-                            <div className={`flex items-center gap-2 ${isRtl ? 'flex-row-reverse' : ''}`}>
-                                <div className={`w-2 h-2 rounded-full animate-pulse ${isEditing ? 'bg-amber-400' : 'bg-green-500'}`}></div>
-                                <p className="text-[10px] font-black uppercase tracking-widest">{isEditing ? t('modals.identity.updating') : t('modals.identity.init')}</p>
+                        <div className={`identity-modal-status-item ${isRtl ? 'rtl' : ''}`}>
+                            <p className="identity-modal-status-label">{t('modals.identity.updating')}</p>
+                            <div className={`identity-modal-updating-wrapper ${isRtl ? 'rtl' : ''}`}>
+                                <div className={`identity-modal-updating-dot ${isEditing ? 'edit' : 'new'}`}></div>
+                                <p className="identity-modal-updating-text">{isEditing ? t('modals.identity.updating') : t('modals.identity.init')}</p>
                             </div>
                         </div>
                     </div>
 
-                    <div className="mt-auto hidden md:block">
-                        <p className={`text-[8px] font-bold text-white/30 tracking-[0.4em] uppercase ${isRtl ? 'text-right' : ''}`}>ISTA_OFPPT_DIGITAL_SYSTEM</p>
-                    </div>
+                    <p className={`identity-modal-system-tag ${isRtl ? 'rtl' : ''}`}>ISTA_OFPPT_DIGITAL_SYSTEM</p>
                 </div>
 
                 {/* Right side (Form) */}
-                <div className="flex-1 bg-white flex flex-col relative overflow-hidden">
+                <div className="identity-modal-form-area">
 
                     {/* Fixed Header */}
-                    <div className={`p-12 pb-8 border-b border-slate-50 flex justify-between items-start bg-white sticky top-0 z-30`}>
-                        <div className={isRtl ? 'text-right' : ''}>
-                            <h3 className="text-2xl font-black italic tracking-tight text-[var(--secondary)] uppercase mb-2">{t('modals.identity.title')}</h3>
-                            <p className="text-[10px] font-bold text-slate-400 tracking-widest uppercase">{t('modals.identity.subtitle')}</p>
+                    <div className="identity-modal-header">
+                        <div className={`identity-modal-header-text ${isRtl ? 'rtl' : ''}`}>
+                            <h3 className="identity-modal-title">{t('modals.identity.title')}</h3>
+                            <p className="identity-modal-subtitle">{t('modals.identity.subtitle')}</p>
                         </div>
                         <button
                             onClick={onClose}
-                            className={`p-3 hover:bg-slate-50 rounded-2xl transition-all text-slate-300 hover:text-[var(--secondary)] -mt-2 -mr-2`}
+                            className={`identity-modal-close-btn ${isRtl ? 'rtl' : ''}`}
                         >
                             <X className="w-6 h-6" />
                         </button>
                     </div>
 
-                    <div className="flex-1 overflow-y-auto ista-scrollbar p-12 pt-8">
-                        <form onSubmit={newUser.role === 'stagiaire' && !isEditing && activeTab === 'excel' ? handleImportSubmit : handleSubmit} className="space-y-10 flex flex-col min-h-full">
-                            <div className="space-y-8">
+                    <div className="identity-modal-body ista-scrollbar">
+                        <form onSubmit={newUser.role === 'stagiaire' && !isEditing && activeTab === 'excel' ? handleImportSubmit : handleSubmit} className="identity-modal-form">
+                            <div className="identity-modal-fields">
                                 {/* Rôle */}
-                                <div className="relative space-y-3">
-                                    <label className={`flex items-center gap-2 text-[10px] font-black tracking-widest text-slate-400 uppercase ${isRtl ? 'flex-row-reverse' : ''}`}>
-                                        <Shield className="w-3 h-3" />
+                                <div className="identity-modal-field">
+                                    <label className={`identity-modal-label ${isRtl ? 'rtl' : ''}`}>
+                                        <Shield className="identity-modal-label-icon" />
                                         {t('modals.identity.access_level')}
                                     </label>
                                     <div
                                         onClick={() => setIsRoleDropdownOpen(!isRoleDropdownOpen)}
-                                        className={`w-full bg-slate-50 border border-slate-100 rounded-2xl px-6 py-4 flex justify-between items-center cursor-pointer hover:border-[var(--primary)] transition-all ${isRtl ? 'flex-row-reverse' : ''}`}
+                                        className={`identity-modal-dropdown-toggle ${isRtl ? 'rtl' : ''}`}
                                     >
-                                        <div className={`flex items-center gap-3 ${isRtl ? 'flex-row-reverse' : ''}`}>
-                                            <currentRole.icon className="w-4 h-4 text-[var(--primary)]" />
-                                            <span className="text-sm font-bold text-[var(--secondary)] uppercase tracking-tight">{currentRole.label}</span>
+                                        <div className={`identity-modal-dropdown-info ${isRtl ? 'rtl' : ''}`}>
+                                            <currentRole.icon className="identity-modal-dropdown-icon" />
+                                            <span className="identity-modal-dropdown-text">{currentRole.label}</span>
                                         </div>
-                                        <ChevronDown className={`w-5 h-5 text-[var(--primary)] transition-transform ${isRoleDropdownOpen ? 'rotate-180' : ''}`} />
+                                        <ChevronDown className={`identity-modal-chevron ${isRoleDropdownOpen ? 'open' : ''}`} />
                                     </div>
 
                                     {isRoleDropdownOpen && (
-                                        <div className="absolute top-full left-0 w-full mt-2 bg-white border border-slate-100 rounded-2xl shadow-2xl z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                                        <div className="identity-modal-dropdown-menu">
                                             {roles.map((role) => (
                                                 <div
                                                     key={role.value}
-                                                    className={`px-6 py-4 cursor-pointer flex items-center justify-between hover:bg-slate-50 transition-colors ${newUser.role === role.value ? 'bg-green-50' : ''} ${isRtl ? 'flex-row-reverse' : ''}`}
+                                                    className={`identity-modal-dropdown-item ${newUser.role === role.value ? 'selected' : ''} ${isRtl ? 'rtl' : ''}`}
                                                     onClick={() => {
                                                         setNewUser({ ...newUser, role: role.value });
                                                         setIsRoleDropdownOpen(false);
                                                     }}
                                                 >
-                                                    <div className={`flex items-center gap-3 ${isRtl ? 'flex-row-reverse' : ''}`}>
-                                                        <role.icon className={`w-4 h-4 ${newUser.role === role.value ? 'text-[var(--primary)]' : 'text-slate-400'}`} />
-                                                        <span className={`text-[10px] font-black uppercase tracking-widest ${newUser.role === role.value ? 'text-[var(--primary)]' : 'text-slate-400'}`}>{role.label}</span>
+                                                    <div className={`identity-modal-item-info ${isRtl ? 'rtl' : ''}`}>
+                                                        <role.icon className={`identity-modal-item-icon ${newUser.role === role.value ? 'selected' : 'unselected'}`} />
+                                                        <span className={`identity-modal-item-text ${newUser.role === role.value ? 'selected' : 'unselected'}`}>{role.label}</span>
                                                     </div>
-                                                    {newUser.role === role.value && <div className="w-1.5 h-1.5 bg-[var(--primary)] rounded-full"></div>}
+                                                    {newUser.role === role.value && <div className="identity-modal-indicator"></div>}
                                                 </div>
                                             ))}
                                         </div>
@@ -164,26 +163,18 @@ const IdentityModal = ({ isOpen, onClose, newUser, setNewUser, handleAddUser, ha
 
                                 {/* Dynamic Tabs for Stagiaire creation */}
                                 {newUser.role === 'stagiaire' && !isEditing && (
-                                    <div className="flex bg-slate-50 p-1.5 rounded-2xl border border-slate-100/50">
+                                    <div className="identity-modal-tabs">
                                         <button
                                             type="button"
                                             onClick={() => setActiveTab('individual')}
-                                            className={`flex-1 py-3 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all ${
-                                                activeTab === 'individual'
-                                                    ? 'bg-white text-[var(--secondary)] shadow-sm font-black'
-                                                    : 'text-slate-400 hover:text-slate-600'
-                                            }`}
+                                            className={`identity-modal-tab-btn ${activeTab === 'individual' ? 'active' : 'inactive'}`}
                                         >
                                             {isRtl ? 'فردي' : 'INDIVIDUEL'}
                                         </button>
                                         <button
                                             type="button"
                                             onClick={() => setActiveTab('excel')}
-                                            className={`flex-1 py-3 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all ${
-                                                activeTab === 'excel'
-                                                    ? 'bg-white text-[var(--secondary)] shadow-sm font-black'
-                                                    : 'text-slate-400 hover:text-slate-600'
-                                            }`}
+                                            className={`identity-modal-tab-btn ${activeTab === 'excel' ? 'active' : 'inactive'}`}
                                         >
                                             {isRtl ? 'استيراد من EXCEL' : 'IMPORTATION EXCEL'}
                                         </button>
@@ -192,9 +183,9 @@ const IdentityModal = ({ isOpen, onClose, newUser, setNewUser, handleAddUser, ha
 
                                 {/* Nom Complet */}
                                 {!(newUser.role === 'stagiaire' && !isEditing && activeTab === 'excel') && (
-                                    <div className="space-y-3">
-                                        <label className={`flex items-center gap-2 text-[10px] font-black tracking-widest text-slate-400 uppercase ${isRtl ? 'flex-row-reverse' : ''}`}>
-                                            <User className="w-3 h-3" />
+                                    <div className="identity-modal-field">
+                                        <label className={`identity-modal-label ${isRtl ? 'rtl' : ''}`}>
+                                            <User className="identity-modal-label-icon" />
                                             {t('modals.identity.full_name')}
                                         </label>
                                         <input
@@ -207,36 +198,36 @@ const IdentityModal = ({ isOpen, onClose, newUser, setNewUser, handleAddUser, ha
                                                 setNewUser({ ...newUser, name, email });
                                             }}
                                             placeholder={t('modals.identity.name_placeholder')}
-                                            className={`w-full bg-slate-50 border border-slate-100 rounded-2xl px-6 py-4 text-sm font-bold text-[var(--secondary)] focus:border-[var(--primary)] focus:ring-4 focus:ring-green-500/5 outline-none transition-all placeholder:text-slate-300 ${isRtl ? 'text-right' : ''}`}
+                                            className={`identity-modal-input ${isRtl ? 'rtl' : ''}`}
                                         />
                                     </div>
                                 )}
 
                                 {/* Email & Password (Formateur / Admin only - Read Only) */}
                                 {['formateur', 'admin'].includes(newUser.role) && (
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                         <div className="space-y-3">
-                                             <label className={`flex items-center gap-2 text-[10px] font-black tracking-widest text-slate-400 uppercase ${isRtl ? 'flex-row-reverse' : ''}`}>
-                                                 <Mail className="w-3 h-3" />
+                                    <div className="identity-modal-input-grid">
+                                         <div className="identity-modal-field">
+                                             <label className={`identity-modal-label ${isRtl ? 'rtl' : ''}`}>
+                                                 <Mail className="identity-modal-label-icon" />
                                                  {t('modals.identity.email')}
                                              </label>
                                              <input
                                                  type="email"
                                                  disabled
                                                  value={newUser.email || `${(newUser.name || 'nom').trim().toLowerCase().replace(/\s+/g, '.')}@ofppt.ma`}
-                                                 className={`w-full bg-slate-100/50 border border-slate-100 rounded-2xl px-6 py-4 text-sm font-bold text-slate-400 outline-none transition-all cursor-not-allowed ${isRtl ? 'text-right' : ''}`}
+                                                 className={`identity-modal-input disabled ${isRtl ? 'rtl' : ''}`}
                                              />
                                          </div>
-                                         <div className="space-y-3">
-                                             <label className={`flex items-center gap-2 text-[10px] font-black tracking-widest text-slate-400 uppercase ${isRtl ? 'flex-row-reverse' : ''}`}>
-                                                 <Lock className="w-3 h-3" />
+                                         <div className="identity-modal-field">
+                                             <label className={`identity-modal-label ${isRtl ? 'rtl' : ''}`}>
+                                                 <Lock className="identity-modal-label-icon" />
                                                  {t('modals.identity.default_password')}
                                              </label>
                                              <input
                                                  type="text"
                                                  disabled
                                                  value={(newUser.email || `${(newUser.name || 'nom').trim().toLowerCase().replace(/\s+/g, '.')}@ofppt.ma`).split('@')[0]}
-                                                 className={`w-full bg-slate-100/50 border border-slate-100 rounded-2xl px-6 py-4 text-sm font-bold text-slate-400 outline-none transition-all cursor-not-allowed ${isRtl ? 'text-right' : ''}`}
+                                                 className={`identity-modal-input disabled ${isRtl ? 'rtl' : ''}`}
                                              />
                                          </div>
                                     </div>
@@ -244,9 +235,9 @@ const IdentityModal = ({ isOpen, onClose, newUser, setNewUser, handleAddUser, ha
 
                                 {/* NumInscription (Stagiaire only) */}
                                 {newUser.role === 'stagiaire' && !(newUser.role === 'stagiaire' && !isEditing && activeTab === 'excel') && (
-                                    <div className="space-y-3">
-                                        <label className={`flex items-center gap-2 text-[10px] font-black tracking-widest text-slate-400 uppercase ${isRtl ? 'flex-row-reverse' : ''}`}>
-                                            <Hash className="w-3 h-3" />
+                                    <div className="identity-modal-field">
+                                        <label className={`identity-modal-label ${isRtl ? 'rtl' : ''}`}>
+                                            <Hash className="identity-modal-label-icon" />
                                             {t('modals.identity.num_inscription')}
                                         </label>
                                         <input
@@ -256,36 +247,36 @@ const IdentityModal = ({ isOpen, onClose, newUser, setNewUser, handleAddUser, ha
                                             value={newUser.numInsc || newUser.id || ''}
                                             onChange={e => setNewUser({ ...newUser, numInsc: e.target.value.toUpperCase() })}
                                             placeholder={t('modals.identity.num_inscription_placeholder')}
-                                            className={`w-full bg-slate-50 border border-slate-100 rounded-2xl px-6 py-4 text-sm font-bold text-[var(--secondary)] focus:border-[var(--primary)] focus:ring-4 focus:ring-green-500/5 outline-none transition-all placeholder:text-slate-300 ${isRtl ? 'text-right' : ''} ${isEditing ? 'opacity-50 cursor-not-allowed grayscale' : ''}`}
+                                            className={`identity-modal-input ${isEditing ? 'disabled' : ''} ${isRtl ? 'rtl' : ''}`}
                                         />
                                     </div>
                                 )}
 
                                 {/* Groupes */}
-                                <div className="space-y-3 relative">
-                                    <label className={`flex items-center gap-2 text-[10px] font-black tracking-widest text-slate-400 uppercase ${isRtl ? 'flex-row-reverse' : ''}`}>
-                                        <Briefcase className="w-3 h-3" />
+                                <div className="identity-modal-field">
+                                    <label className={`identity-modal-label ${isRtl ? 'rtl' : ''}`}>
+                                        <Briefcase className="identity-modal-label-icon" />
                                         {t('modals.identity.group_assignment')}
                                     </label>
 
                                     <div
                                         onClick={() => setIsClassDropdownOpen(!isClassDropdownOpen)}
-                                        className={`w-full bg-slate-50 border border-slate-100 rounded-2xl px-6 py-4 flex justify-between items-center cursor-pointer hover:border-[var(--primary)] transition-all ${isRtl ? 'flex-row-reverse' : ''}`}
+                                        className={`identity-modal-dropdown-toggle ${isRtl ? 'rtl' : ''}`}
                                     >
-                                        <span className={`text-sm font-bold truncate ${isRtl ? 'text-right' : ''} ${newUser.role === 'stagiaire'
-                                            ? (newUser.group_id ? 'text-[var(--secondary)]' : 'text-slate-400')
-                                            : (newUser.group_ids?.length > 0 ? 'text-[var(--secondary)]' : 'text-slate-400')
+                                        <span className={`identity-modal-dropdown-text ${isRtl ? 'rtl' : ''} ${newUser.role === 'stagiaire'
+                                            ? (newUser.group_id ? '' : 'muted')
+                                            : (newUser.group_ids?.length > 0 ? '' : 'muted')
                                             }`}>
                                             {newUser.role === 'stagiaire'
                                                 ? (newUser.group_id || t('modals.identity.select_group'))
                                                 : (newUser.group_ids?.length > 0 ? newUser.group_ids.join(', ') : t('modals.identity.select_groups'))
                                             }
                                         </span>
-                                        <ChevronDown className={`w-5 h-5 text-[var(--primary)] transition-transform ${isClassDropdownOpen ? 'rotate-180' : ''}`} />
+                                        <ChevronDown className={`identity-modal-chevron ${isClassDropdownOpen ? 'open' : ''}`} />
                                     </div>
 
                                     {isClassDropdownOpen && (
-                                        <div className="absolute top-full left-0 w-full mt-2 bg-white border border-slate-100 rounded-2xl shadow-2xl z-50 max-h-48 overflow-y-auto ista-scrollbar animate-in fade-in zoom-in-95 duration-200">
+                                        <div className="identity-modal-dropdown-menu scrollable">
                                             {availableGroups.map((grp) => {
                                                 const isSelected = newUser.role === 'stagiaire'
                                                     ? newUser.group_id === grp.id
@@ -294,7 +285,7 @@ const IdentityModal = ({ isOpen, onClose, newUser, setNewUser, handleAddUser, ha
                                                 return (
                                                     <div
                                                         key={grp.id}
-                                                        className={`px-6 py-4 cursor-pointer flex items-center justify-between hover:bg-slate-50 transition-colors ${isSelected ? 'bg-green-50' : ''} ${isRtl ? 'flex-row-reverse text-right' : ''}`}
+                                                        className={`identity-modal-dropdown-item ${isSelected ? 'selected' : ''} ${isRtl ? 'rtl' : ''}`}
                                                         onClick={() => {
                                                             if (newUser.role === 'stagiaire') {
                                                                 setNewUser({ 
@@ -312,8 +303,8 @@ const IdentityModal = ({ isOpen, onClose, newUser, setNewUser, handleAddUser, ha
                                                             }
                                                         }}
                                                     >
-                                                        <span className={`text-[10px] font-black uppercase tracking-widest ${isSelected ? 'text-[var(--primary)]' : 'text-slate-400'}`}>{grp.id}</span>
-                                                        {isSelected ? <CheckSquare className="w-5 h-5 text-[var(--primary)]" /> : <Square className="w-5 h-5 text-slate-200" />}
+                                                        <span className={`identity-modal-item-text ${isSelected ? 'selected' : 'unselected'}`}>{grp.id}</span>
+                                                        {isSelected ? <CheckSquare className="identity-modal-checkbox-icon checked" /> : <Square className="identity-modal-checkbox-icon unchecked" />}
                                                     </div>
                                                 );
                                             })}
@@ -323,35 +314,29 @@ const IdentityModal = ({ isOpen, onClose, newUser, setNewUser, handleAddUser, ha
 
                                 {/* Excel Uploader (Stagiaire only) */}
                                 {newUser.role === 'stagiaire' && !isEditing && activeTab === 'excel' && (
-                                    <div className="space-y-4">
-                                        <label className={`flex items-center gap-2 text-[10px] font-black tracking-widest text-slate-400 uppercase ${isRtl ? 'flex-row-reverse' : ''}`}>
-                                            <FileUp className="w-3 h-3 text-[var(--primary)]" />
+                                    <div className="identity-modal-field">
+                                        <label className={`identity-modal-label ${isRtl ? 'rtl' : ''}`}>
+                                            <FileUp className="identity-modal-label-icon" />
                                             {isRtl ? 'ملف Excel' : 'FICHIER EXCEL (XLSX, XLS)'}
                                         </label>
-                                        <div className="relative group/uploader">
+                                        <div className="identity-modal-upload-wrapper">
                                             <input
                                                 type="file"
                                                 accept=".xlsx, .xls, .csv"
                                                 id="excel-file-input"
                                                 onChange={onExcelFileChange}
-                                                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                                                className="identity-modal-upload-input"
                                             />
-                                            <div className={`border-2 border-dashed rounded-3xl p-8 flex flex-col items-center justify-center gap-4 transition-all duration-300 ${
-                                                excelFile 
-                                                    ? 'border-[var(--primary)] bg-green-50/10' 
-                                                     : 'border-slate-200 hover:border-[var(--primary)] hover:bg-slate-50/50'
-                                            }`}>
-                                                <div className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all ${
-                                                    excelFile ? 'bg-green-500/10 text-green-600' : 'bg-slate-100 text-slate-400 group-hover/uploader:bg-[var(--primary)]/10 group-hover/uploader:text-[var(--primary)]'
-                                                }`}>
-                                                    <FileUp className="w-6 h-6" />
+                                            <div className={`identity-modal-upload-box ${excelFile ? 'has-file' : ''}`}>
+                                                <div className={`identity-modal-upload-icon-wrapper ${excelFile ? 'has-file' : 'empty'}`}>
+                                                    <FileUp className="identity-modal-upload-icon" />
                                                 </div>
                                                 
-                                                <div className="text-center">
-                                                    <p className="text-sm font-bold text-[var(--secondary)]">
+                                                <div className="identity-modal-upload-text-container">
+                                                    <p className="identity-modal-upload-filename">
                                                          {excelFile ? excelFile.name : (isRtl ? 'اسحب وأسقط ملف Excel هنا أو انقر للتصفح' : 'Glissez-déposez le fichier Excel ici ou cliquez pour parcourir')}
                                                     </p>
-                                                    <p className="text-[10px] font-medium text-slate-400 mt-1 uppercase tracking-wider">
+                                                    <p className="identity-modal-upload-filesize">
                                                          {excelFile ? `${(excelFile.size / 1024).toFixed(1)} KB` : (isRtl ? 'يدعم XLSX, XLS, CSV' : 'Formats acceptés : .xlsx, .xls, .csv')}
                                                     </p>
                                                 </div>
@@ -359,22 +344,22 @@ const IdentityModal = ({ isOpen, onClose, newUser, setNewUser, handleAddUser, ha
                                         </div>
                                          
                                         {errorMessage && (
-                                             <p className="text-xs font-black uppercase tracking-widest text-red-500 text-center animate-pulse">
+                                             <p className="identity-modal-error-msg">
                                                  {errorMessage}
                                              </p>
                                         )}
 
-                                        <div className="bg-slate-50 rounded-2xl p-6 border border-slate-100 flex items-start gap-4">
-                                             <div className="w-8 h-8 rounded-lg bg-amber-500/10 flex items-center justify-center text-amber-600 shrink-0 mt-0.5">
-                                                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                                        <div className="identity-modal-format-info">
+                                             <div className="identity-modal-format-icon-wrapper">
+                                                 <svg className="identity-modal-format-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                                                      <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                                                  </svg>
                                              </div>
-                                             <div className="space-y-1">
-                                                 <h4 className="text-[10px] font-black uppercase tracking-widest text-[var(--secondary)]">
+                                             <div className="identity-modal-format-text-wrapper">
+                                                 <h4 className="identity-modal-format-title">
                                                      {isRtl ? 'تنسيق الملف المتوقع' : 'STRUCTURE DU FICHIER REQUIS'}
                                                  </h4>
-                                                 <p className="text-[10px] font-bold text-slate-400 leading-relaxed uppercase">
+                                                 <p className="identity-modal-format-desc">
                                                      {isRtl 
                                                          ? 'يجب أن يحتوي الملف على الأعمدة التالية كصف أول: NumInscription، Nom Complet (أو Nom)' 
                                                          : 'Le fichier doit contenir les en-têtes suivants sur la 1ère ligne : "NumInscription" et "Nom Complet" (ou "Nom").'}
@@ -385,24 +370,24 @@ const IdentityModal = ({ isOpen, onClose, newUser, setNewUser, handleAddUser, ha
                                 )}
                             </div>
 
-                            <div>
+                            <div className="identity-modal-submit-area">
                                 <button
                                     type="submit"
                                     disabled={newUser.role === 'stagiaire' && !isEditing && activeTab === 'excel' ? isImporting || !excelFile || !newUser.group_id : false}
-                                    className={`w-full btn-ista py-5 rounded-2xl font-black uppercase tracking-widest shadow-xl flex items-center justify-center gap-3 hover:scale-[1.01] active:scale-[0.99] transition-all ${
+                                    className={`identity-modal-submit-btn ${
                                         newUser.role === 'stagiaire' && !isEditing && activeTab === 'excel' && (isImporting || !excelFile || !newUser.group_id)
-                                             ? 'opacity-50 cursor-not-allowed grayscale'
+                                             ? 'disabled'
                                              : ''
                                     }`}
                                 >
                                     {newUser.role === 'stagiaire' && !isEditing && activeTab === 'excel' ? (
                                         <>
-                                            <FileUp className={`w-5 h-5 ${isImporting ? 'animate-bounce' : ''}`} />
+                                            <FileUp className={`identity-modal-submit-icon ${isImporting ? 'bounce' : ''}`} />
                                             <span>{isImporting ? (isRtl ? 'جاري الاستيراد...' : 'IMPORTATION EN COURS...') : (isRtl ? 'بدء استيراد Excel' : 'COMMENCER L\'IMPORT EXCEL')}</span>
                                         </>
                                     ) : (
                                         <>
-                                            {isEditing ? <Save className="w-5 h-5" /> : <UserPlus className="w-5 h-5" />}
+                                            {isEditing ? <Save className="identity-modal-submit-icon" /> : <UserPlus className="identity-modal-submit-icon" />}
                                              <span>{isEditing ? t('modals.identity.save') : t('modals.identity.create')}</span>
                                         </>
                                     )}
@@ -411,11 +396,6 @@ const IdentityModal = ({ isOpen, onClose, newUser, setNewUser, handleAddUser, ha
                         </form>
                     </div>
                 </div>
-                <style>{`
-                .ista-scrollbar::-webkit-scrollbar { width: 4px; }
-                .ista-scrollbar::-webkit-scrollbar-track { background: transparent; }
-                .ista-scrollbar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
-            `}</style>
             </div>
         </div>,
         document.body

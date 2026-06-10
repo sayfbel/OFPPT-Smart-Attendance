@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom';
 import { ChevronRight, X, ChevronDown, CheckSquare, Square, Calendar, Clock, BookOpen, User, MapPin, Save, Plus, Trash2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import ConfirmationModal from './ConfirmationModal';
+import './SeanceDossierModal.css';
 
 const SeanceDossierModal = ({ isOpen, onClose, targetSeance, handleUpdateSeance, handleCreateSeance, handleDeleteSeance, availableClasses = [], formateurs = [] }) => {
     const { t } = useTranslation();

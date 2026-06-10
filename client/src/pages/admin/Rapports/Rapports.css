@@ -1,5 +1,406 @@
-.ista-scrollbar::-webkit-scrollbar { width: 4px; height: 4px; }
-.ista-scrollbar::-webkit-scrollbar-track { background: transparent; }
-.ista-scrollbar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
-.pdf-export-element { overflow: visible !important; }
-.pdf-export-element * { overflow: visible !important; }
+/* Rapports.css */
+.rapports-container {
+    animation: fadeUp 0.5s ease-out;
+}
+.rapports-container.rtl { text-align: right; }
+
+.rapports-header {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: flex-start;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 2rem;
+    gap: 1.5rem;
+}
+@media (min-width: 768px) {
+    .rapports-header {
+        flex-direction: row;
+        align-items: flex-end;
+    }
+}
+@media (min-width: 1024px) {
+    .rapports-header { padding-bottom: 3rem; gap: 2rem; }
+}
+.rapports-header.rtl { flex-direction: row-reverse; }
+
+.rapports-title-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.rapports-title {
+    font-size: 2.25rem;
+    font-weight: 900;
+    letter-spacing: -0.05em;
+    color: var(--secondary);
+    text-transform: uppercase;
+    font-style: italic;
+    line-height: 0.9;
+}
+@media (min-width: 768px) { .rapports-title { font-size: 3rem; } }
+@media (min-width: 1024px) { .rapports-title { font-size: 4.5rem; } }
+
+.rapports-subtitle {
+    font-size: 10px;
+    letter-spacing: 0.4em;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    font-weight: 900;
+}
+@media (min-width: 1024px) { .rapports-subtitle { font-size: 0.75rem; } }
+
+.rapports-group-cards-row {
+    display: flex;
+    gap: 1rem;
+    overflow-x: auto;
+    padding-bottom: 1rem;
+    margin-bottom: 2rem;
+}
+
+.rapports-group-card {
+    min-width: 320px;
+    padding: 2rem;
+    border-radius: 1.5rem;
+    cursor: pointer;
+    transition: all 0.3s;
+    border: 1px solid var(--border);
+}
+.rapports-group-card.active { background-color: white; border-color: var(--primary); box-shadow: 0 10px 15px -3px rgba(0, 102, 92, 0.05), 0 4px 6px -2px rgba(0, 102, 92, 0.025); }
+.rapports-group-card.inactive { background-color: white; border-color: #f1f5f9; opacity: 0.6; }
+.rapports-group-card.inactive:hover { border-color: #cbd5e1; opacity: 1; }
+
+.rapports-card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
+.rapports-card-header.rtl { flex-direction: row-reverse; }
+
+.rapports-card-id { font-size: 12px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.1em; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rapports-card-id.active { color: var(--primary); }
+.rapports-card-id.inactive { color: var(--secondary); }
+.rapports-card-id.rtl { text-align: right; }
+
+.rapports-card-indicator { width: 0.625rem; height: 0.625rem; border-radius: 9999px; outline: 4px solid; outline-offset: 2px; }
+.rapports-card-indicator.active { background-color: var(--primary); outline-color: rgba(0, 102, 92, 0.2); }
+.rapports-card-indicator.inactive { background-color: #e2e8f0; outline-color: #f1f5f9; }
+
+.rapports-card-title { font-size: 1.5rem; font-weight: 900; font-style: italic; color: var(--secondary); text-transform: uppercase; letter-spacing: -0.025em; margin-bottom: 2rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rapports-card-title.rtl { text-align: right; }
+
+.rapports-card-subtitle { font-size: 9px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.1em; }
+.rapports-card-subtitle.rtl { text-align: right; }
+.rapports-card-highlight { color: var(--secondary); margin-left: 0.25rem; display: inline-block; vertical-align: bottom; max-width: 150px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rapports-card-count { color: var(--primary); font-weight: 900; }
+.rapports-card-dot { margin: 0 0.5rem; }
+
+.rapports-no-groups { min-width: 320px; padding: 2rem; border-radius: 1.5rem; background-color: white; border: 1px solid #f1f5f9; opacity: 0.6; display: flex; align-items: center; justify-content: center; }
+.rapports-no-groups-text { font-size: 10px; font-weight: 900; color: #94a3b8; letter-spacing: 0.1em; text-transform: uppercase; }
+
+.rapports-filters-bar {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.5rem;
+    background-color: white;
+    padding: 1.5rem;
+    border-radius: 1.5rem;
+    border: 1px solid #f1f5f9;
+    box-shadow: var(--shadow-sm);
+    margin-bottom: 2rem;
+}
+@media (min-width: 768px) {
+    .rapports-filters-bar { flex-direction: row; }
+    .rapports-filters-bar.rtl { flex-direction: row-reverse; }
+}
+
+.rapports-filters-left { display: flex; align-items: center; gap: 1.5rem; width: 100%; }
+@media (min-width: 768px) { .rapports-filters-left { width: auto; } }
+.rapports-filters-left.rtl { flex-direction: row-reverse; }
+
+.rapports-filters-title { font-size: 10px; font-weight: 900; letter-spacing: 0.3em; text-transform: uppercase; color: #94a3b8; }
+.rapports-filters-divider { height: 1rem; width: 1px; background-color: #f1f5f9; display: none; }
+@media (min-width: 768px) { .rapports-filters-divider { display: block; } }
+
+.rapports-search-wrapper {
+    display: flex;
+    align-items: center;
+    background-color: #f8fafc;
+    border: 1px solid #f1f5f9;
+    border-radius: 1rem;
+    width: 100%;
+    padding: 0 1rem;
+    transition: all 0.3s;
+}
+@media (min-width: 768px) { .rapports-search-wrapper { width: 16rem; } }
+.rapports-search-wrapper:focus-within { border-color: var(--primary); }
+.rapports-search-wrapper.rtl { flex-direction: row-reverse; }
+
+.rapports-search-icon { width: 1rem; height: 1rem; color: #cbd5e1; transition: color 0.3s; }
+.rapports-search-wrapper:focus-within .rapports-search-icon { color: var(--primary); }
+
+.rapports-search-input {
+    background-color: transparent;
+    border: none;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 0.75rem;
+    width: 100%;
+    letter-spacing: 0.1em;
+    color: var(--secondary);
+    outline: none;
+    text-transform: uppercase;
+}
+.rapports-search-input::placeholder { color: #cbd5e1; }
+.rapports-search-input.rtl { text-align: right; }
+
+.rapports-filters-right { display: flex; align-items: center; gap: 1rem; width: 100%; }
+@media (min-width: 768px) { .rapports-filters-right { width: auto; } }
+.rapports-filters-right.rtl { flex-direction: row-reverse; }
+
+.rapports-export-wrapper { position: relative; }
+
+.rapports-export-btn {
+    padding: 0.75rem 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: all 0.3s;
+}
+.rapports-export-btn.disabled { opacity: 0.5; cursor: not-allowed; transform: scale(0.95); box-shadow: none; }
+.rapports-export-btn.active { box-shadow: var(--shadow-lg); }
+.rapports-export-btn.active:hover { transform: scale(1.02); }
+.rapports-export-btn.active:active { transform: scale(0.98); }
+
+.rapports-export-icon { width: 1rem; height: 1rem; }
+.rapports-export-icon.animating { animation: bounce 1s infinite; }
+.rapports-export-text { font-size: 10px; text-transform: uppercase; font-weight: 700; letter-spacing: 0.1em; }
+.rapports-export-chevron { width: 0.75rem; height: 0.75rem; margin-left: 0.25rem; }
+
+.rapports-export-menu {
+    position: absolute;
+    right: 0;
+    top: 100%;
+    margin-top: 0.5rem;
+    width: 12rem;
+    background-color: white;
+    border: 1px solid #f1f5f9;
+    border-radius: 0.75rem;
+    box-shadow: var(--shadow-xl);
+    z-index: 50;
+    overflow: hidden;
+}
+
+.rapports-export-option {
+    width: 100%;
+    text-align: left;
+    padding: 0.75rem 1rem;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #475569;
+    transition: background-color 0.3s;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+}
+.rapports-export-option:hover { background-color: #f8fafc; }
+.rapports-export-option.border-b { border-bottom: 1px solid #f8fafc; }
+
+.rapports-table-container {
+    background-color: white;
+    border-radius: 2rem;
+    border: 1px solid #f1f5f9;
+    box-shadow: var(--shadow-sm);
+    overflow: hidden;
+}
+
+.rapports-loading-state { padding: 6rem 0; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+.rapports-spinner { width: 3rem; height: 3rem; border: 4px solid #f1f5f9; border-top-color: var(--primary); border-radius: 9999px; animation: spin 1s linear infinite; margin-bottom: 1.5rem; }
+.rapports-loading-text { font-size: 10px; font-weight: 900; letter-spacing: 0.4em; text-transform: uppercase; color: #94a3b8; }
+
+.rapports-empty-state { padding: 6rem 0; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; opacity: 0.5; }
+.rapports-empty-icon-wrapper { width: 4rem; height: 4rem; background-color: #f8fafc; border-radius: 9999px; display: flex; align-items: center; justify-content: center; margin-bottom: 1.5rem; }
+.rapports-empty-icon { width: 2rem; height: 2rem; color: #e2e8f0; }
+.rapports-empty-title { font-size: 10px; font-weight: 900; letter-spacing: 0.4em; text-transform: uppercase; color: #94a3b8; }
+.rapports-empty-subtitle { font-size: 9px; font-weight: 700; letter-spacing: 0.1em; color: #cbd5e1; text-transform: uppercase; margin-top: 0.5rem; }
+
+.rapports-table-wrapper { overflow-x: auto; }
+
+.rapports-table { width: 100%; text-align: left; border-collapse: collapse; min-width: 900px; }
+.rapports-table.rtl { text-align: right; }
+
+.rapports-th { padding: 1.5rem 1rem; }
+.rapports-th-select { padding: 1.5rem 2rem; width: 4rem; text-align: center; }
+.rapports-th-actions { padding: 1.5rem 2rem; }
+.rapports-th-actions.ltr { text-align: right; }
+.rapports-th-actions.rtl { text-align: left; }
+
+.rapports-thead-tr { background-color: rgba(248, 250, 252, 0.5); color: #94a3b8; font-size: 9px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.1em; border-bottom: 1px solid #f1f5f9; }
+
+.rapports-tbody { }
+.rapports-tr { transition: background-color 0.3s; border-bottom: 1px solid #f8fafc; }
+.rapports-tr:hover { background-color: rgba(248, 250, 252, 0.3); }
+
+.rapports-td { padding: 1.5rem 1rem; }
+.rapports-td-select { padding: 1.5rem 2rem; width: 4rem; text-align: center; }
+.rapports-td-actions { padding: 1.5rem 2rem; }
+.rapports-td-actions.ltr { text-align: right; }
+.rapports-td-actions.rtl { text-align: left; }
+
+.rapports-select-box { display: flex; justify-content: center; cursor: pointer; }
+.rapports-icon-selected { width: 1.25rem; height: 1.25rem; color: var(--primary); }
+.rapports-icon-unselected { width: 1.25rem; height: 1.25rem; color: #e2e8f0; transition: color 0.3s; }
+.rapports-select-box:hover .rapports-icon-unselected { color: var(--primary); }
+.rapports-tr:hover .rapports-icon-unselected { color: var(--primary); }
+
+.rapports-td-date { font-size: 10px; font-weight: 900; color: #94a3b8; font-family: monospace; text-transform: uppercase; font-style: italic; }
+.rapports-td-formateur { font-size: 0.875rem; font-weight: 900; font-style: italic; color: var(--secondary); text-transform: uppercase; transition: color 0.3s; }
+.rapports-tr:hover .rapports-td-formateur { color: var(--primary); }
+
+.rapports-td-subject { font-size: 0.75rem; font-weight: 700; color: var(--secondary); text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px; }
+
+.rapports-badge { padding: 0.25rem 0.75rem; background-color: #f8fafc; font-size: 10px; font-weight: 900; color: var(--primary); border: 1px solid rgba(34, 197, 94, 0.1); border-radius: 0.5rem; }
+
+.rapports-rate-wrapper { display: flex; flex-direction: column; }
+.rapports-rate-val { font-size: 0.75rem; font-weight: 900; font-style: italic; color: var(--primary); text-transform: uppercase; }
+.rapports-rate-lbl { font-size: 8px; font-weight: 700; color: #cbd5e1; text-transform: uppercase; letter-spacing: 0.1em; }
+
+.rapports-btn-view { padding: 0.75rem; background-color: white; border: 1px solid #f1f5f9; color: #cbd5e1; transition: all 0.3s; border-radius: 0.75rem; box-shadow: var(--shadow-sm); cursor: pointer; }
+.rapports-btn-view:hover { border-color: var(--primary); color: var(--primary); }
+.rapports-btn-view-icon { width: 1rem; height: 1rem; }
+
+@keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes bounce { 0%, 100% { transform: translateY(-25%); animation-timing-function: cubic-bezier(0.8,0,1,1); } 50% { transform: none; animation-timing-function: cubic-bezier(0,0,0.2,1); } }
+
+/* PDF Export Styles */
+.rapports-pdf-container {
+    padding: 2rem;
+    position: relative;
+    background-color: white;
+}
+.rapports-pdf-wrapper {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    background-color: white;
+}
+.rapports-pdf-title {
+    font-size: 1.25rem;
+    font-weight: bold;
+    text-align: center;
+    margin-bottom: 1rem;
+    text-transform: uppercase;
+    color: black;
+}
+.rapports-pdf-subtitle {
+    font-size: 0.875rem;
+    font-weight: bold;
+    margin-bottom: 1rem;
+    color: black;
+    text-align: center;
+}
+.rapports-pdf-info-section {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 1rem;
+    gap: 1rem;
+}
+.rapports-pdf-table-info {
+    border-collapse: collapse;
+    border: 1px solid black;
+    font-size: 0.75rem;
+    color: black;
+}
+.rapports-pdf-table-info.main {
+    width: 80%;
+}
+.rapports-pdf-table-info.secondary {
+    width: 60%;
+}
+.rapports-pdf-td-label {
+    border: 1px solid black;
+    background-color: #e5e7eb;
+    padding: 0.25rem;
+    font-weight: bold;
+    color: black;
+}
+.rapports-pdf-td-label.w-33 { width: 33.333333%; }
+.rapports-pdf-td-label.w-50 { width: 50%; }
+.rapports-pdf-td-value {
+    border: 1px solid black;
+    padding: 0.25rem;
+    color: black;
+}
+.rapports-pdf-students-section {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    margin-bottom: 1.5rem;
+}
+.rapports-pdf-table-students {
+    width: 90%;
+    border-collapse: collapse;
+    border: 1px solid black;
+    font-size: 10px;
+}
+.rapports-pdf-table-students thead {
+    background-color: #e5e7eb;
+}
+.rapports-pdf-th-num,
+.rapports-pdf-th-name,
+.rapports-pdf-th-id,
+.rapports-pdf-th-status {
+    border: 1px solid black;
+    padding: 0.125rem 0.25rem;
+    text-align: left;
+    color: black;
+    font-weight: bold;
+}
+.rapports-pdf-th-num { width: 2rem; }
+.rapports-pdf-th-id { width: 10rem; }
+.rapports-pdf-th-status { width: 6rem; }
+.rapports-pdf-td {
+    border: 1px solid black;
+    padding: 0.125rem 0.25rem;
+    color: black;
+}
+.rapports-pdf-td-empty {
+    border: 1px solid black;
+    padding: 0.125rem 0.25rem;
+    text-align: center;
+    font-style: italic;
+    color: black;
+}
+.rapports-pdf-signature-section {
+    width: 100%;
+    margin-top: auto;
+    padding-top: 0.5rem;
+    padding-bottom: 2rem;
+}
+.rapports-pdf-signature-label {
+    font-size: 0.875rem;
+    font-weight: bold;
+    font-style: italic;
+    margin-bottom: 0.5rem;
+    color: black;
+}
+.rapports-pdf-signature-image-wrapper {
+    height: 6rem;
+    display: flex;
+    align-items: flex-start;
+    margin-top: 0.5rem;
+}
+.rapports-pdf-signature-image {
+    max-height: 6rem;
+    width: auto;
+    object-fit: contain;
+    filter: grayscale(100%) contrast(200%);
+    mix-blend-mode: multiply;
+}
+.rapports-pdf-signature-placeholder {
+    border-bottom: 1px solid black;
+    width: 12rem;
+    margin-top: 2.5rem;
+}

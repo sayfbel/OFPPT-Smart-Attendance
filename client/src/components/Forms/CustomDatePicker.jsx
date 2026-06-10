@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Calendar as CalendarIcon, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import './CustomDatePicker.css';
 
 const CustomDatePicker = ({ selectedDate, onChange, placeholder }) => {
     const { t } = useTranslation();

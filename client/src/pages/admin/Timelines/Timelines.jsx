@@ -4,6 +4,7 @@ import { SeanceDossierModal } from '../../../components/Modals';
 import { useNotification } from '../../../hooks/useNotification';
 import studentService from '../../../services/studentService';
 import './Timelines.css';
+import '../../../styles/admin-shared.css';
 
 const Timelines = () => {
     const { addNotification } = useNotification();
@@ -169,7 +170,7 @@ const Timelines = () => {
                         className="btn-ista px-8 py-4 flex items-center gap-3"
                     >
                         <Plus className="w-5 h-5" />
-                        <span>AJOUTER UNE SÉANCE</span>
+                        <span>{t('timetable.add_seance')}</span>
                     </button>
                 </div>
             </div>

@@ -1,15 +1,413 @@
+/* Accounts.css */
+.accounts-page-container {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+
+.accounts-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    position: relative;
+}
+
+.accounts-filiere-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1rem 1.5rem;
+    background-color: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 1rem;
+    font-size: 10px;
+    font-weight: 900;
+    letter-spacing: 0.1em;
+    color: var(--secondary);
+    text-transform: uppercase;
+    transition: all 0.3s;
+    cursor: pointer;
+}
+.accounts-filiere-btn:hover { border-color: #cbd5e1; }
+
+.accounts-filiere-icon { width: 1rem; height: 1rem; color: var(--primary); flex-shrink: 0; }
+
+.accounts-filiere-text {
+    max-width: 200px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.accounts-filiere-chevron {
+    width: 1rem;
+    height: 1rem;
+    color: #94a3b8;
+    margin-left: 0.5rem;
+    transition: transform 0.3s;
+}
+.accounts-filiere-chevron.open { transform: rotate(180deg); }
+
+.accounts-dropdown-menu {
+    position: absolute;
+    top: 100%;
+    margin-top: 0.5rem;
+    right: 0;
+    width: 280px;
+    max-height: 300px;
+    overflow-y: auto;
+    background-color: white;
+    border: 1px solid #f1f5f9;
+    border-radius: 1rem;
+    box-shadow: var(--shadow-xl);
+    z-index: 50;
+}
+
+.accounts-dropdown-item {
+    width: 100%;
+    text-align: left;
+    padding: 1rem 1.5rem;
+    font-size: 10px;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    transition: background-color 0.3s, color 0.3s;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    border: none;
+    cursor: pointer;
+    background: transparent;
+}
+.accounts-dropdown-item.active { background-color: rgba(0, 102, 92, 0.05); color: var(--primary); }
+.accounts-dropdown-item.inactive { color: var(--secondary); }
+.accounts-dropdown-item.inactive:hover { background-color: #f8fafc; }
+
+.accounts-add-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    padding: 1rem 2rem;
+    background-color: var(--primary);
+    color: white;
+    border-radius: 1rem;
+    box-shadow: 0 20px 25px -5px rgba(0, 102, 92, 0.2);
+    transition: all 0.3s;
+    border: none;
+    cursor: pointer;
+}
+.accounts-add-btn:hover { background-color: var(--primary-dark); }
+.accounts-add-icon { width: 1rem; height: 1rem; transition: transform 0.3s; }
+.accounts-add-btn:hover .accounts-add-icon { transform: scale(1.1); }
+.accounts-add-text { font-size: 10px; font-weight: 900; letter-spacing: 0.1em; text-transform: uppercase; }
+
+.accounts-group-cards-row {
+    display: flex;
+    overflow-x: auto;
+    gap: 1.5rem;
+    padding-bottom: 1rem;
+}
+
 .accounts-card {
-  transition: var(--transition-smooth);
+    min-width: 320px;
+    padding: 2rem;
+    border-radius: 1.5rem;
+    cursor: pointer;
+    border: 1px solid #f1f5f9;
+    background-color: white;
+    opacity: 0.6;
+    transition: all 0.3s ease;
 }
-
+.accounts-card:hover { border-color: #cbd5e1; opacity: 1; }
 .accounts-card-selected {
-  border-color: var(--color-active-border) !important;
-  background-color: var(--color-bg-card) !important;
-  box-shadow: var(--shadow-hover) !important;
-  opacity: 1 !important;
+    border-color: var(--primary);
+    box-shadow: var(--shadow-md);
+    opacity: 1;
 }
 
-.accounts-card-active-dot {
-  background-color: var(--color-active-border) !important;
-  box-shadow: 0 0 0 4px rgba(0, 135, 90, 0.2);
+.accounts-card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
+.accounts-card-header.rtl { flex-direction: row-reverse; }
+
+.accounts-card-prefix {
+    font-size: 12px;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: var(--secondary);
 }
+.accounts-card-prefix.active { color: var(--primary); }
+.accounts-card-prefix.rtl { text-align: right; }
+
+.accounts-card-dot {
+    width: 0.625rem;
+    height: 0.625rem;
+    border-radius: 9999px;
+    background-color: #e2e8f0;
+    outline: 4px solid #f1f5f9;
+    outline-offset: 2px;
+}
+.accounts-card-active-dot {
+    background-color: var(--primary);
+    outline-color: rgba(0, 102, 92, 0.2);
+}
+
+.accounts-card-title {
+    font-size: 1.5rem;
+    font-weight: 900;
+    font-style: italic;
+    color: var(--secondary);
+    text-transform: uppercase;
+    letter-spacing: -0.025em;
+    margin-bottom: 2rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.accounts-card-title.rtl { text-align: right; }
+
+.accounts-card-filiere {
+    font-size: 9px;
+    font-weight: 700;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+}
+.accounts-card-filiere.rtl { text-align: right; }
+
+.accounts-card-filiere-value {
+    color: var(--secondary);
+    margin-left: 0.25rem;
+    display: inline-block;
+    vertical-align: bottom;
+    max-width: 150px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.accounts-empty-group {
+    min-width: 320px;
+    padding: 2rem;
+    border-radius: 1.5rem;
+    background-color: white;
+    border: 1px solid #f1f5f9;
+    opacity: 0.6;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.accounts-empty-group-text { font-size: 10px; font-weight: 900; color: #94a3b8; letter-spacing: 0.1em; text-transform: uppercase; }
+
+.accounts-section {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+.accounts-section-bottom { padding-bottom: 5rem; }
+
+.accounts-section-title {
+    font-size: 1.875rem;
+    font-weight: 900;
+    font-style: italic;
+    letter-spacing: -0.05em;
+    color: var(--secondary);
+    text-transform: uppercase;
+}
+.accounts-section-title.rtl { text-align: right; }
+
+.accounts-table-container { padding: 2rem; }
+
+.accounts-table-header {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+@media (min-width: 768px) {
+    .accounts-table-header { flex-direction: row; align-items: center; justify-content: space-between; }
+}
+.accounts-table-header.rtl { flex-direction: row-reverse; }
+
+.accounts-table-label { font-size: 10px; font-weight: 900; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.2em; }
+
+.accounts-search-wrapper {
+    display: flex;
+    align-items: center;
+    background-color: #f8fafc;
+    border: 1px solid transparent;
+    border-radius: 1rem;
+    width: 100%;
+    max-width: 400px;
+    padding: 1rem 1.25rem;
+    transition: all 0.3s;
+}
+.accounts-search-wrapper:focus-within, .accounts-search-wrapper:hover { border-color: #e2e8f0; }
+.accounts-search-wrapper.rtl { flex-direction: row-reverse; }
+
+.accounts-search-icon { width: 1rem; height: 1rem; color: #94a3b8; }
+.accounts-search-icon.ltr { margin-right: 0.75rem; }
+.accounts-search-icon.rtl { margin-left: 0.75rem; }
+
+.accounts-search-input {
+    background-color: transparent;
+    border: none;
+    font-size: 10px;
+    font-weight: 700;
+    width: 100%;
+    letter-spacing: 0.1em;
+    color: var(--secondary);
+    outline: none;
+    text-transform: uppercase;
+    padding: 0;
+}
+.accounts-search-input::placeholder { color: #cbd5e1; }
+.accounts-search-input.rtl { text-align: right; }
+.accounts-search-input.rtl-staff { text-align: right; margin-left: 0.5rem; }
+
+.accounts-table-wrapper { overflow-x: auto; }
+
+.accounts-table { width: 100%; min-width: 800px; border-collapse: collapse; }
+.accounts-table.ltr { text-align: left; }
+.accounts-table.rtl { text-align: right; }
+
+.accounts-th {
+    padding-bottom: 1.5rem;
+    font-size: 9px;
+    font-weight: 900;
+    color: #cbd5e1;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    border-bottom: 1px solid #f1f5f9;
+}
+.accounts-th.id-col { width: 4rem; }
+.accounts-th.center { text-align: center; }
+.accounts-th.ltr { text-align: left; }
+.accounts-th.rtl { text-align: right; }
+
+.accounts-tbody { border-top: 1px solid #f1f5f9; }
+
+.accounts-tr { transition: background-color 0.3s; }
+.accounts-tr:hover { background-color: #f8fafc; }
+.accounts-td { padding-top: 1.5rem; padding-bottom: 1.5rem; }
+
+.accounts-td-id { font-size: 11px; font-weight: 900; color: #94a3b8; }
+
+.accounts-td-name {
+    font-size: 0.875rem;
+    font-weight: 900;
+    font-style: italic;
+    color: var(--secondary);
+    text-transform: uppercase;
+    letter-spacing: -0.025em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 150px;
+    transition: color 0.3s;
+    text-decoration: none;
+    display: inline-block;
+}
+.accounts-td-name:hover { color: var(--primary); }
+.accounts-td-name.formateur { max-width: 200px; }
+
+.accounts-td-filiere {
+    text-align: center;
+}
+.accounts-td-filiere-span {
+    font-size: 10px;
+    font-weight: 900;
+    color: var(--primary);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100px;
+    display: inline-block;
+}
+
+.accounts-td-group {
+    text-align: center;
+}
+.accounts-td-group-span {
+    font-size: 10px;
+    font-weight: 900;
+    color: var(--secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+}
+
+.accounts-td-actions { display: flex; gap: 0.5rem; }
+.accounts-td-actions.ltr { justify-content: flex-end; }
+.accounts-td-actions.rtl { justify-content: flex-start; }
+
+.accounts-action-btn {
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 0.75rem;
+    border: 1px solid #e2e8f0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #94a3b8;
+    background: transparent;
+    transition: all 0.3s;
+    cursor: pointer;
+}
+.accounts-action-btn.edit:hover { color: var(--primary); border-color: var(--primary); background-color: rgba(0, 102, 92, 0.05); }
+.accounts-action-btn.delete:hover { color: #ef4444; border-color: #ef4444; background-color: #fef2f2; }
+.accounts-action-icon { width: 1rem; height: 1rem; }
+
+.accounts-empty-tr { text-align: center; }
+.accounts-empty-td { padding: 6rem 0; }
+.accounts-empty-wrapper { display: flex; flex-direction: column; align-items: center; gap: 1rem; opacity: 0.3; }
+.accounts-empty-icon { width: 3rem; height: 3rem; color: #cbd5e1; }
+.accounts-empty-text { font-size: 10px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.4em; font-style: italic; color: #94a3b8; }
+
+.accounts-groups-list {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.25rem;
+}
+.accounts-group-badge {
+    padding: 0.125rem 0.5rem;
+    background-color: #f1f5f9;
+    font-size: 8px;
+    font-weight: 900;
+    color: #64748b;
+    border-radius: 0.5rem;
+}
+
+.accounts-td-email { text-align: center; }
+.accounts-email-span {
+    font-size: 10px;
+    font-weight: 700;
+    color: #94a3b8;
+    text-transform: lowercase;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 180px;
+    display: inline-block;
+}
+
+.accounts-td-status { text-align: center; }
+.accounts-status-wrapper { display: flex; align-items: center; justify-content: center; gap: 0.5rem; }
+.accounts-status-dot { width: 0.5rem; height: 0.5rem; border-radius: 9999px; }
+.accounts-status-dot.online { background-color: #22c55e; animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+.accounts-status-dot.offline { background-color: #cbd5e1; }
+
+.accounts-status-text {
+    font-size: 9px;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+}
+.accounts-status-text.online { color: #22c55e; }
+.accounts-status-text.offline { color: #94a3b8; }

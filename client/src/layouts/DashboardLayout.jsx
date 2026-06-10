@@ -2,34 +2,15 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import {
-    LayoutDashboard,
-    Users,
-    BookOpen,
-    Calendar,
-    LogOut,
-    Bell,
-    Sun,
-    Moon,
-    FileText,
-    ChevronRight,
-    ChevronLeft,
-    Menu,
-    X,
-    Languages,
-    Key,
-    Layers,
-    UserCheck,
-    Globe,
-    Settings,
-    ClipboardCheck,
-    Gavel,
-    User,
-    MapPin
+    LayoutDashboard, Users, BookOpen, Calendar, LogOut, Bell, Sun, Moon, FileText,
+    ChevronRight, ChevronLeft, Menu, X, Languages, Key, Layers, UserCheck, Globe,
+    Settings, ClipboardCheck, Gavel, User, MapPin
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import api from '../services/api';
-import { NotificationPanel } from '../components/UI';
+import NotificationPanel from '../components/UI/NotificationPanel';
 import ofpptLogo from '../assets/OFPPT.png';
+import './DashboardLayout.css';
 
 const DashboardLayout = ({ children }) => {
     const { user, logout, skipPasswordUpdate } = useAuth();
@@ -45,7 +26,6 @@ const DashboardLayout = ({ children }) => {
     const fetchNotifications = async () => {
         try {
             const res = await api.get('/notifications');
-
             const formatted = res.data.notifications.map(n => {
                 const date = new Date(n.created_at);
                 const now = new Date();
@@ -59,13 +39,8 @@ const DashboardLayout = ({ children }) => {
                 else if (diffMins > 0) timeStr = `IL Y A ${diffMins}M`;
 
                 return {
-                    id: n.id,
-                    type: n.type,
-                    category: n.category,
-                    title: n.title,
-                    message: n.message,
-                    time: timeStr,
-                    read: n.is_read
+                    id: n.id, type: n.type, category: n.category, title: n.title,
+                    message: n.message, time: timeStr, read: n.is_read
                 };
             });
             setNotifications(formatted);
@@ -132,11 +107,7 @@ const DashboardLayout = ({ children }) => {
     };
 
     const getSidebarLinks = () => {
-        // If it's first login and they haven't explicitly skipped for this session, hide all nav links
-        if (user?.first_login && !skipPasswordUpdate) {
-            return [];
-        }
-
+        if (user?.first_login && !skipPasswordUpdate) return [];
         switch (user?.role) {
             case 'admin':
                 return [
@@ -150,155 +121,124 @@ const DashboardLayout = ({ children }) => {
                     { icon: User, label: t('nav.profile'), path: '/admin/profile' },
                 ];
             case 'formateur':
-                const formateurLinks = [
+                return [
                     { icon: LayoutDashboard, label: t('nav.dashboard'), path: '/formateur' },
                     { icon: UserCheck, label: t('nav.my_groups'), path: '/formateur/groups' },
                     { icon: User, label: t('nav.profile'), path: '/formateur/profile' }
                 ];
-                return formateurLinks;
-            default:
-                return [];
+            default: return [];
         }
     };
 
     const links = getSidebarLinks();
 
     return (
-        <div className={`flex bg-[var(--background)] min-h-screen text-[var(--text)] transition-all duration-300 ${isRtl ? 'font-arabic' : ''}`} dir={isRtl ? 'rtl' : 'ltr'}>
+        <div className={`dashboard-layout-root ${isRtl ? 'rtl-layout' : ''}`}>
             {isMobileMenuOpen && (
-                <div
-                    className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 lg:hidden animate-in fade-in duration-300"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                />
+                <div className="mobile-overlay animate-fade-in" onClick={() => setIsMobileMenuOpen(false)} />
             )}
 
-            <aside className={`
-                    fixed top-0 h-screen transition-all duration-300 z-50 bg-white dark:bg-[var(--surface)] border-[var(--border)]
-                    flex flex-col
-                    ${isRtl ? 'right-0 border-l' : 'left-0 border-r'}
-                    ${isMobileMenuOpen ? 'w-64 translate-x-0 shadow-2xl' : `w-0 ${isRtl ? 'translate-x-full' : '-translate-x-full'} lg:translate-x-0 lg:w-16 xl:w-60`}
-                    overflow-hidden
-                `}>
-                <div className="p-4 xl:p-8 flex flex-col items-center">
-                    <div className={`flex items-center justify-between w-full lg:justify-center mb-8 ${isRtl ? 'flex-row-reverse text-right' : ''}`}>
-                        <div className="flex flex-col items-center">
-                            <img src={ofpptLogo} alt="OFPPT" className="h-10 xl:h-12" />
-                            <span className="text-[10px] xl:text-[12px] font-black text-[#00665c] dark:text-[#00a896] mt-1.5 tracking-[0.3em] uppercase leading-none">OFPPT</span>
+            <aside className={`dashboard-sidebar ${isRtl ? 'rtl' : 'ltr'} ${isMobileMenuOpen ? 'sidebar-mobile-open' : 'sidebar-mobile-closed'}`}>
+                <div className="sidebar-header">
+                    <div className={`sidebar-logo-container ${isRtl ? 'rtl' : ''}`}>
+                        <div className="sidebar-logo-wrapper">
+                            <img src={ofpptLogo} alt="OFPPT" className="sidebar-logo" />
+                            <span className="sidebar-logo-text">OFPPT</span>
                         </div>
-                        <button
-                            onClick={() => setIsMobileMenuOpen(false)}
-                            className="p-2 hover:bg-slate-100 rounded-xl lg:hidden text-slate-400"
-                        >
-                            <X className="w-6 h-6" />
+                        <button onClick={() => setIsMobileMenuOpen(false)} className="sidebar-close-btn">
+                            <X className="icon-lg" />
                         </button>
                     </div>
 
-                    <div className="text-center hidden xl:block animate-in fade-in zoom-in duration-500">
-                        <h2 className="text-xl font-bold tracking-tight text-[var(--secondary)]">{t('nav.portal')}</h2>
-                        <p className="text-[9px] text-[var(--primary)] uppercase tracking-widest mt-1 font-black">{t('nav.digital_campus')}</p>
+                    <div className="sidebar-portal-text">
+                        <h2 className="portal-title">{t('nav.portal')}</h2>
+                        <p className="portal-subtitle">{t('nav.digital_campus')}</p>
                     </div>
                 </div>
 
-                <div className="flex-1 overflow-y-auto no-scrollbar mt-4 px-3 xl:px-4">
-                    <nav className="space-y-2">
+                <div className="sidebar-nav-container ista-scrollbar">
+                    <nav className="sidebar-nav">
                         {links.map((link) => {
                             const isActive = location.pathname === link.path;
                             return (
                                 <Link
                                     key={link.path}
                                     to={link.path}
-                                    className={`flex items-center gap-3 px-4 py-3.5 rounded-2xl transition-all group ${isRtl ? 'flex-row-reverse' : ''} ${isActive
-                                        ? 'bg-[var(--primary)] text-white shadow-lg shadow-green-900/10'
-                                        : 'text-[var(--text-muted)] hover:bg-[var(--surface-hover)] hover:text-[var(--primary)]'
-                                        }`}
+                                    className={`nav-link ${isRtl ? 'rtl' : ''} ${isActive ? 'active' : 'inactive'}`}
                                     title={link.label}
                                 >
-                                    <link.icon className={`w-5 h-5 flex-shrink-0 ${isActive ? 'text-white' : 'group-hover:text-[var(--primary)]'}`} />
-                                    <span className={`text-[11px] font-black uppercase tracking-widest flex-1 truncate ${isRtl ? 'text-right' : ''} ${isMobileMenuOpen ? 'block' : 'hidden xl:block'}`}>{link.label}</span>
-                                    {isActive && (isRtl ? <ChevronLeft className={`w-3 h-3 text-white/50 ${isMobileMenuOpen ? 'block' : 'hidden xl:block'}`} /> : <ChevronRight className={`w-3 h-3 text-white/50 ${isMobileMenuOpen ? 'block' : 'hidden xl:block'}`} />)}
+                                    <link.icon className="nav-link-icon" />
+                                    <span className={`nav-link-text ${isRtl ? 'rtl' : ''} hide-on-mobile`}>
+                                        {link.label}
+                                    </span>
+                                    {isActive && (isRtl ? 
+                                        <ChevronLeft className="nav-link-chevron hide-on-mobile" /> : 
+                                        <ChevronRight className="nav-link-chevron hide-on-mobile" />
+                                    )}
                                 </Link>
                             );
                         })}
                     </nav>
                 </div>
 
-                <div className="p-3 xl:p-4 border-t border-[var(--border)] dark:border-white/5">
-                    <button
-                        onClick={handleLogout}
-                        className={`w-full flex items-center gap-3 px-4 py-3.5 text-[var(--text-muted)] hover:bg-red-50 hover:text-red-500 rounded-2xl transition-all ${isRtl ? 'flex-row-reverse' : ''}`}
-                        title={t('nav.logout')}
-                    >
-                        <LogOut className={`w-5 h-5 flex-shrink-0 ${isRtl ? 'rotate-180' : ''}`} />
-                        <span className={`text-[11px] font-black uppercase tracking-widest flex-1 truncate ${isRtl ? 'text-right' : ''} ${isMobileMenuOpen ? 'block' : 'hidden xl:block'}`}>{t('nav.logout')}</span>
+                <div className="sidebar-footer">
+                    <button onClick={handleLogout} className={`logout-btn ${isRtl ? 'rtl' : ''}`} title={t('nav.logout')}>
+                        <LogOut className={`logout-icon ${isRtl ? 'rtl' : ''}`} />
+                        <span className={`nav-link-text ${isRtl ? 'rtl' : ''} hide-on-mobile`}>
+                            {t('nav.logout')}
+                        </span>
                     </button>
                 </div>
             </aside>
 
-            <main className={`flex-1 min-h-screen relative min-w-0 transition-all duration-300 ${isRtl ? 'lg:mr-16 xl:mr-60' : 'lg:ml-16 xl:ml-60'}`}>
-                <header className={`h-16 flex items-center justify-between px-4 lg:px-8 bg-white/80 dark:bg-[var(--surface)]/80 backdrop-blur-md sticky top-0 z-40 border-b border-[var(--border)] transition-all duration-300 ${isRtl ? 'flex-row-reverse' : ''}`}>
-                    <div className={`flex items-center gap-3 ${isRtl ? 'flex-row-reverse' : ''}`}>
-                        <button
-                            onClick={() => setIsMobileMenuOpen(true)}
-                            className="p-2.5 hover:bg-[var(--surface-hover)] rounded-xl lg:hidden text-[var(--secondary)]"
-                        >
-                            <Menu className="w-6 h-6" />
+            <main className={`main-content ${isRtl ? 'rtl' : 'ltr'}`}>
+                <header className={`dashboard-header ${isRtl ? 'rtl' : ''}`}>
+                    <div className={`header-left ${isRtl ? 'rtl' : ''}`}>
+                        <button onClick={() => setIsMobileMenuOpen(true)} className="mobile-menu-btn">
+                            <Menu className="icon-lg" />
                         </button>
 
-                        <Link to={user?.role === 'admin' ? '/admin/profile' : '/formateur/profile'} className={`flex items-center gap-3 hover:opacity-80 transition-opacity ${isRtl ? 'flex-row-reverse text-right' : ''}`}>
-                            <div className="w-8 h-8 lg:w-10 lg:h-10 bg-gradient-to-br from-[var(--primary)] to-[var(--primary-dark)] rounded-xl flex items-center justify-center text-white font-bold text-xs lg:text-sm shadow-md">
+                        <Link to={user?.role === 'admin' ? '/admin/profile' : '/formateur/profile'} className={`profile-link ${isRtl ? 'rtl' : ''}`}>
+                            <div className="profile-avatar">
                                 {user?.name?.charAt(0)}
                             </div>
-                            <div className="hidden sm:block">
-                                <h3 className="text-[10px] lg:text-[11px] font-black tracking-widest text-[var(--secondary)] uppercase leading-none mb-1">{user?.name}</h3>
-                                <p className="text-[8px] lg:text-[9px] text-[var(--primary)] uppercase tracking-[0.2em] font-black opacity-70">{user?.role === 'admin' ? t('header.admin_access') : t('header.formateur_access')}</p>
+                            <div className="profile-info">
+                                <h3 className="profile-name">{user?.name}</h3>
+                                <p className="profile-role">{user?.role === 'admin' ? t('header.admin_access') : t('header.formateur_access')}</p>
                             </div>
                         </Link>
                     </div>
 
-                    <div className={`flex items-center gap-2 lg:gap-3 relative ${isRtl ? 'flex-row-reverse' : ''}`}>
-                        <button
-                            onClick={toggleTheme}
-                            className="p-2 lg:p-2.5 rounded-xl bg-[var(--surface-hover)] text-[var(--text-muted)] hover:text-[var(--primary)] transition-all focus:outline-none"
-                            title={t('header.theme_toggle')}
-                        >
-                            {isDark ? <Sun className="w-4 h-4 lg:w-5 lg:h-5" /> : <Moon className="w-4 h-4 lg:w-5 lg:h-5" />}
+                    <div className={`header-right ${isRtl ? 'rtl' : ''}`}>
+                        <button onClick={toggleTheme} className="header-btn" title={t('header.theme_toggle')}>
+                            {isDark ? <Sun className="header-icon" /> : <Moon className="header-icon" />}
                         </button>
-                        <div className="hidden lg:block w-[1px] h-6 bg-[var(--border)] mx-1 lg:mx-2"></div>
+                        <div className="header-divider"></div>
 
-                        <div className="relative">
-                            <button
-                                onClick={() => setIsNotifOpen(!isNotifOpen)}
-                                className={`p-2 lg:p-2.5 rounded-xl transition-all relative group ${isNotifOpen ? 'bg-[var(--primary)] text-white shadow-lg' : 'bg-[var(--surface-hover)] text-[var(--text-muted)] hover:text-[var(--primary)]'}`}
-                            >
-                                <Bell className="w-4 h-4 lg:w-5 lg:h-5" />
-                                {unreadCount > 0 && (
-                                    <span className="absolute -top-1 -right-1 w-4 h-4 bg-rose-500 border-2 border-white rounded-full text-[8px] font-black flex items-center justify-center text-white p-[2px]">
-                                        {unreadCount}
-                                    </span>
-                                )}
+                        <div className="notif-wrapper">
+                            <button onClick={() => setIsNotifOpen(!isNotifOpen)} className={`header-btn ${isNotifOpen ? 'notif-active' : ''}`}>
+                                <Bell className="header-icon" />
+                                {unreadCount > 0 && <span className="notif-badge">{unreadCount}</span>}
                             </button>
-
-                            <NotificationPanel
-                                isOpen={isNotifOpen}
-                                onClose={() => setIsNotifOpen(false)}
-                                notifications={notifications}
-                                onMarkRead={handleMarkRead}
-                                onMarkAllRead={handleMarkAllRead}
-                            />
+                            {isNotifOpen && (
+                                <NotificationPanel
+                                    isOpen={isNotifOpen}
+                                    onClose={() => setIsNotifOpen(false)}
+                                    notifications={notifications}
+                                    onMarkRead={handleMarkRead}
+                                    onMarkAllRead={handleMarkAllRead}
+                                />
+                            )}
                         </div>
 
-                        <button
-                            onClick={toggleLanguage}
-                            className="p-2 lg:p-2.5 rounded-xl bg-[var(--surface-hover)] text-[var(--text-muted)] hover:text-[var(--primary)] transition-all flex items-center gap-2"
-                            title={i18n.language === 'fr' ? 'العربية' : 'Français'}
-                        >
-                            <Settings className="w-4 h-4 lg:w-5 lg:h-5" />
-                            <span className="text-[10px] font-black uppercase tracking-widest">{i18n.language === 'fr' ? 'AR' : 'FR'}</span>
+                        <button onClick={toggleLanguage} className="header-btn" title={i18n.language === 'fr' ? 'العربية' : 'Français'}>
+                            <Settings className="header-icon" />
+                            <span className="lang-text">{i18n.language === 'fr' ? 'AR' : 'FR'}</span>
                         </button>
                     </div>
                 </header>
 
-                <div className="p-4 sm:p-6 lg:p-8 page-transition pb-20 sm:pb-10">
+                <div className="page-content page-transition">
                     {children}
                 </div>
             </main>

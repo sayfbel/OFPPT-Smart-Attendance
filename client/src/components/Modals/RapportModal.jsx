@@ -3,152 +3,155 @@ import ReactDOM from 'react-dom';
 import { X, ChevronDown, FileText, Calendar, User, MapPin, Clock, Search } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { getSignatureDataURI } from '../../utils/signatureHelper';
+import './RapportModal.css';
 
 const RapportModal = ({ isOpen, onClose, rapport, onExportPDF, onExportExcel, isExporting }) => {
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
+    const isRtl = i18n.language === 'ar';
+
     if (!isOpen || !rapport) return null;
 
     return ReactDOM.createPortal(
-        <div className="fixed inset-0 z-[9999] bg-black/60 backdrop-blur-md flex items-center justify-center p-4 sm:p-8 animate-in fade-in duration-300">
-            <div className="bg-white rounded-[40px] w-full max-w-6xl h-[90vh] max-h-[850px] flex flex-col md:flex-row shadow-2xl relative overflow-hidden">
+        <div className="rapport-modal-overlay">
+            <div className={`rapport-modal-content ${isRtl ? 'rtl' : ''}`}>
                 <button
                     type="button"
                     onClick={onClose}
-                    className="absolute top-8 right-8 p-3 hover:bg-slate-50 rounded-2xl transition-all text-slate-300 hover:text-[var(--secondary)] z-50"
+                    className={`rapport-modal-close-btn ${isRtl ? 'rtl' : ''}`}
                 >
                     <X className="w-6 h-6" />
                 </button>
 
                 {/* Left Side (Branding & Status) */}
-                <div className="w-full md:w-[35%] bg-gradient-to-br from-[var(--secondary)] to-[#003d6b] text-white p-12 flex flex-col overflow-y-auto ista-scrollbar">
-                    <div className="mb-auto">
-                        <div className="w-16 h-16 bg-white/10 rounded-2xl flex items-center justify-center border border-white/20 mb-8">
-                            <FileText className="w-8 h-8 text-white" />
+                <div className="rapport-modal-info-panel ista-scrollbar">
+                    <div className="rapport-modal-info-top">
+                        <div className="rapport-modal-icon-wrapper">
+                            <FileText className="rapport-modal-icon" />
                         </div>
-                        <h2 className="text-5xl font-black italic tracking-tighter leading-[0.9] mb-4">
-                            {t('modals.report.title')} <br /> <span className="text-[var(--primary)]">{t('modals.report.subtitle')}</span>
+                        <h2 className={`rapport-modal-title ${isRtl ? 'rtl' : ''}`}>
+                            {t('modals.report.title')} <br /> <span className="rapport-modal-highlight">{t('modals.report.subtitle')}</span>
                         </h2>
-                        <p className="text-[10px] font-bold text-white/50 tracking-[0.3em] uppercase">{t('modals.report.official')}</p>
+                        <p className={`rapport-modal-subtitle ${isRtl ? 'rtl' : ''}`}>{t('modals.report.official')}</p>
                     </div>
 
-                    <div className="space-y-8 mt-12 bg-black/10 p-8 rounded-3xl border border-white/5">
-                        <div className="space-y-1">
-                            <p className="text-[9px] font-black text-white/40 tracking-widest uppercase">{t('modals.report.doc_code')}</p>
-                            <p className="text-xl font-black italic uppercase tracking-tight text-[var(--primary)]">{rapport.id}</p>
+                    <div className="rapport-modal-status-box">
+                        <div className={`rapport-modal-status-item ${isRtl ? 'rtl' : ''}`}>
+                            <p className="rapport-modal-status-label">{t('modals.report.doc_code')}</p>
+                            <p className="rapport-modal-status-value">{rapport.id}</p>
                         </div>
-                        <div className="space-y-1">
-                            <p className="text-[9px] font-black text-white/40 tracking-widest uppercase">{t('modals.report.status_label')}</p>
-                            <div className="flex items-center gap-2">
-                                <div className={`w-2 h-2 rounded-full animate-pulse ${rapport.status === 'VALIDATED' ? 'bg-[var(--primary)]' : 'bg-gold-500'}`}></div>
-                                <p className="text-[10px] font-black uppercase tracking-widest">
+                        <div className={`rapport-modal-status-item ${isRtl ? 'rtl' : ''}`}>
+                            <p className="rapport-modal-status-label">{t('modals.report.status_label')}</p>
+                            <div className={`rapport-modal-status-indicator ${isRtl ? 'rtl' : ''}`}>
+                                <div className={`rapport-modal-dot ${rapport.status === 'VALIDATED' ? 'validated' : 'waiting'}`}></div>
+                                <p className="rapport-modal-status-text">
                                     {rapport.status === 'VALIDATED' ? t('modals.report.status_validated') : t('modals.report.status_waiting')}
                                 </p>
                             </div>
                         </div>
-                        <div className="space-y-1">
-                            <p className="text-[9px] font-black text-white/40 tracking-widest uppercase">{t('modals.report.group_label')}</p>
-                            <p className="text-sm font-bold uppercase tracking-tight text-white/70">{rapport.group_id}</p>
+                        <div className={`rapport-modal-status-item ${isRtl ? 'rtl' : ''}`}>
+                            <p className="rapport-modal-status-label">{t('modals.report.group_label')}</p>
+                            <p className="rapport-modal-group-value">{rapport.group_id}</p>
                         </div>
                     </div>
 
-                    <div className="mt-auto flex flex-col gap-4 pt-8">
-                        <div className="flex flex-col gap-2">
-                            <p className="text-[9px] font-black text-white/40 tracking-widest uppercase mb-1">{t('reports.export_button') || 'EXPORTER'}</p>
+                    <div className="rapport-modal-actions">
+                        <div className="rapport-modal-actions-wrapper">
+                            <p className={`rapport-modal-actions-label ${isRtl ? 'rtl' : ''}`}>{t('reports.export_button') || 'EXPORTER'}</p>
                             <button
                                 onClick={onExportPDF}
                                 disabled={isExporting}
-                                className="w-full flex items-center justify-between bg-white/10 hover:bg-white/20 border border-white/20 p-3 rounded-xl transition-all disabled:opacity-50"
+                                className={`rapport-modal-export-btn ${isRtl ? 'rtl' : ''}`}
                             >
-                                <span className="text-[11px] font-bold tracking-widest">FORMAT PDF</span>
-                                <FileText className={`w-4 h-4 ${isExporting ? 'animate-bounce' : ''}`} />
+                                <span className="rapport-modal-export-text">FORMAT PDF</span>
+                                <FileText className={`rapport-modal-export-icon ${isExporting ? 'bounce' : ''}`} />
                             </button>
                             <button
                                 onClick={onExportExcel}
                                 disabled={isExporting}
-                                className="w-full flex items-center justify-between bg-white/10 hover:bg-white/20 border border-white/20 p-3 rounded-xl transition-all disabled:opacity-50"
+                                className={`rapport-modal-export-btn ${isRtl ? 'rtl' : ''}`}
                             >
-                                <span className="text-[11px] font-bold tracking-widest">FORMAT EXCEL</span>
-                                <FileText className={`w-4 h-4 ${isExporting ? 'animate-bounce' : ''}`} />
+                                <span className="rapport-modal-export-text">FORMAT EXCEL</span>
+                                <FileText className={`rapport-modal-export-icon ${isExporting ? 'bounce' : ''}`} />
                             </button>
                         </div>
-                        <p className="text-[8px] font-bold text-white/30 tracking-[0.4em] uppercase hidden md:block mt-2">ISTA_OFPPT_D.A.D_ARCHIVE_v3</p>
+                        <p className={`rapport-modal-system-tag ${isRtl ? 'rtl' : ''}`}>ISTA_OFPPT_D.A.D_ARCHIVE_v3</p>
                     </div>
                 </div>
 
                 {/* Right Side (Content) */}
-                <div className="flex-1 bg-white flex flex-col relative overflow-hidden rounded-r-[40px]">
+                <div className="rapport-modal-content-area">
                     {/* Fixed Header Section */}
-                    <div className="p-8 md:p-12 pb-6 bg-white z-20 flex-shrink-0 border-b border-slate-100 shadow-[0_5px_15px_-10px_rgba(0,0,0,0.05)]">
+                    <div className="rapport-modal-header">
                         <div>
-                            <h3 className="text-2xl font-black italic tracking-tight text-[var(--secondary)] uppercase mb-2">{t('modals.report.details_title')}</h3>
-                            <p className="text-[10px] font-bold text-slate-400 tracking-widest uppercase">{t('modals.report.details_sub')}</p>
+                            <h3 className={`rapport-modal-header-title ${isRtl ? 'rtl' : ''}`}>{t('modals.report.details_title')}</h3>
+                            <p className={`rapport-modal-header-subtitle ${isRtl ? 'rtl' : ''}`}>{t('modals.report.details_sub')}</p>
                         </div>
                     </div>
 
                     {/* Scrollable Content Section */}
-                    <div className="flex-1 overflow-y-auto ista-scrollbar p-8 md:p-12 pt-8 flex flex-col space-y-10">
+                    <div className="rapport-modal-body ista-scrollbar">
                         {/* Header Info Grid */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
-                            <div className="space-y-1 border-l-4 border-[var(--primary)] pl-4 md:pl-6">
-                                <p className="text-[9px] font-black text-slate-400 tracking-widest uppercase">{t('modals.report.module_label')}</p>
-                                <p className="text-lg font-black italic text-[var(--secondary)] uppercase">{rapport.subject}</p>
+                        <div className="rapport-modal-grid">
+                            <div className={`rapport-modal-info-block primary ${isRtl ? 'rtl' : ''}`}>
+                                <p className="rapport-modal-info-label">{t('modals.report.module_label')}</p>
+                                <p className="rapport-modal-info-value">{rapport.subject}</p>
                             </div>
-                            <div className="space-y-1 border-l-4 border-slate-100 pl-4 md:pl-6">
-                                <p className="text-[9px] font-black text-slate-400 tracking-widest uppercase">{t('modals.report.formateur_label')}</p>
-                                <p className="text-lg font-black italic text-[var(--secondary)] uppercase">{rapport.formateur}</p>
+                            <div className={`rapport-modal-info-block ${isRtl ? 'rtl' : ''}`}>
+                                <p className="rapport-modal-info-label">{t('modals.report.formateur_label')}</p>
+                                <p className="rapport-modal-info-value">{rapport.formateur}</p>
                             </div>
-                            <div className="space-y-1 border-l-4 border-slate-100 pl-4 md:pl-6">
-                                <p className="text-[9px] font-black text-slate-400 tracking-widest uppercase">{t('modals.report.date_label')}</p>
-                                <div className="flex items-center gap-2">
-                                    <Calendar className="w-3 h-3 text-[var(--primary)]" />
-                                    <p className="text-sm font-bold text-[var(--secondary)] uppercase font-mono">{rapport.date}</p>
+                            <div className={`rapport-modal-info-block ${isRtl ? 'rtl' : ''}`}>
+                                <p className="rapport-modal-info-label">{t('modals.report.date_label')}</p>
+                                <div className={`rapport-modal-info-flex ${isRtl ? 'rtl' : ''}`}>
+                                    <Calendar className="rapport-modal-info-icon" />
+                                    <p className="rapport-modal-info-text">{rapport.date}</p>
                                 </div>
                             </div>
-                            <div className="space-y-1 border-l-4 border-slate-100 pl-4 md:pl-6">
-                                <p className="text-[9px] font-black text-slate-400 tracking-widest uppercase">{t('modals.report.schedule_label')}</p>
-                                <div className="flex items-center gap-4">
-                                    <div className="flex items-center gap-2">
-                                        <Clock className="w-3 h-3 text-[var(--primary)]" />
-                                        <p className="text-sm font-bold text-[var(--secondary)] uppercase font-mono">{rapport.heure || 'N/A'}</p>
+                            <div className={`rapport-modal-info-block ${isRtl ? 'rtl' : ''}`}>
+                                <p className="rapport-modal-info-label">{t('modals.report.schedule_label')}</p>
+                                <div className={`rapport-modal-schedule-flex ${isRtl ? 'rtl' : ''}`}>
+                                    <div className={`rapport-modal-info-flex ${isRtl ? 'rtl' : ''}`}>
+                                        <Clock className="rapport-modal-info-icon" />
+                                        <p className="rapport-modal-info-text">{rapport.heure || 'N/A'}</p>
                                     </div>
-                                    <div className="flex items-center gap-2">
-                                        <MapPin className="w-3 h-3 text-[var(--primary)]" />
-                                        <p className="text-sm font-bold text-[var(--secondary)] uppercase">{rapport.salle || 'N/A'}</p>
+                                    <div className={`rapport-modal-info-flex ${isRtl ? 'rtl' : ''}`}>
+                                        <MapPin className="rapport-modal-info-icon" />
+                                        <p className="rapport-modal-info-text">{rapport.salle || 'N/A'}</p>
                                     </div>
                                 </div>
                             </div>
                         </div>
                         {/* Student List */}
-                        <div className="space-y-4">
-                            <div className="flex items-center justify-between sticky top-0 bg-white z-10 pb-4">
-                                <label className="flex items-center gap-2 text-[10px] font-black tracking-widest text-slate-400 uppercase">
-                                    <Search className="w-3 h-3 text-[var(--primary)]" />
+                        <div className="rapport-modal-list-section">
+                            <div className={`rapport-modal-list-header ${isRtl ? 'rtl' : ''}`}>
+                                <label className={`rapport-modal-list-label ${isRtl ? 'rtl' : ''}`}>
+                                    <Search className="rapport-modal-list-icon" />
                                     {t('modals.report.list_label')}
                                 </label>
-                                <span className="text-[10px] font-black text-[var(--primary)] uppercase">
+                                <span className="rapport-modal-list-count">
                                     {t('modals.report.present_count', { present: (rapport.total_group_students || (rapport.stagiaires || []).length) - (rapport.stagiaires || []).length, total: rapport.total_group_students || (rapport.stagiaires || []).length })}
                                 </span>
                             </div>
-                            <div className="border border-slate-100 rounded-3xl overflow-hidden bg-slate-50/30">
-                                <table className="w-full text-left border-collapse">
+                            <div className="rapport-modal-table-container">
+                                <table className="rapport-modal-table">
                                     <thead>
-                                        <tr className="bg-slate-50 text-[9px] font-black uppercase tracking-widest text-slate-400 sticky top-0 z-10">
-                                            <th className="p-4 md:p-6">{t('accounts.student_name')}</th>
-                                            <th className="p-4 md:p-6">{t('common.matricule')}</th>
-                                            <th className="p-4 md:p-6 text-right">Statut</th>
+                                        <tr>
+                                            <th className={isRtl ? 'rtl' : ''}>{t('accounts.student_name')}</th>
+                                            <th className={isRtl ? 'rtl' : ''}>{t('common.matricule')}</th>
+                                            <th className={isRtl ? '' : 'rtl'}>Statut</th>
                                         </tr>
                                     </thead>
-                                    <tbody className="divide-y divide-slate-100">
+                                    <tbody>
                                         {(rapport.stagiaires || []).map((stagiaire, idx) => (
-                                            <tr key={idx} className="hover:bg-white transition-colors">
-                                                <td className="p-4 md:p-6">
-                                                    <span className="text-sm font-black italic text-[var(--secondary)] uppercase">{stagiaire.name}</span>
+                                            <tr key={idx}>
+                                                <td className={isRtl ? 'rtl' : ''}>
+                                                    <span className="rapport-modal-table-name">{stagiaire.name}</span>
                                                 </td>
-                                                <td className="p-4 md:p-6">
-                                                    <span className="text-[10px] font-bold text-slate-400 font-mono tracking-widest">{stagiaire.id}</span>
+                                                <td className={isRtl ? 'rtl' : ''}>
+                                                    <span className="rapport-modal-table-id">{stagiaire.id}</span>
                                                 </td>
-                                                <td className="p-4 md:p-6 text-right">
-                                                    <span className={`text-[9px] font-black tracking-widest px-4 py-1.5 rounded-lg border ${stagiaire.status === 'ABSENT' ? 'border-red-500 text-red-500 bg-red-50' : 'border-[var(--primary)] text-[var(--primary)] bg-green-50'}`}>
+                                                <td className={isRtl ? '' : 'rtl'}>
+                                                    <span className={`rapport-modal-status-badge ${stagiaire.status === 'ABSENT' ? 'absent' : 'present'}`}>
                                                         {stagiaire.status === 'PRESENT' ? t('dashboard.present') : t('dashboard.absent')}
                                                     </span>
                                                 </td>
@@ -160,15 +163,15 @@ const RapportModal = ({ isOpen, onClose, rapport, onExportPDF, onExportExcel, is
                         </div>
 
                         {/* Signature */}
-                        <div className="pt-8 flex justify-end mt-auto">
-                            <div className="flex flex-col items-center">
-                                <label className="text-[9px] font-black tracking-[0.3em] text-[var(--secondary)] uppercase mb-4">{t('modals.report.signature_label')}</label>
-                                <div className="w-64 h-32 bg-slate-50 border border-dashed border-slate-200 rounded-[24px] flex items-center justify-center p-6 shadow-inner relative overflow-hidden">
-                                    <div className="absolute inset-0 opacity-[0.03] bg-[url('https://www.transparenttextures.com/patterns/graphy.png')]"></div>
+                        <div className={`rapport-modal-signature-section ${isRtl ? 'rtl' : ''}`}>
+                            <div className="rapport-modal-signature-container">
+                                <label className="rapport-modal-signature-label">{t('modals.report.signature_label')}</label>
+                                <div className="rapport-modal-signature-box">
+                                    <div className="rapport-modal-signature-bg"></div>
                                     {rapport.signature ? (
-                                        <img src={getSignatureDataURI(rapport.signature)} alt="Signature" className="max-h-full relative z-10" />
+                                        <img src={getSignatureDataURI(rapport.signature)} alt="Signature" className="rapport-modal-signature-img" />
                                     ) : (
-                                        <span className="font-['Brush_Script_MT',cursive] italic text-3xl text-[var(--secondary)] opacity-10 relative z-10">
+                                        <span className="rapport-modal-signature-text">
                                             {rapport.formateur}
                                         </span>
                                     )}
@@ -178,11 +181,6 @@ const RapportModal = ({ isOpen, onClose, rapport, onExportPDF, onExportExcel, is
                     </div>
                 </div>
             </div>
-            <style>{`
-                .ista-scrollbar::-webkit-scrollbar { width: 4px; }
-                .ista-scrollbar::-webkit-scrollbar-track { background: transparent; }
-                .ista-scrollbar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
-            `}</style>
         </div>,
         document.body
     );

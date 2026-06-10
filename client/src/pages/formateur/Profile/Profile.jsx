@@ -9,12 +9,10 @@ import {
     Key, 
     Lock, 
     Camera, 
-    CheckCircle2, 
-    AlertCircle,
-    Info,
-    LayoutDashboard
+    Info
 } from 'lucide-react';
 import { useNotification } from '../../../hooks/useNotification';
+import './Profile.css';
 
 const Profile = () => {
     const { user, login } = useAuth();
@@ -78,185 +76,185 @@ const Profile = () => {
     };
 
     return (
-        <div className="space-y-12 fade-up max-w-[1200px] mx-auto pb-20">
+        <div className="prof-container fade-up">
             {/* Header section */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-8 transition-all duration-500">
-                <div className="space-y-2">
-                    <h1 className="text-5xl md:text-[64px] font-black tracking-tighter text-[var(--secondary)] uppercase italic leading-none">
-                        PROFIL <span className="text-[var(--primary)] shrink-0">UTILISATEUR</span>
+            <div className="prof-header">
+                <div className="prof-title-wrapper">
+                    <h1 className="prof-title">
+                        PROFIL <span className="prof-title-highlight">UTILISATEUR</span>
                     </h1>
-                    <p className="text-[10px] text-slate-400 font-bold tracking-[0.3em] uppercase">
+                    <p className="prof-subtitle">
                         GESTION DES INFORMATIONS PERSONNELLES ET SÉCURITÉ
                     </p>
                 </div>
             </div>
 
-            <div className="flex flex-col lg:flex-row gap-12">
+            <div className="prof-content-wrapper">
                 {/* Sidebar / Left Column */}
-                <div className="w-full lg:w-[380px] space-y-10">
-                    <div className="bg-white border border-slate-100 rounded-[48px] p-12 shadow-sm relative overflow-hidden group">
+                <div className="prof-sidebar">
+                    <div className="prof-sidebar-card group">
                         {/* Avatar backdrop */}
-                        <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-br from-[var(--secondary)] to-[#003d6b] -z-0"></div>
+                        <div className="prof-avatar-backdrop"></div>
                         
-                        <div className="relative z-10 flex flex-col items-center">
-                            <div className="w-32 h-32 rounded-[32px] bg-white p-2 shadow-2xl relative mb-8 group-hover:scale-105 transition-transform duration-500">
-                                <div className="w-full h-full rounded-[24px] bg-slate-100 flex items-center justify-center overflow-hidden border border-slate-50 relative group/pic">
+                        <div className="prof-avatar-content">
+                            <div className="prof-avatar-wrapper group">
+                                <div className="prof-avatar-inner group/pic">
                                     {profile.image ? (
-                                        <img src={profile.image} alt={profile.name} className="w-full h-full object-cover" />
+                                        <img src={profile.image} alt={profile.name} className="prof-avatar-img" />
                                     ) : (
-                                        <User className="w-12 h-12 text-slate-300" />
+                                        <User className="prof-avatar-icon" />
                                     )}
-                                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/pic:opacity-100 transition-opacity flex items-center justify-center cursor-pointer">
-                                        <Camera className="w-6 h-6 text-white" />
+                                    <div className="prof-avatar-overlay">
+                                        <Camera className="prof-avatar-cam-icon" />
                                     </div>
                                 </div>
                             </div>
                             
-                            <h3 className="text-2xl font-black italic text-[var(--secondary)] uppercase tracking-tight text-center leading-tight mb-2">
+                            <h3 className="prof-user-name">
                                 {profile.name}
                             </h3>
-                            <div className="px-5 py-1.5 bg-[var(--primary)]/10 text-[var(--primary)] rounded-full text-[9px] font-black uppercase tracking-widest mb-8">
+                            <div className="prof-user-role">
                                 {user?.role === 'admin' ? 'ADMINISTRATEUR' : 'FORMATEUR'}
                             </div>
 
-                            <div className="w-full space-y-4 pt-8 border-t border-slate-50">
+                            <div className="prof-tabs-wrapper">
                                 <button 
                                     onClick={() => setActiveTab('general')}
-                                    className={`w-full p-5 rounded-2xl flex items-center gap-4 transition-all ${activeTab === 'general' ? 'bg-[var(--secondary)] text-white shadow-xl shadow-[var(--secondary)]/20' : 'bg-slate-50 text-slate-400 hover:bg-slate-100'}`}
+                                    className={`prof-tab-btn ${activeTab === 'general' ? 'active' : ''}`}
                                 >
-                                    <User className="w-4 h-4" />
-                                    <span className="text-[10px] font-black uppercase tracking-widest">Informations Générales</span>
+                                    <User className="prof-tab-icon" />
+                                    <span className="prof-tab-text">Informations Générales</span>
                                 </button>
                                 <button 
                                     onClick={() => setActiveTab('security')}
-                                    className={`w-full p-5 rounded-2xl flex items-center gap-4 transition-all ${activeTab === 'security' ? 'bg-[var(--secondary)] text-white shadow-xl shadow-[var(--secondary)]/20' : 'bg-slate-50 text-slate-400 hover:bg-slate-100'}`}
+                                    className={`prof-tab-btn ${activeTab === 'security' ? 'active' : ''}`}
                                 >
-                                    <Lock className="w-4 h-4" />
-                                    <span className="text-[10px] font-black uppercase tracking-widest">Sécurité du Compte</span>
+                                    <Lock className="prof-tab-icon" />
+                                    <span className="prof-tab-text">Sécurité du Compte</span>
                                 </button>
                             </div>
                         </div>
                     </div>
 
-                    <div className="bg-slate-900 rounded-[40px] p-10 text-white space-y-6 shadow-2xl relative overflow-hidden">
-                        <div className="absolute top-0 right-0 w-32 h-32 bg-[var(--primary)]/10 rounded-full blur-2xl"></div>
-                        <h4 className="text-[10px] font-black uppercase tracking-widest text-[var(--primary)]">Système de Sécurité</h4>
-                        <p className="text-xs font-bold text-slate-400 leading-relaxed uppercase italic">
+                    <div className="prof-security-card">
+                        <div className="prof-security-glow"></div>
+                        <h4 className="prof-security-title">Système de Sécurité</h4>
+                        <p className="prof-security-desc">
                             "Votre identité numérique est protégée par un protocole de cryptage asymétrique de grade professionnel."
                         </p>
-                        <Shield className="w-8 h-8 text-[var(--primary)] opacity-50" />
+                        <Shield className="prof-security-icon" />
                     </div>
                 </div>
 
                 {/* Main Content Area */}
-                <div className="flex-1">
+                <div className="prof-main">
                     {activeTab === 'general' ? (
-                        <div className="bg-white border border-slate-100 rounded-[48px] p-12 md:p-16 shadow-sm fade-up">
-                            <div className="mb-12">
-                                <h3 className="text-3xl font-black italic tracking-tighter text-[var(--secondary)] uppercase leading-none mb-3">INFORMATIONS <span className="text-[var(--primary)] shrink-0">GÉNÉRALES</span></h3>
-                                <p className="text-[9px] font-bold text-slate-400 tracking-widest uppercase italic">METTEZ À JOUR VOS COORDONNÉES PERSONNELLES</p>
+                        <div className="prof-form-card fade-up">
+                            <div className="prof-form-header">
+                                <h3 className="prof-form-title">INFORMATIONS <span className="prof-form-title-highlight">GÉNÉRALES</span></h3>
+                                <p className="prof-form-subtitle">METTEZ À JOUR VOS COORDONNÉES PERSONNELLES</p>
                             </div>
 
-                            <form onSubmit={handleUpdateProfile} className="space-y-10">
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-                                    <div className="space-y-4">
-                                        <label className="flex items-center gap-2 text-[10px] font-black tracking-widest text-slate-400 uppercase">
-                                            <User className="w-3 h-3 text-[var(--primary)]" /> NOM COMPLET
+                            <form onSubmit={handleUpdateProfile} className="prof-form">
+                                <div className="prof-form-grid">
+                                    <div className="prof-input-group">
+                                        <label className="prof-input-label">
+                                            <User className="prof-label-icon" /> NOM COMPLET
                                         </label>
                                         <input
                                             type="text"
                                             value={profile.name}
                                             onChange={e => setProfile({ ...profile, name: e.target.value })}
-                                            className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-6 py-5 text-sm font-bold text-[var(--secondary)] focus:border-[var(--primary)] focus:ring-8 focus:ring-[var(--primary)]/5 outline-none transition-all"
+                                            className="prof-input"
                                             placeholder="Saad Bentalb"
                                         />
                                     </div>
-                                    <div className="space-y-4">
-                                        <label className="flex items-center gap-2 text-[10px] font-black tracking-widest text-slate-400 uppercase">
-                                            <Mail className="w-3 h-3 text-[var(--primary)]" /> ADRESSE EMAIL
+                                    <div className="prof-input-group">
+                                        <label className="prof-input-label">
+                                            <Mail className="prof-label-icon" /> ADRESSE EMAIL
                                         </label>
                                         <input
                                             type="email"
                                             value={profile.email}
                                             onChange={e => setProfile({ ...profile, email: e.target.value })}
-                                            className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-6 py-5 text-sm font-bold text-[var(--secondary)] focus:border-[var(--primary)] focus:ring-8 focus:ring-[var(--primary)]/5 outline-none transition-all"
+                                            className="prof-input"
                                             placeholder="saad@ofppt.ma"
                                         />
                                     </div>
                                 </div>
 
-                                <div className="pt-10 border-t border-slate-50">
+                                <div className="prof-form-footer">
                                     <button 
                                         type="submit"
                                         disabled={loading}
-                                        className="btn-ista px-12 py-5 rounded-2xl font-black uppercase tracking-[0.2em] shadow-xl flex items-center justify-center gap-4 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50"
+                                        className="btn-ista prof-submit-btn"
                                     >
-                                        {loading ? "ENREGISTREMENT..." : <><Save className="w-4 h-4" /> ENREGISTRER LES MODIFICATIONS</>}
+                                        {loading ? "ENREGISTREMENT..." : <><Save className="prof-submit-icon" /> ENREGISTRER LES MODIFICATIONS</>}
                                     </button>
                                 </div>
                             </form>
                         </div>
                     ) : (
-                        <div className="bg-white border border-slate-100 rounded-[48px] p-12 md:p-16 shadow-sm fade-up">
-                            <div className="mb-12">
-                                <h3 className="text-3xl font-black italic tracking-tighter text-[var(--secondary)] uppercase leading-none mb-3">SÉCURISATION <span className="text-[var(--primary)] shrink-0">DU COMPTE</span></h3>
-                                <p className="text-[9px] font-bold text-slate-400 tracking-widest uppercase italic">RENFORCEZ LA PROTECTION DE VOTRE ACCÈS</p>
+                        <div className="prof-form-card fade-up">
+                            <div className="prof-form-header">
+                                <h3 className="prof-form-title">SÉCURISATION <span className="prof-form-title-highlight">DU COMPTE</span></h3>
+                                <p className="prof-form-subtitle">RENFORCEZ LA PROTECTION DE VOTRE ACCÈS</p>
                             </div>
 
-                            <form onSubmit={handleUpdatePassword} className="space-y-10">
-                                <div className="space-y-4">
-                                    <label className="flex items-center gap-2 text-[10px] font-black tracking-widest text-slate-400 uppercase">
-                                        <Key className="w-3 h-3 text-red-500" /> MOT DE PASSE ACTUEL
+                            <form onSubmit={handleUpdatePassword} className="prof-form">
+                                <div className="prof-input-group">
+                                    <label className="prof-input-label">
+                                        <Key className="prof-label-icon text-red" /> MOT DE PASSE ACTUEL
                                     </label>
                                     <input
                                         type="password"
                                         required
                                         value={passwords.currentPassword}
                                         onChange={e => setPasswords({ ...passwords, currentPassword: e.target.value })}
-                                        className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-6 py-5 text-sm font-bold text-[var(--secondary)] focus:border-red-500 focus:ring-8 focus:ring-red-500/5 outline-none transition-all"
+                                        className="prof-input input-danger"
                                         placeholder="••••••••"
                                     />
                                 </div>
 
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-                                    <div className="space-y-4">
-                                        <label className="flex items-center gap-2 text-[10px] font-black tracking-widest text-slate-400 uppercase">
-                                            <Lock className="w-3 h-3 text-[var(--primary)]" /> NOUVEAU MOT DE PASSE
+                                <div className="prof-form-grid">
+                                    <div className="prof-input-group">
+                                        <label className="prof-input-label">
+                                            <Lock className="prof-label-icon" /> NOUVEAU MOT DE PASSE
                                         </label>
                                         <input
                                             type="password"
                                             required
                                             value={passwords.newPassword}
                                             onChange={e => setPasswords({ ...passwords, newPassword: e.target.value })}
-                                            className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-6 py-5 text-sm font-bold text-[var(--secondary)] focus:border-[var(--primary)] focus:ring-8 focus:ring-[var(--primary)]/5 outline-none transition-all"
+                                            className="prof-input"
                                             placeholder="••••••••"
                                         />
                                     </div>
-                                    <div className="space-y-4">
-                                        <label className="flex items-center gap-2 text-[10px] font-black tracking-widest text-slate-400 uppercase">
-                                            <Lock className="w-3 h-3 text-[var(--primary)]" /> CONFIRMER LE NOUVEAU MOT DE PASSE
+                                    <div className="prof-input-group">
+                                        <label className="prof-input-label">
+                                            <Lock className="prof-label-icon" /> CONFIRMER LE NOUVEAU MOT DE PASSE
                                         </label>
                                         <input
                                             type="password"
                                             required
                                             value={passwords.confirmPassword}
                                             onChange={e => setPasswords({ ...passwords, confirmPassword: e.target.value })}
-                                            className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-6 py-5 text-sm font-bold text-[var(--secondary)] focus:border-[var(--primary)] focus:ring-8 focus:ring-[var(--primary)]/5 outline-none transition-all"
+                                            className="prof-input"
                                             placeholder="••••••••"
                                         />
                                     </div>
                                 </div>
 
-                                <div className="pt-10 border-t border-slate-50 flex flex-col md:flex-row gap-6 items-center">
+                                <div className="prof-form-footer prof-form-footer-pw">
                                     <button 
                                         type="submit"
                                         disabled={loading}
-                                        className="w-full md:w-auto px-12 py-5 bg-[var(--secondary)] text-white rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] shadow-xl shadow-[var(--secondary)]/20 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50"
+                                        className="prof-submit-pw-btn"
                                     >
                                         {loading ? "MISE À JOUR..." : "ACTUALISER LE MOT DE PASSE"}
                                     </button>
-                                    <p className="text-[10px] font-black uppercase italic text-slate-300 gap-2 flex items-center">
-                                        <Info className="w-4 h-4" /> Utilisation recommandée de 8 caractères minimum
+                                    <p className="prof-pw-hint">
+                                        <Info className="prof-pw-hint-icon" /> Utilisation recommandée de 8 caractères minimum
                                     </p>
                                 </div>
                             </form>

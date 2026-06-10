@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Gavel, AlertCircle, FileText, ArrowRight, ShieldAlert, ChevronLeft } from 'lucide-react';
+import { Gavel, AlertCircle, FileText, ArrowRight, ShieldAlert, ChevronLeft, Activity } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useNotification } from '../../../hooks/useNotification';
 import reportService from '../../../services/reportService';
 import './PenaltyDecision.css';
+import '../../../styles/admin-shared.css';
 
 const PenaltyDecision = () => {
     const location = useLocation();
@@ -33,9 +34,9 @@ const PenaltyDecision = () => {
     });
 
     const penaltyLevels = [
-        { value: 'Blâme 1', label: 'DEGRÉ 1', fullLabel: 'BLÂME SIMPLE', color: 'text-amber-500', bg: 'bg-amber-50', border: 'border-amber-200', icon: AlertCircle },
-        { value: 'Blâme 2', label: 'DEGRÉ 2', fullLabel: 'MISE À PIED', color: 'text-orange-500', bg: 'bg-orange-50', border: 'border-orange-200', icon: ShieldAlert },
-        { value: 'Blâme 3', label: 'DEGRÉ 3', fullLabel: 'EXCLUSION', color: 'text-red-500', bg: 'bg-red-50', border: 'border-red-200', icon: Gavel },
+        { value: 'Blâme 1', label: t('penalty_decision.degree', { num: 1 }), fullLabel: t('penalty_decision.blame_simple'), color: 'text-amber-500', bg: 'bg-amber-50', border: 'border-amber-200', icon: AlertCircle },
+        { value: 'Blâme 2', label: t('penalty_decision.degree', { num: 2 }), fullLabel: t('penalty_decision.mise_a_pied'), color: 'text-orange-500', bg: 'bg-orange-50', border: 'border-orange-200', icon: ShieldAlert },
+        { value: 'Blâme 3', label: t('penalty_decision.degree', { num: 3 }), fullLabel: t('penalty_decision.exclusion'), color: 'text-red-500', bg: 'bg-red-50', border: 'border-red-200', icon: Gavel },
     ];
 
     const handleSubmit = async (e) => {
@@ -70,11 +71,11 @@ const PenaltyDecision = () => {
                     className={`flex items-center gap-2 text-slate-500 hover:text-[var(--primary)] transition-colors group ${isRtl ? 'flex-row-reverse' : ''}`}
                 >
                     <ChevronLeft className={`w-5 h-5 transition-transform group-hover:-translate-x-1 ${isRtl ? 'rotate-180' : ''}`} />
-                    <span className="text-xs font-bold uppercase tracking-wider">{t('common.back') || 'RETOUR AU REGISTRE'}</span>
+                    <span className="text-xs font-bold uppercase tracking-wider">{t('common.back')}</span>
                 </button>
                 <div className="flex items-center gap-2">
                     <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
-                    <span className="text-xs font-bold text-red-500 uppercase tracking-widest">PROCÉDURE DISCIPLINAIRE</span>
+                    <span className="text-xs font-bold text-red-500 uppercase tracking-widest">{t('penalty_decision.procedure')}</span>
                 </div>
             </div>
 
@@ -92,9 +93,9 @@ const PenaltyDecision = () => {
                         </div>
                     </div>
                     <div className={`bg-red-50 border border-red-100 px-6 py-4 rounded-2xl flex flex-col ${isRtl ? 'items-end text-right' : 'items-start text-left'}`}>
-                        <span className="text-[10px] font-black text-red-400 uppercase tracking-widest mb-1">STATUT</span>
+                        <span className="text-[10px] font-black text-red-400 uppercase tracking-widest mb-1">{t('penalty_decision.status')}</span>
                         <span className="text-red-600 font-black text-sm uppercase tracking-wide">
-                            {student.status} — ABSENCE NON JUSTIFIÉE
+                            {student.status} — {t('penalty_decision.unjustified')}
                         </span>
                     </div>
                 </div>
@@ -107,14 +108,14 @@ const PenaltyDecision = () => {
                 <div className="space-y-8">
                     <div className="bg-white rounded-[24px] shadow-sm border border-slate-100 p-8">
                         <h4 className={`text-xs font-black text-slate-400 uppercase tracking-widest mb-6 ${isRtl ? 'text-right' : ''}`}>
-                            CONTEXTE DE L'INCIDENT
+                            {t('penalty_decision.incident_context')}
                         </h4>
                         <div className="space-y-4">
                             {[
-                                { label: 'GROUPE', value: student.class_id },
-                                { label: 'MODULE', value: student.subject },
-                                { label: 'SESSION', value: student.session_time },
-                                { label: 'DATE', value: new Date(student.session_date).toLocaleDateString() }
+                                { label: t('penalty_decision.group'), value: student.class_id },
+                                { label: t('penalty_decision.module'), value: student.subject },
+                                { label: t('penalty_decision.session'), value: student.session_time },
+                                { label: t('penalty_decision.date'), value: new Date(student.session_date).toLocaleDateString() }
                             ].map((item, i) => (
                                 <div key={i} className={`flex justify-between items-center pb-3 border-b border-slate-50 last:border-0 last:pb-0 ${isRtl ? 'flex-row-reverse' : ''}`}>
                                     <span className="text-[10px] font-bold text-slate-400 uppercase">{item.label}</span>
@@ -126,16 +127,16 @@ const PenaltyDecision = () => {
 
                     <div className="bg-white rounded-[24px] shadow-sm border border-slate-100 p-8">
                         <h4 className={`text-xs font-black text-slate-400 uppercase tracking-widest mb-6 ${isRtl ? 'text-right' : ''}`}>
-                            ANTÉCÉDENTS
+                            {t('penalty_decision.history')}
                         </h4>
                         <div className="grid grid-cols-2 gap-4">
                             <div className="bg-slate-50 rounded-xl p-4 text-center border border-slate-100">
                                 <p className="text-3xl font-black text-slate-700 mb-1">{student.total_absences || 0}</p>
-                                <p className="text-[9px] font-bold text-slate-400 uppercase">ABSENCES</p>
+                                <p className="text-[9px] font-bold text-slate-400 uppercase">{t('penalty_decision.absences')}</p>
                             </div>
                             <div className="bg-red-50 rounded-xl p-4 text-center border border-red-100">
                                 <p className="text-3xl font-black text-red-500 mb-1">{student.total_blames || 0}</p>
-                                <p className="text-[9px] font-bold text-red-400 uppercase">SANCTIONS</p>
+                                <p className="text-[9px] font-bold text-red-400 uppercase">{t('penalty_decision.sanctions_count')}</p>
                             </div>
                         </div>
                     </div>
@@ -145,7 +146,7 @@ const PenaltyDecision = () => {
                 <div className="lg:col-span-2 space-y-8">
                     <div className="bg-white rounded-[24px] shadow-sm border border-slate-100 p-8">
                         <h4 className={`text-xs font-black text-slate-400 uppercase tracking-widest mb-6 ${isRtl ? 'text-right' : ''}`}>
-                            SÉLECTION DE LA SANCTION
+                            {t('penalty_decision.select_sanction')}
                         </h4>
                         <div className={`grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8 ${isRtl ? 'dir-rtl' : ''}`}>
                             {penaltyLevels.map((lvl) => (
@@ -175,7 +176,7 @@ const PenaltyDecision = () => {
                         </div>
 
                         <h4 className={`text-xs font-black text-slate-400 uppercase tracking-widest mb-4 ${isRtl ? 'text-right' : ''}`}>
-                            MOTIF / RAPPORT
+                            {t('penalty_decision.reason_report')}
                         </h4>
                         <div className="relative mb-6">
                             <textarea
@@ -183,7 +184,7 @@ const PenaltyDecision = () => {
                                 rows="5"
                                 value={penaltyData.reason}
                                 onChange={e => setPenaltyData({ ...penaltyData, reason: e.target.value.toUpperCase() })}
-                                placeholder="DÉTAILLEZ LES MOTIFS ICI..."
+                                placeholder={t('penalty_decision.reason_placeholder')}
                                 className="w-full bg-slate-50 border-2 border-slate-100 focus:border-[var(--primary)] focus:bg-white rounded-2xl p-6 text-sm font-bold text-slate-800 outline-none transition-all resize-none uppercase"
                             />
                             <div className={`absolute top-6 ${isRtl ? 'left-6' : 'right-6'} opacity-10 pointer-events-none`}>
@@ -204,7 +205,7 @@ const PenaltyDecision = () => {
                                 <Activity className="w-5 h-5 animate-spin" />
                             ) : (
                                 <>
-                                    <span>VALIDER LA SANCTION</span>
+                                    <span>{t('penalty_decision.validate')}</span>
                                     <ArrowRight className={`w-5 h-5 ${isRtl ? 'rotate-180' : ''}`} />
                                 </>
                             )}

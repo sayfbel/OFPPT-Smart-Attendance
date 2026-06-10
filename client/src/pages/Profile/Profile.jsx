@@ -51,7 +51,6 @@ const Profile = () => {
             await authService.updateAdminProfile(profile.name, profile.email);
             addNotification(t('profile.success_msg'), "success");
             
-            // Update local user state
             setUser(prev => ({ ...prev, name: profile.name, email: profile.email }));
         } catch (err) {
             addNotification(err.response?.data?.message || t('profile.error_msg'), "error");
@@ -79,194 +78,189 @@ const Profile = () => {
     };
 
     return (
-        <div className={`max-w-6xl mx-auto space-y-6 ${isRtl ? 'text-right' : ''}`}>
-            {/* Page Header */}
-            <div className={`mb-8 ${isRtl ? 'text-right' : 'text-left'}`}>
-                <h1 className="text-3xl font-bold text-slate-800 dark:text-white">
+        <div className={`profile-container ${isRtl ? 'rtl' : ''}`}>
+            <div className={`profile-header ${isRtl ? 'rtl' : 'ltr'}`}>
+                <h1 className="profile-title">
                     {t('profile.title', 'Mon Profil')}
                 </h1>
-                <p className="text-sm text-slate-500 mt-1">
+                <p className="profile-subtitle">
                     {t('profile.subtitle', 'Gérez vos informations personnelles et vos paramètres de sécurité')}
                 </p>
             </div>
 
-            <div className={`flex flex-col lg:flex-row gap-8 ${isRtl ? 'lg:flex-row-reverse' : ''}`}>
-                {/* Left Sidebar */}
-                <div className="w-full lg:w-1/3 space-y-6">
-                    {/* User Info Card */}
-                    <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-slate-100 dark:border-slate-700 flex flex-col items-center text-center">
-                        <div className="relative group mb-4">
-                            <div className="w-28 h-28 rounded-full overflow-hidden bg-slate-100 border-4 border-white shadow-md">
+            <div className={`profile-layout ${isRtl ? 'rtl' : ''}`}>
+                <div className="profile-sidebar">
+                    <div className="profile-user-card">
+                        <div className="profile-avatar-wrapper">
+                            <div className="profile-avatar">
                                 {profile.image ? (
-                                    <img src={profile.image} alt={profile.name} className="w-full h-full object-cover" />
+                                    <img src={profile.image} alt={profile.name} className="profile-avatar-img" />
                                 ) : (
-                                    <div className="w-full h-full flex items-center justify-center bg-slate-50 text-slate-300">
-                                        <User className="w-12 h-12" />
+                                    <div className="profile-avatar-placeholder">
+                                        <User className="profile-avatar-icon" />
                                     </div>
                                 )}
                             </div>
-                            <button className="absolute bottom-0 right-0 p-2 bg-[var(--primary)] text-white rounded-full shadow-lg hover:scale-105 transition-transform">
-                                <Camera className="w-4 h-4" />
+                            <button className="profile-camera-btn">
+                                <Camera className="profile-camera-icon" />
                             </button>
                         </div>
-                        <h2 className="text-xl font-bold text-slate-800 dark:text-white">{profile.name || 'Utilisateur'}</h2>
-                        <p className="text-sm text-slate-500 mb-4">{profile.email}</p>
-                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 text-blue-600 text-xs font-semibold">
-                            <Shield className="w-3.5 h-3.5" />
+                        <h2 className="profile-user-name">{profile.name || 'Utilisateur'}</h2>
+                        <p className="profile-user-email">{profile.email}</p>
+                        <span className="profile-role-badge">
+                            <Shield className="profile-role-icon" />
                             {user?.role === 'admin' ? t('modals.roles.admin', 'Administrateur') : t('modals.roles.formateur', 'Formateur')}
                         </span>
                     </div>
 
-                    {/* Navigation Menu */}
-                    <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden">
+                    <div className="profile-nav">
                         <button 
                             onClick={() => setActiveTab('general')}
-                            className={`w-full flex items-center gap-3 px-6 py-4 text-sm font-medium transition-colors profile-tab-btn ${isRtl ? 'flex-row-reverse' : ''} ${activeTab === 'general' ? 'active-tab' : 'text-slate-600 hover:bg-slate-50'}`}
+                            className={`profile-tab-btn ${isRtl ? 'rtl' : ''} ${activeTab === 'general' ? 'active' : 'inactive'}`}
                         >
-                            <User className="w-5 h-5" />
+                            <User className="profile-tab-icon" />
                             {t('profile.personal_info', 'Informations Personnelles')}
                         </button>
                         <button 
                             onClick={() => setActiveTab('security')}
-                            className={`w-full flex items-center gap-3 px-6 py-4 text-sm font-medium transition-colors border-t border-slate-100 profile-tab-btn ${isRtl ? 'flex-row-reverse' : ''} ${activeTab === 'security' ? 'active-tab' : 'text-slate-600 hover:bg-slate-50'}`}
+                            className={`profile-tab-btn border-t ${isRtl ? 'rtl' : ''} ${activeTab === 'security' ? 'active' : 'inactive'}`}
                         >
-                            <Lock className="w-5 h-5" />
+                            <Lock className="profile-tab-icon" />
                             {t('profile.password_section', 'Sécurité & Mot de passe')}
                         </button>
                     </div>
                 </div>
 
-                {/* Main Content Area */}
-                <div className="w-full lg:w-2/3">
-                    <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 p-6 md:p-8">
+                <div className="profile-main-content">
+                    <div className="profile-card">
                         {activeTab === 'general' ? (
-                            <div className="animate-in fade-in">
-                                <h3 className={`text-lg font-bold text-slate-800 dark:text-white mb-6 ${isRtl ? 'text-right' : ''}`}>
+                            <div className="profile-fade-in">
+                                <h3 className={`profile-section-title ${isRtl ? 'rtl' : ''}`}>
                                     {t('profile.personal_info', 'Informations Personnelles')}
-                                </h3>
-                                <form onSubmit={handleUpdateProfile} className="space-y-6">
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                        <div className="space-y-2">
-                                            <label className={`block text-sm font-medium text-slate-700 dark:text-slate-300 ${isRtl ? 'text-right' : ''}`}>
+                               </h3>
+                                <form onSubmit={handleUpdateProfile} className="profile-form">
+                                    <div className="profile-form-grid">
+                                        <div className="profile-input-group">
+                                            <label className={`profile-label ${isRtl ? 'rtl' : ''}`}>
                                                 {t('profile.full_name', 'Nom Complet')}
                                             </label>
-                                            <div className="relative">
-                                                <div className={`absolute inset-y-0 flex items-center pointer-events-none ${isRtl ? 'right-0 pr-3' : 'left-0 pl-3'}`}>
-                                                    <User className="h-5 w-5 text-slate-400" />
+                                            <div className="profile-input-wrapper">
+                                                <div className={`profile-input-icon-wrapper ${isRtl ? 'rtl' : 'ltr'}`}>
+                                                    <User className="profile-input-icon" />
                                                 </div>
                                                 <input
                                                     type="text"
                                                     value={profile.name}
                                                     onChange={e => setProfile({ ...profile, name: e.target.value })}
-                                                    className={`block w-full rounded-xl border border-slate-200 bg-white py-3 text-sm focus:border-[var(--primary)] focus:ring-[var(--primary)] focus:ring-opacity-50 transition-colors ${isRtl ? 'pr-10 pl-3 text-right' : 'pl-10 pr-3'}`}
+                                                    className={`profile-input ${isRtl ? 'rtl' : 'ltr'}`}
                                                     placeholder={t('profile.full_name', 'Nom Complet')}
                                                 />
                                             </div>
                                         </div>
-                                        <div className="space-y-2">
-                                            <label className={`block text-sm font-medium text-slate-700 dark:text-slate-300 ${isRtl ? 'text-right' : ''}`}>
+                                        <div className="profile-input-group">
+                                            <label className={`profile-label ${isRtl ? 'rtl' : ''}`}>
                                                 {t('profile.email', 'Adresse Email')}
                                             </label>
-                                            <div className="relative">
-                                                <div className={`absolute inset-y-0 flex items-center pointer-events-none ${isRtl ? 'right-0 pr-3' : 'left-0 pl-3'}`}>
-                                                    <Mail className="h-5 w-5 text-slate-400" />
+                                            <div className="profile-input-wrapper">
+                                                <div className={`profile-input-icon-wrapper ${isRtl ? 'rtl' : 'ltr'}`}>
+                                                    <Mail className="profile-input-icon" />
                                                 </div>
                                                 <input
                                                     type="email"
                                                     value={profile.email}
                                                     onChange={e => setProfile({ ...profile, email: e.target.value })}
-                                                    className={`block w-full rounded-xl border border-slate-200 bg-white py-3 text-sm focus:border-[var(--primary)] focus:ring-[var(--primary)] focus:ring-opacity-50 transition-colors ${isRtl ? 'pr-10 pl-3 text-right' : 'pl-10 pr-3'}`}
+                                                    className={`profile-input ${isRtl ? 'rtl' : 'ltr'}`}
                                                     placeholder={t('profile.email', 'Adresse Email')}
                                                 />
                                             </div>
                                         </div>
                                     </div>
                                     
-                                    <div className={`pt-6 border-t border-slate-100 ${isRtl ? 'text-right' : 'text-left'}`}>
+                                    <div className={`profile-form-footer ${isRtl ? 'rtl' : 'ltr'}`}>
                                         <button 
                                             type="submit"
                                             disabled={loading}
-                                            className={`inline-flex items-center justify-center gap-2 px-6 py-3 bg-[var(--primary)] text-white text-sm font-semibold rounded-xl hover:bg-opacity-90 transition-colors shadow-sm disabled:opacity-50`}
+                                            className="profile-btn-submit"
                                         >
-                                            {loading ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div> : <><Save className="w-4 h-4" /> {t('profile.update_button', 'Enregistrer les modifications')}</>}
+                                            {loading ? <div className="profile-spinner"></div> : <><Save className="w-4 h-4" /> {t('profile.update_button', 'Enregistrer les modifications')}</>}
                                         </button>
                                     </div>
                                 </form>
                             </div>
                         ) : (
-                            <div className="animate-in fade-in">
-                                <h3 className={`text-lg font-bold text-slate-800 dark:text-white mb-6 ${isRtl ? 'text-right' : ''}`}>
+                            <div className="profile-fade-in">
+                                <h3 className={`profile-section-title ${isRtl ? 'rtl' : ''}`}>
                                     {t('profile.password_section', 'Sécurité & Mot de passe')}
                                 </h3>
-                                <form onSubmit={handleUpdatePassword} className="space-y-6">
-                                    <div className="space-y-2">
-                                        <label className={`block text-sm font-medium text-slate-700 dark:text-slate-300 ${isRtl ? 'text-right' : ''}`}>
+                                <form onSubmit={handleUpdatePassword} className="profile-form">
+                                    <div className="profile-input-group">
+                                        <label className={`profile-label ${isRtl ? 'rtl' : ''}`}>
                                             {t('profile.current_password', 'Mon mot de passe actuel')}
                                         </label>
-                                        <div className="relative">
-                                            <div className={`absolute inset-y-0 flex items-center pointer-events-none ${isRtl ? 'right-0 pr-3' : 'left-0 pl-3'}`}>
-                                                <Key className="h-5 w-5 text-slate-400" />
+                                        <div className="profile-input-wrapper">
+                                            <div className={`profile-input-icon-wrapper ${isRtl ? 'rtl' : 'ltr'}`}>
+                                                <Key className="profile-input-icon" />
                                             </div>
                                             <input
                                                 type="password"
                                                 required
                                                 value={passwords.currentPassword}
                                                 onChange={e => setPasswords({ ...passwords, currentPassword: e.target.value })}
-                                                className={`block w-full rounded-xl border border-slate-200 bg-white py-3 text-sm focus:border-[var(--primary)] focus:ring-[var(--primary)] focus:ring-opacity-50 transition-colors ${isRtl ? 'pr-10 pl-3 text-right' : 'pl-10 pr-3'}`}
+                                                className={`profile-input ${isRtl ? 'rtl' : 'ltr'}`}
                                                 placeholder="••••••••"
                                             />
                                         </div>
                                     </div>
 
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                        <div className="space-y-2">
-                                            <label className={`block text-sm font-medium text-slate-700 dark:text-slate-300 ${isRtl ? 'text-right' : ''}`}>
+                                    <div className="profile-form-grid">
+                                        <div className="profile-input-group">
+                                            <label className={`profile-label ${isRtl ? 'rtl' : ''}`}>
                                                 {t('profile.new_password', 'Nouveau mot de passe')}
                                             </label>
-                                            <div className="relative">
-                                                <div className={`absolute inset-y-0 flex items-center pointer-events-none ${isRtl ? 'right-0 pr-3' : 'left-0 pl-3'}`}>
-                                                    <Lock className="h-5 w-5 text-slate-400" />
+                                            <div className="profile-input-wrapper">
+                                                <div className={`profile-input-icon-wrapper ${isRtl ? 'rtl' : 'ltr'}`}>
+                                                    <Lock className="profile-input-icon" />
                                                 </div>
                                                 <input
                                                     type="password"
                                                     required
                                                     value={passwords.newPassword}
                                                     onChange={e => setPasswords({ ...passwords, newPassword: e.target.value })}
-                                                    className={`block w-full rounded-xl border border-slate-200 bg-white py-3 text-sm focus:border-[var(--primary)] focus:ring-[var(--primary)] focus:ring-opacity-50 transition-colors ${isRtl ? 'pr-10 pl-3 text-right' : 'pl-10 pr-3'}`}
+                                                    className={`profile-input ${isRtl ? 'rtl' : 'ltr'}`}
                                                     placeholder="••••••••"
                                                 />
                                             </div>
                                         </div>
-                                        <div className="space-y-2">
-                                            <label className={`block text-sm font-medium text-slate-700 dark:text-slate-300 ${isRtl ? 'text-right' : ''}`}>
+                                        <div className="profile-input-group">
+                                            <label className={`profile-label ${isRtl ? 'rtl' : ''}`}>
                                                 {t('profile.confirm_password', 'Confirmer le mot de passe')}
                                             </label>
-                                            <div className="relative">
-                                                <div className={`absolute inset-y-0 flex items-center pointer-events-none ${isRtl ? 'right-0 pr-3' : 'left-0 pl-3'}`}>
-                                                    <CheckCircle2 className="h-5 w-5 text-slate-400" />
+                                            <div className="profile-input-wrapper">
+                                                <div className={`profile-input-icon-wrapper ${isRtl ? 'rtl' : 'ltr'}`}>
+                                                    <CheckCircle2 className="profile-input-icon" />
                                                 </div>
                                                 <input
                                                     type="password"
                                                     required
                                                     value={passwords.confirmPassword}
                                                     onChange={e => setPasswords({ ...passwords, confirmPassword: e.target.value })}
-                                                    className={`block w-full rounded-xl border border-slate-200 bg-white py-3 text-sm focus:border-[var(--primary)] focus:ring-[var(--primary)] focus:ring-opacity-50 transition-colors ${isRtl ? 'pr-10 pl-3 text-right' : 'pl-10 pr-3'}`}
+                                                    className={`profile-input ${isRtl ? 'rtl' : 'ltr'}`}
                                                     placeholder="••••••••"
                                                 />
                                             </div>
                                         </div>
                                     </div>
 
-                                    <div className={`pt-6 border-t border-slate-100 flex flex-col sm:flex-row items-center gap-4 ${isRtl ? 'sm:flex-row-reverse' : ''}`}>
+                                    <div className="profile-form-footer profile-form-footer-flex">
                                         <button 
                                             type="submit"
                                             disabled={loading}
-                                            className={`inline-flex items-center justify-center gap-2 px-6 py-3 bg-[var(--secondary)] text-white text-sm font-semibold rounded-xl hover:bg-opacity-90 transition-colors shadow-sm w-full sm:w-auto disabled:opacity-50`}
+                                            className="profile-btn-submit profile-btn-submit-secondary full-width"
                                         >
-                                            {loading ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div> : <><Lock className="w-4 h-4" /> {t('profile.change_password', 'Mettre à jour')}</>}
+                                            {loading ? <div className="profile-spinner"></div> : <><Lock className="w-4 h-4" /> {t('profile.change_password', 'Mettre à jour')}</>}
                                         </button>
-                                        <p className="text-xs text-slate-500 flex items-center gap-1.5">
-                                            <Info className="w-4 h-4" />
+                                        <p className="profile-hint">
+                                            <Info className="profile-hint-icon" />
                                             {t('profile.password_hint', 'Vous devrez vous reconnecter après cette modification.')}
                                         </p>
                                     </div>

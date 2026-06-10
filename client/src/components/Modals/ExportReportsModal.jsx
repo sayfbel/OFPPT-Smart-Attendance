@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom';
 import { X, FileText, Calendar, User, Download, Filter, CheckCircle2, ChevronRight, Clock } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { CustomDatePicker } from '../Forms';
+import './ExportReportsModal.css';
 
 const ExportReportsModal = ({ isOpen, onClose, onExport, allReports, availableGroups }) => {
     const { t, i18n } = useTranslation();
@@ -69,61 +70,61 @@ const ExportReportsModal = ({ isOpen, onClose, onExport, allReports, availableGr
     };
 
     return ReactDOM.createPortal(
-        <div className="fixed inset-0 z-[9999] bg-black/60 backdrop-blur-md flex items-center justify-center p-4 sm:p-8 animate-in fade-in duration-300">
-            <div className="bg-white rounded-[40px] w-full max-w-4xl shadow-2xl relative overflow-hidden flex flex-col md:flex-row max-h-[90vh]">
+        <div className="export-reports-modal-overlay">
+            <div className={`export-reports-modal-content ${isRtl ? 'rtl' : ''}`}>
                 <button
                     type="button"
                     onClick={onClose}
-                    className="absolute top-8 right-8 p-3 hover:bg-slate-50 rounded-2xl transition-all text-slate-300 hover:text-[var(--secondary)] z-10"
+                    className={`export-reports-modal-close-btn ${isRtl ? 'rtl' : ''}`}
                 >
                     <X className="w-6 h-6" />
                 </button>
 
                 {/* Left Side: Illustration & Title */}
-                <div className="w-full md:w-2/5 bg-gradient-to-br from-[var(--secondary)] to-[#003d6b] text-white p-12 flex flex-col justify-between">
+                <div className="export-reports-modal-info-panel">
                     <div>
-                        <div className="w-16 h-16 bg-white/10 rounded-2xl flex items-center justify-center border border-white/20 mb-8">
-                            <Download className="w-8 h-8 text-white" />
+                        <div className="export-reports-modal-icon-wrapper">
+                            <Download className="export-reports-modal-icon" />
                         </div>
-                        <h2 className="text-4xl font-black italic tracking-tighter leading-none mb-6 uppercase">
-                            {t('reports.export_title')} <br /> <span className="text-[var(--primary)]">{t('reports.export_presence')}</span>
+                        <h2 className={`export-reports-modal-title ${isRtl ? 'rtl' : ''}`}>
+                            {t('reports.export_title')} <br /> <span className="export-reports-modal-highlight">{t('reports.export_presence')}</span>
                         </h2>
-                        <p className="text-[10px] font-bold text-white/50 tracking-[0.3em] uppercase leading-relaxed">
+                        <p className={`export-reports-modal-subtitle ${isRtl ? 'rtl' : ''}`}>
                             {t('reports.export_subtitle_modal')}
                         </p>
                     </div>
 
-                    <div className="space-y-4 bg-black/20 p-6 rounded-3xl border border-white/10">
-                        <div className="flex items-center gap-4 text-white/60">
-                            <CheckCircle2 className="w-4 h-4 text-[var(--primary)]" />
-                            <span className="text-[10px] font-black uppercase tracking-widest">{t('reports.export_step1')}</span>
+                    <div className="export-reports-modal-steps-box">
+                        <div className={`export-reports-modal-step ${isRtl ? 'rtl' : ''}`}>
+                            <CheckCircle2 className="export-reports-modal-step-icon" />
+                            <span className="export-reports-modal-step-text">{t('reports.export_step1')}</span>
                         </div>
-                        <div className="flex items-center gap-4 text-white/60">
-                            <CheckCircle2 className="w-4 h-4 text-[var(--primary)]" />
-                            <span className="text-[10px] font-black uppercase tracking-widest">{t('reports.export_step2')}</span>
+                        <div className={`export-reports-modal-step ${isRtl ? 'rtl' : ''}`}>
+                            <CheckCircle2 className="export-reports-modal-step-icon" />
+                            <span className="export-reports-modal-step-text">{t('reports.export_step2')}</span>
                         </div>
-                        <div className="flex items-center gap-4 text-white/60">
-                            <div className="w-4 h-4 rounded-full border-2 border-white/20"></div>
-                            <span className="text-[10px] font-black uppercase tracking-widest">{t('reports.export_step3')}</span>
+                        <div className={`export-reports-modal-step ${isRtl ? 'rtl' : ''}`}>
+                            <div className="export-reports-modal-step-circle"></div>
+                            <span className="export-reports-modal-step-text">{t('reports.export_step3')}</span>
                         </div>
                     </div>
                 </div>
 
                 {/* Right Side: Configuration */}
-                <div ref={dropdownRef} className="flex-1 p-12 overflow-y-auto ista-scrollbar">
-                    <div className="mb-10">
-                        <h3 className="text-xl font-black italic tracking-tight text-[var(--secondary)] uppercase mb-2">{t('reports.export_config_title')}</h3>
-                        <div className="h-1 w-12 bg-[var(--primary)] rounded-full"></div>
+                <div ref={dropdownRef} className="export-reports-modal-config-area ista-scrollbar">
+                    <div className={`export-reports-modal-header-section ${isRtl ? 'rtl' : ''}`}>
+                        <h3 className="export-reports-modal-section-title">{t('reports.export_config_title')}</h3>
+                        <div className={`export-reports-modal-section-divider ${isRtl ? 'rtl' : ''}`}></div>
                     </div>
 
-                    <div className="space-y-8">
+                    <div className="export-reports-modal-config-container">
                         {/* Type Selection */}
-                        <div className="space-y-4">
-                            <label className="text-[10px] font-black tracking-widest text-slate-400 uppercase flex items-center gap-2">
-                                <Filter className="w-3 h-3 text-[var(--primary)]" />
+                        <div className="export-reports-modal-field">
+                            <label className={`export-reports-modal-label ${isRtl ? 'rtl' : ''}`}>
+                                <Filter className="export-reports-modal-label-icon" />
                                 {t('reports.export_select_type')}
                             </label>
-                            <div className="grid grid-cols-2 gap-3">
+                            <div className="export-reports-modal-type-grid">
                                 {[
                                     { id: 'ALL', icon: FileText, label: t('reports.all_data') },
                                     { id: 'WEEKLY', icon: Clock, label: t('reports.weekly') },
@@ -133,34 +134,34 @@ const ExportReportsModal = ({ isOpen, onClose, onExport, allReports, availableGr
                                     <button
                                         key={type.id}
                                         onClick={() => setExportType(type.id)}
-                                        className={`flex items-center gap-3 p-4 rounded-2xl border transition-all text-left ${exportType === type.id ? 'bg-[var(--primary)]/10 border-[var(--primary)] text-[var(--primary)]' : 'bg-white border-slate-100 text-slate-400 hover:border-slate-200'}`}
+                                        className={`export-reports-modal-type-btn ${exportType === type.id ? 'active' : ''} ${isRtl ? 'rtl' : ''}`}
                                     >
-                                        <type.icon className="w-4 h-4" />
-                                        <span className="text-[10px] font-black uppercase tracking-widest">{type.label}</span>
+                                        <type.icon className="export-reports-modal-type-icon" />
+                                        <span className="export-reports-modal-type-text">{type.label}</span>
                                     </button>
                                 ))}
                             </div>
                         </div>
 
                         {/* Conditional Filters */}
-                        <div className="space-y-6 animate-in slide-in-from-top-4 duration-300">
+                        <div className="export-reports-modal-dynamic-filters">
                             {exportType === 'FORMATEUR' && (
-                                <div className="space-y-3 relative">
-                                    <label className="text-[10px] font-black tracking-widest text-slate-400 uppercase">{t('reports.select_formateur')}</label>
+                                <div className="export-reports-modal-field">
+                                    <label className={`export-reports-modal-label ${isRtl ? 'rtl' : ''}`}>{t('reports.select_formateur')}</label>
                                     <button
                                         onClick={() => setIsFormateurDropdownOpen(!isFormateurDropdownOpen)}
-                                        className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-6 py-4 flex items-center justify-between group hover:border-[var(--primary)]/30 transition-all"
+                                        className={`export-reports-modal-dropdown-toggle ${isRtl ? 'rtl' : ''}`}
                                     >
-                                        <span className="text-[11px] font-black uppercase tracking-widest text-[var(--secondary)]">
+                                        <span className="export-reports-modal-dropdown-text">
                                             {selectedFormateur === 'ALL' ? t('reports.all_formateurs') : selectedFormateur}
                                         </span>
-                                        <ChevronRight className={`w-4 h-4 text-[var(--primary)] transition-transform ${isFormateurDropdownOpen ? 'rotate-90' : ''}`} />
+                                        <ChevronRight className={`export-reports-modal-chevron ${isFormateurDropdownOpen ? 'open' : ''} ${isRtl ? 'rtl' : ''}`} />
                                     </button>
 
                                     {isFormateurDropdownOpen && (
-                                        <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-slate-100 rounded-2xl shadow-xl z-50 max-h-48 overflow-y-auto ista-scrollbar animate-in fade-in zoom-in-95 duration-200">
+                                        <div className="export-reports-modal-dropdown-menu ista-scrollbar">
                                             <div
-                                                className={`px-6 py-4 cursor-pointer text-[10px] font-black tracking-widest uppercase transition-colors ${selectedFormateur === 'ALL' ? 'bg-[var(--primary)] text-white' : 'text-[var(--secondary)] hover:bg-slate-50'}`}
+                                                className={`export-reports-modal-dropdown-item ${selectedFormateur === 'ALL' ? 'selected' : 'unselected'} ${isRtl ? 'rtl' : ''}`}
                                                 onClick={() => { setSelectedFormateur('ALL'); setIsFormateurDropdownOpen(false); }}
                                             >
                                                 {t('reports.all_formateurs')}
@@ -168,7 +169,7 @@ const ExportReportsModal = ({ isOpen, onClose, onExport, allReports, availableGr
                                             {availableFormateurs.map(f => (
                                                 <div
                                                     key={f}
-                                                    className={`px-6 py-4 cursor-pointer text-[10px] font-black tracking-widest uppercase transition-colors ${selectedFormateur === f ? 'bg-[var(--primary)] text-white' : 'text-[var(--secondary)] hover:bg-slate-50'}`}
+                                                    className={`export-reports-modal-dropdown-item ${selectedFormateur === f ? 'selected' : 'unselected'} ${isRtl ? 'rtl' : ''}`}
                                                     onClick={() => { setSelectedFormateur(f); setIsFormateurDropdownOpen(false); }}
                                                 >
                                                     {f}
@@ -180,34 +181,34 @@ const ExportReportsModal = ({ isOpen, onClose, onExport, allReports, availableGr
                             )}
 
                             {exportType === 'CUSTOM' && (
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div className="space-y-3">
-                                        <label className="text-[10px] font-black tracking-widest text-slate-400 uppercase">{t('reports.start_date')}</label>
+                                <div className="export-reports-modal-date-grid">
+                                    <div className="export-reports-modal-date-field">
+                                        <label className={`export-reports-modal-label ${isRtl ? 'rtl' : ''}`}>{t('reports.start_date')}</label>
                                         <CustomDatePicker selectedDate={startDate} onChange={setStartDate} />
                                     </div>
-                                    <div className="space-y-3">
-                                        <label className="text-[10px] font-black tracking-widest text-slate-400 uppercase">{t('reports.end_date')}</label>
+                                    <div className="export-reports-modal-date-field">
+                                        <label className={`export-reports-modal-label ${isRtl ? 'rtl' : ''}`}>{t('reports.end_date')}</label>
                                         <CustomDatePicker selectedDate={endDate} onChange={setEndDate} />
                                     </div>
                                 </div>
                             )}
 
-                            <div className="space-y-3 relative">
-                                <label className="text-[10px] font-black tracking-widest text-slate-400 uppercase">{t('reports.group_filter')}</label>
+                            <div className="export-reports-modal-field">
+                                <label className={`export-reports-modal-label ${isRtl ? 'rtl' : ''}`}>{t('reports.group_filter')}</label>
                                 <button
                                     onClick={() => setIsGroupDropdownOpen(!isGroupDropdownOpen)}
-                                    className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-6 py-4 flex items-center justify-between group hover:border-[var(--primary)]/30 transition-all"
+                                    className={`export-reports-modal-dropdown-toggle ${isRtl ? 'rtl' : ''}`}
                                 >
-                                    <span className="text-[11px] font-black uppercase tracking-widest text-[var(--secondary)]">
+                                    <span className="export-reports-modal-dropdown-text">
                                         {selectedGroup === 'ALL' ? t('reports.all_groups') : selectedGroup}
                                     </span>
-                                    <ChevronRight className={`w-4 h-4 text-[var(--primary)] transition-transform ${isGroupDropdownOpen ? 'rotate-90' : ''}`} />
+                                    <ChevronRight className={`export-reports-modal-chevron ${isGroupDropdownOpen ? 'open' : ''} ${isRtl ? 'rtl' : ''}`} />
                                 </button>
 
                                 {isGroupDropdownOpen && (
-                                    <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-slate-100 rounded-2xl shadow-xl z-50 max-h-48 overflow-y-auto ista-scrollbar animate-in fade-in zoom-in-95 duration-200">
+                                    <div className="export-reports-modal-dropdown-menu ista-scrollbar">
                                         <div
-                                            className={`px-6 py-4 cursor-pointer text-[10px] font-black tracking-widest uppercase transition-colors ${selectedGroup === 'ALL' ? 'bg-[var(--primary)] text-white' : 'text-[var(--secondary)] hover:bg-slate-50'}`}
+                                            className={`export-reports-modal-dropdown-item ${selectedGroup === 'ALL' ? 'selected' : 'unselected'} ${isRtl ? 'rtl' : ''}`}
                                             onClick={() => { setSelectedGroup('ALL'); setIsGroupDropdownOpen(false); }}
                                         >
                                             {t('reports.all_groups')}
@@ -215,7 +216,7 @@ const ExportReportsModal = ({ isOpen, onClose, onExport, allReports, availableGr
                                         {availableGroups.map(grp => (
                                             <div
                                                 key={grp.id}
-                                                className={`px-6 py-4 cursor-pointer text-[10px] font-black tracking-widest uppercase transition-colors ${selectedGroup === grp.id ? 'bg-[var(--primary)] text-white' : 'text-[var(--secondary)] hover:bg-slate-50'}`}
+                                                className={`export-reports-modal-dropdown-item ${selectedGroup === grp.id ? 'selected' : 'unselected'} ${isRtl ? 'rtl' : ''}`}
                                                 onClick={() => { setSelectedGroup(grp.id); setIsGroupDropdownOpen(false); }}
                                             >
                                                 {grp.id}
@@ -226,13 +227,13 @@ const ExportReportsModal = ({ isOpen, onClose, onExport, allReports, availableGr
                             </div>
                         </div>
 
-                        <div className="pt-6 border-t border-slate-50">
+                        <div className="export-reports-modal-submit-container">
                             <button
                                 onClick={handleExportClick}
-                                className="w-full btn-ista py-5 rounded-[24px] flex items-center justify-center gap-4 group hover:shadow-xl hover:shadow-[var(--primary)]/20 transition-all active:scale-95"
+                                className={`btn-ista export-reports-modal-submit-btn ${isRtl ? 'rtl' : ''}`}
                             >
-                                <span className="text-xs font-black uppercase tracking-[0.2em]">{t('reports.generate_pdf', 'Générer le Rapport PDF')}</span>
-                                <ChevronRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+                                <span className="export-reports-modal-submit-text">{t('reports.generate_pdf', 'Générer le Rapport PDF')}</span>
+                                <ChevronRight className={`export-reports-modal-submit-arrow ${isRtl ? 'rtl' : ''}`} />
                             </button>
                         </div>
                     </div>

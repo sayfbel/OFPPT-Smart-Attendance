@@ -1,10 +1,738 @@
-.ista-scrollbar::-webkit-scrollbar {
-    width: 4px;
+/* Salles.css */
+.salles-container {
+    animation: fadeUp 0.5s ease-out;
 }
-.ista-scrollbar::-webkit-scrollbar-track {
+.salles-container.rtl { text-align: right; }
+
+.salles-header-section {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: flex-start;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 2rem;
+    gap: 1.5rem;
+}
+@media (min-width: 768px) {
+    .salles-header-section {
+        flex-direction: row;
+        align-items: flex-end;
+    }
+}
+@media (min-width: 1024px) {
+    .salles-header-section { padding-bottom: 3rem; gap: 2rem; }
+}
+.salles-header-section.rtl { flex-direction: row-reverse; }
+
+.salles-title-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.salles-title {
+    font-size: 2.25rem;
+    font-weight: 900;
+    letter-spacing: -0.05em;
+    color: var(--secondary);
+    text-transform: uppercase;
+    font-style: italic;
+    line-height: 0.9;
+}
+@media (min-width: 768px) { .salles-title { font-size: 3rem; } }
+@media (min-width: 1024px) { .salles-title { font-size: 4.5rem; } }
+
+.salles-subtitle-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    color: var(--primary);
+    font-size: 9px;
+    letter-spacing: 0.4em;
+    text-transform: uppercase;
+    font-weight: 900;
+}
+@media (min-width: 1024px) { .salles-subtitle-wrapper { font-size: 0.75rem; } }
+.salles-subtitle-wrapper.rtl { flex-direction: row-reverse; }
+
+.pulse-dot {
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 9999px;
+    background-color: var(--primary);
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.salles-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    justify-content: flex-end;
+    width: 100%;
+}
+@media (min-width: 768px) { .salles-actions { width: auto; } }
+
+.salles-search-wrapper {
+    position: relative;
+    flex: 1;
+}
+@media (min-width: 768px) { .salles-search-wrapper { min-width: 300px; } }
+
+.salles-search-icon {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 1rem;
+    height: 1rem;
+    color: #94a3b8;
+}
+.salles-search-icon.ltr { left: 1rem; }
+.salles-search-icon.rtl { right: 1rem; }
+
+.salles-search-input {
+    width: 100%;
+    background-color: white;
+    border: 1px solid var(--border);
+    border-radius: 0.75rem;
+    padding: 1rem;
+    font-size: 10px;
+    font-weight: 900;
+    letter-spacing: 0.1em;
+    transition: all 0.3s;
+    outline: none;
+}
+.salles-search-input:focus { border-color: var(--primary); }
+.salles-search-input.ltr { padding-left: 3rem; padding-right: 1rem; }
+.salles-search-input.rtl { padding-right: 3rem; padding-left: 1rem; text-align: right; }
+
+.btn-add-salle {
+    padding: 1rem 2rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.salles-grid {
+    display: grid;
+    grid-template-columns: repeat(1, minmax(0, 1fr));
+    gap: 2rem;
+    padding-bottom: 3rem;
+}
+@media (min-width: 768px) { .salles-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (min-width: 1024px) { .salles-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+
+.salles-init-card {
+    border: 2px dashed #e2e8f0;
+    background-color: white;
+    border-radius: 1.5rem;
+    padding: 2.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.5s;
+    min-height: 300px;
+}
+.salles-init-card:hover {
+    background-color: #f8fafc;
+    border-color: rgba(0, 102, 92, 0.3);
+}
+
+.salles-init-icon-wrapper {
+    width: 4rem;
+    height: 4rem;
+    border-radius: 1rem;
+    border: 2px dashed #e2e8f0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 1.5rem;
+    transition: all 0.5s;
+}
+.salles-init-card:hover .salles-init-icon-wrapper {
+    background-color: var(--primary);
+    border-color: var(--primary);
+}
+
+.salles-init-icon {
+    width: 2rem;
+    height: 2rem;
+    color: #cbd5e1;
+    transition: all 0.5s;
+}
+.salles-init-card:hover .salles-init-icon { color: white; }
+
+.salles-init-title {
+    font-size: 1.25rem;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: -0.025em;
+    color: var(--secondary);
+    margin-bottom: 0.5rem;
+    transition: all 0.3s;
+}
+.salles-init-card:hover .salles-init-title { color: var(--primary); }
+
+.salles-init-subtitle {
+    font-size: 9px;
+    letter-spacing: 0.2em;
+    color: #94a3b8;
+    text-transform: uppercase;
+    font-weight: 900;
+}
+
+.salles-loading-card {
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    background-color: white;
+    border-radius: 1.5rem;
+    border: 1px solid #f1f5f9;
+    padding: 2.5rem;
+    height: 300px;
+}
+.salles-loading-icon { width: 3rem; height: 3rem; background-color: #f1f5f9; border-radius: 0.75rem; margin-bottom: 2rem; }
+.salles-loading-title { height: 2rem; background-color: #f1f5f9; border-radius: 0.5rem; width: 75%; margin-bottom: 1rem; }
+.salles-loading-subtitle { height: 1rem; background-color: #f1f5f9; border-radius: 0.5rem; width: 50%; }
+
+.salles-card-container {
+    perspective: 1000px;
+    min-height: 300px;
+}
+
+.salles-card-inner {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    transition: transform 0.6s;
+    transform-style: preserve-3d;
+}
+.salles-card-inner.flipped { transform: rotateY(180deg); }
+
+.salles-card-front, .salles-card-back {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    backface-visibility: hidden;
+    border-radius: 1.5rem;
+    border: 1px solid var(--border);
+    padding: 2.5rem;
+    display: flex;
+    flex-direction: column;
+}
+
+.salles-card-front {
+    background-color: white;
+    box-shadow: var(--shadow-sm);
+    transition: all 0.5s;
+    overflow: hidden;
+}
+.salles-card-container:hover .salles-card-front {
+    box-shadow: var(--shadow-xl);
+    border-color: rgba(0, 102, 92, 0.3);
+}
+
+.salles-card-bg-shape {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 6rem;
+    height: 6rem;
+    background-color: #f8fafc;
+    opacity: 0.5;
+    border-bottom-left-radius: 80px;
+    transform: translate(3rem, -3rem);
+    transition: all 0.5s;
+}
+.salles-card-container:hover .salles-card-bg-shape { background-color: #f0fdf4; }
+
+.salles-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 2rem;
+    position: relative;
+}
+
+.salles-card-icon-wrapper {
+    width: 3rem;
+    height: 3rem;
+    background-color: #f8fafc;
+    border-radius: 0.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--primary);
+    border: 1px solid #f1f5f9;
+    transition: all 0.5s;
+}
+.salles-card-container:hover .salles-card-icon-wrapper {
+    background-color: var(--primary);
+    color: white;
+    border-color: var(--primary);
+}
+.salles-card-icon { width: 1.25rem; height: 1.25rem; }
+
+.salles-card-actions { display: flex; gap: 0.5rem; }
+
+.salles-action-btn {
+    padding: 0.75rem;
+    background-color: white;
+    border-radius: 0.75rem;
+    border: 1px solid var(--border);
+    color: #94a3b8;
+    transition: all 0.3s;
+    box-shadow: var(--shadow-sm);
+    cursor: pointer;
+}
+.salles-action-btn.edit:hover { border-color: #3b82f6; color: #2563eb; }
+.salles-action-btn.delete:hover { border-color: #ef4444; color: #ef4444; }
+.salles-action-icon { width: 1rem; height: 1rem; }
+
+.salles-card-content { flex: 1; }
+
+.salles-id-wrapper { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem; }
+.salles-id-icon { width: 0.75rem; height: 0.75rem; color: var(--primary); opacity: 0.4; font-style: italic; }
+.salles-id-text { font-size: 10px; font-weight: 900; color: #cbd5e1; text-transform: uppercase; letter-spacing: 0.1em; }
+
+.salles-card-title {
+    font-size: 1.875rem;
+    font-weight: 900;
+    font-style: italic;
+    color: var(--secondary);
+    letter-spacing: -0.05em;
+    line-height: 1.2;
+    margin-bottom: 0.5rem;
+    text-transform: uppercase;
+    transition: color 0.3s;
+}
+@media (min-width: 768px) { .salles-card-title { font-size: 2.25rem; } }
+.salles-card-container:hover .salles-card-title { color: var(--primary); }
+
+.salles-status-badge {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-top: 1rem;
+    padding: 0.375rem 0.75rem;
+    background-color: rgba(240, 253, 244, 0.5);
+    border-radius: 0.5rem;
+    border: 1px solid #dcfce7;
+    width: fit-content;
+}
+.salles-status-row { display: flex; align-items: center; }
+.salles-status-dot { width: 0.375rem; height: 0.375rem; background-color: var(--primary); border-radius: 9999px; margin-right: 0.5rem; }
+.salles-status-text { font-size: 8px; font-weight: 900; color: var(--primary); text-transform: uppercase; letter-spacing: 0.1em; }
+
+.salles-group-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    border-top: 1px solid #dcfce7;
+    padding-top: 0.5rem;
+    margin-top: 0.25rem;
+}
+.salles-group-item { display: flex; align-items: center; }
+.salles-group-icon { width: 0.625rem; height: 0.625rem; color: #f59e0b; margin-right: 0.5rem; }
+.salles-group-text { font-size: 8px; font-weight: 900; color: #d97706; text-transform: uppercase; letter-spacing: 0.1em; }
+
+.salles-lead-formateur { display: flex; align-items: center; gap: 0.25rem; margin-top: 0.25rem; }
+.salles-lead-dot { width: 0.25rem; height: 0.25rem; background-color: #fbbf24; border-radius: 9999px; animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+.salles-lead-text { font-size: 7px; font-weight: 700; color: #94a3b8; text-transform: uppercase; font-style: italic; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 120px; }
+
+.salles-card-back {
+    background-color: #f8fafc;
+    box-shadow: var(--shadow-2xl);
+    transform: rotateY(180deg);
+}
+
+.salles-back-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
+.salles-back-title { font-size: 10px; font-weight: 900; letter-spacing: 0.1em; color: var(--secondary); text-transform: uppercase; }
+.salles-close-btn { padding: 0.5rem; border-radius: 0.5rem; transition: all 0.3s; color: #94a3b8; border: none; background: transparent; cursor: pointer; }
+.salles-close-btn:hover { background-color: white; color: var(--secondary); }
+.salles-close-icon { width: 1.25rem; height: 1.25rem; }
+
+.salles-back-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    flex: 1;
+    overflow-y: auto;
+    padding-right: 0.25rem;
+}
+
+.salles-input-wrapper { display: flex; flex-direction: column; }
+.salles-label { font-size: 9px; font-weight: 900; letter-spacing: 0.1em; color: #94a3b8; text-transform: uppercase; margin-bottom: 0.5rem; }
+.salles-input {
+    width: 100%;
+    background-color: white;
+    border: 1px solid var(--border);
+    border-radius: 0.75rem;
+    padding: 0.75rem 1rem;
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--secondary);
+    outline: none;
+    transition: all 0.3s;
+    font-style: italic;
+}
+.salles-input:focus { border-color: var(--primary); box-shadow: 0 0 0 4px rgba(0, 102, 92, 0.1); }
+.salles-input::placeholder { color: #e2e8f0; }
+
+.salles-dropdown-wrapper { position: relative; }
+.salles-dropdown-toggle {
+    width: 100%;
+    background-color: white;
+    border: 1px solid var(--border);
+    border-radius: 0.75rem;
+    padding: 0.75rem 1rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+.salles-dropdown-toggle:hover { border-color: var(--primary); }
+.salles-dropdown-text { font-size: 10px; font-weight: 700; color: var(--secondary); text-transform: uppercase; }
+.salles-dropdown-icon { width: 0.75rem; height: 0.75rem; color: var(--primary); transition: transform 0.3s; }
+.salles-dropdown-icon.open { transform: rotate(180deg); }
+
+.salles-dropdown-menu {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    width: 100%;
+    margin-top: 0.5rem;
+    background-color: white;
+    border: 1px solid #f1f5f9;
+    border-radius: 0.75rem;
+    box-shadow: var(--shadow-2xl);
+    z-index: 50;
+    max-height: 8rem;
+    overflow-y: auto;
+}
+
+.salles-dropdown-item {
+    padding: 0.5rem 1rem;
+    cursor: pointer;
+    font-size: 9px;
+    font-weight: 700;
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    transition: background-color 0.3s;
+}
+.salles-dropdown-item:hover { background-color: #f8fafc; }
+.salles-dropdown-item.selected { color: var(--primary); background-color: #f0fdf4; }
+.salles-dropdown-item.unselected { color: var(--secondary); }
+
+.salles-dropdown-checkbox { width: 0.75rem; height: 0.75rem; border: 1px solid #e2e8f0; border-radius: 0.25rem; }
+
+.salles-save-btn {
+    width: 100%;
+    padding: 1rem;
+    margin-top: 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    box-shadow: var(--shadow-lg);
+}
+
+.salles-empty-state {
+    grid-column: 1 / -1;
+    padding: 5rem 0;
+    text-align: center;
+}
+.salles-empty-text { font-size: 10px; font-weight: 900; color: #cbd5e1; text-transform: uppercase; letter-spacing: 0.5em; }
+
+.salles-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background-color: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(12px);
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    animation: fadeIn 0.3s;
+}
+@media (min-width: 640px) { .salles-modal-overlay { padding: 2rem; } }
+
+.salles-modal-content {
+    background-color: white;
+    width: 100%;
+    max-width: 42rem;
+    border-radius: 2.5rem;
+    overflow: hidden;
+    box-shadow: var(--shadow-2xl);
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    animation: zoomIn 0.3s;
+}
+.dark .salles-modal-content { background-color: var(--surface); }
+
+.salles-modal-header {
+    padding: 2.5rem;
+    border-bottom: 1px solid var(--border);
+    background: linear-gradient(to right, var(--secondary), #003d6b);
+    color: white;
+    position: relative;
+}
+
+.salles-modal-close {
+    position: absolute;
+    top: 2rem;
+    right: 2rem;
+    padding: 0.75rem;
+    border-radius: 9999px;
+    transition: all 0.3s;
+    color: rgba(255, 255, 255, 0.5);
     background: transparent;
+    border: none;
+    cursor: pointer;
+    z-index: 50;
 }
-.ista-scrollbar::-webkit-scrollbar-thumb {
-    background: #e2e8f0;
-    border-radius: 10px;
+.salles-modal-close:hover { background-color: rgba(255, 255, 255, 0.1); color: white; }
+
+.salles-modal-header-content { display: flex; align-items: center; gap: 1.25rem; }
+.salles-modal-header-content.rtl { flex-direction: row-reverse; text-align: right; }
+
+.salles-modal-icon-wrapper {
+    width: 3.5rem;
+    height: 3.5rem;
+    background-color: rgba(255, 255, 255, 0.1);
+    border-radius: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, 0.06);
 }
+.salles-modal-icon { width: 1.75rem; height: 1.75rem; color: white; }
+
+.salles-modal-title { font-size: 1.875rem; font-weight: 900; text-transform: uppercase; font-style: italic; line-height: 1; margin-bottom: 0.5rem; }
+.salles-modal-subtitle { font-size: 10px; font-weight: 700; color: rgba(255, 255, 255, 0.6); letter-spacing: 0.3em; text-transform: uppercase; }
+
+.salles-modal-form { padding: 2.5rem; display: flex; flex-direction: column; gap: 2rem; }
+
+.salles-modal-grid {
+    display: grid;
+    grid-template-columns: repeat(1, minmax(0, 1fr));
+    gap: 2rem;
+}
+@media (min-width: 768px) { .salles-modal-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+.salles-modal-field { display: flex; flex-direction: column; gap: 1rem; }
+
+.salles-modal-label {
+    font-size: 10px;
+    font-weight: 700;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.3em;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+.salles-modal-label.rtl { flex-direction: row-reverse; }
+
+.salles-modal-label-icon { width: 0.75rem; height: 0.75rem; color: var(--primary); }
+.salles-modal-label-icon.amber { color: #f59e0b; }
+
+.salles-modal-input {
+    width: 100%;
+    background-color: #f8fafc;
+    border: 1px solid #f1f5f9;
+    border-radius: 1rem;
+    padding: 1.25rem 1.5rem;
+    font-size: 0.875rem;
+    font-weight: 900;
+    color: var(--secondary);
+    font-style: italic;
+    letter-spacing: -0.025em;
+    outline: none;
+    transition: all 0.3s;
+}
+.salles-modal-input:focus { border-color: var(--primary); }
+.salles-modal-input::placeholder { color: #e2e8f0; font-style: italic; }
+.salles-modal-input.rtl { text-align: right; }
+
+.salles-modal-dropdown {
+    width: 100%;
+    background-color: #f8fafc;
+    border: 1px solid #f1f5f9;
+    border-radius: 1rem;
+    padding: 1.25rem 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+.salles-modal-dropdown:hover { border-color: #f59e0b; }
+.salles-modal-dropdown.rtl { flex-direction: row-reverse; }
+
+.salles-modal-dropdown-text { font-size: 0.875rem; font-weight: 900; color: var(--secondary); text-transform: uppercase; letter-spacing: -0.025em; }
+.salles-modal-dropdown-icon { width: 1.25rem; height: 1.25rem; color: #f59e0b; transition: transform 0.3s; }
+.salles-modal-dropdown-icon.open { transform: rotate(180deg); }
+
+.salles-modal-dropdown-menu {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    width: 100%;
+    margin-top: 0.5rem;
+    background-color: white;
+    border: 1px solid #f1f5f9;
+    border-radius: 1.5rem;
+    box-shadow: var(--shadow-2xl);
+    z-index: 50;
+    max-height: 12rem;
+    overflow-y: auto;
+    animation: zoomIn 0.2s;
+}
+
+.salles-modal-dropdown-header {
+    padding: 1rem 2rem;
+    cursor: pointer;
+    font-size: 10px;
+    font-weight: 900;
+    color: #cbd5e1;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    border-bottom: 1px solid #f8fafc;
+}
+.salles-modal-dropdown-header:hover { background-color: #f8fafc; }
+
+.salles-modal-dropdown-option {
+    padding: 1rem 2rem;
+    cursor: pointer;
+    font-size: 10px;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    transition: background-color 0.3s;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+.salles-modal-dropdown-option.selected { color: var(--primary); background-color: #f0fdf4; }
+.salles-modal-dropdown-option.unselected { color: var(--secondary); }
+.salles-modal-dropdown-option:hover { background-color: #f8fafc; }
+
+.salles-modal-checkbox { width: 1.25rem; height: 1.25rem; border: 2px solid #f1f5f9; border-radius: 0.375rem; }
+
+.salles-modal-submit {
+    width: 100%;
+    padding: 1.5rem;
+    border-radius: 1rem;
+    font-size: 11px;
+    font-weight: 900;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    box-shadow: var(--shadow-2xl);
+    position: relative;
+    overflow: hidden;
+    cursor: pointer;
+    border: none;
+}
+.salles-modal-submit.active { background-color: var(--primary); color: white; }
+.salles-modal-submit.active:hover { transform: scale(1.01); }
+.salles-modal-submit.active:active { transform: scale(0.98); }
+.salles-modal-submit.disabled { background-color: #f1f5f9; color: #94a3b8; cursor: not-allowed; }
+
+.salles-submit-arrow { width: 1.25rem; height: 1.25rem; transition: transform 0.3s; }
+.salles-modal-submit.active:hover .salles-submit-arrow { transform: translateX(0.5rem); }
+.salles-submit-arrow.rtl { transform: rotate(180deg); }
+.salles-modal-submit.active:hover .salles-submit-arrow.rtl { transform: rotate(180deg) translateX(0.5rem); }
+
+.salles-modal-footer { padding: 1.5rem; background-color: rgba(248, 250, 252, 0.5); border-top: 1px solid #f8fafc; }
+.salles-modal-footer-text { text-align: center; font-size: 8px; font-weight: 900; color: #cbd5e1; letter-spacing: 0.5em; text-transform: uppercase; }
+
+.salles-confirm-modal-wrapper {
+    position: fixed;
+    inset: 0;
+    background-color: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(12px);
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    animation: fadeIn 0.3s;
+}
+
+.salles-confirm-modal {
+    background-color: white;
+    width: 100%;
+    max-width: 28rem;
+    border-radius: 2.5rem;
+    padding: 2.5rem;
+    text-align: center;
+    box-shadow: var(--shadow-2xl);
+    animation: zoomIn 0.3s;
+}
+
+.salles-confirm-icon-wrapper {
+    width: 5rem;
+    height: 5rem;
+    background-color: #fef2f2;
+    color: #dc2626;
+    border-radius: 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 2rem auto;
+}
+.salles-confirm-icon { width: 2.5rem; height: 2.5rem; }
+
+.salles-confirm-title { font-size: 1.5rem; font-weight: 900; font-style: italic; color: var(--secondary); letter-spacing: -0.025em; text-transform: uppercase; margin-bottom: 0.5rem; }
+.salles-confirm-msg { font-size: 10px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.1em; line-height: 2; margin-bottom: 2.5rem; padding: 0 1rem; }
+
+.salles-confirm-actions { display: flex; gap: 1rem; }
+
+.salles-btn-cancel {
+    flex: 1;
+    background-color: #f8fafc;
+    color: #94a3b8;
+    padding: 1.25rem 0;
+    border-radius: 1rem;
+    font-size: 10px;
+    font-weight: 900;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    transition: all 0.3s;
+    border: none;
+    cursor: pointer;
+}
+.salles-btn-cancel:hover { background-color: #f1f5f9; }
+
+.salles-btn-confirm {
+    flex: 1;
+    background-color: #dc2626;
+    color: white;
+    padding: 1.25rem 0;
+    border-radius: 1rem;
+    font-size: 10px;
+    font-weight: 900;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    transition: all 0.3s;
+    box-shadow: 0 20px 25px -5px rgba(153, 27, 27, 0.2);
+    border: none;
+    cursor: pointer;
+}
+.salles-btn-confirm:hover { background-color: #b91c1c; }
+
+@keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.5; transform: scale(1.1); } }
+@keyframes zoomIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }

@@ -16,6 +16,7 @@ import {
 import { useTranslation } from 'react-i18next';
 import studentService from '../../../services/studentService';
 import './StudentProfile.css';
+import '../../../styles/admin-shared.css';
 
 const StudentProfile = () => {
     const { id } = useParams();
@@ -74,7 +75,7 @@ const StudentProfile = () => {
                     <ArrowLeft className={`w-4 h-4 group-hover:-translate-x-1 transition-transform ${isRtl ? 'rotate-180' : ''}`} />
                     <span className="text-[10px] font-black uppercase tracking-widest">Retourner à la liste</span>
                 </button>
-                <div className="flex items-center gap-4">
+                <div className="admin-header-actions">
                     <span className="px-4 py-2 bg-slate-100 rounded-xl text-[9px] font-black text-slate-400 uppercase tracking-widest">
                         ID: {student.NumInscription}
                     </span>
@@ -130,7 +131,7 @@ const StudentProfile = () => {
                 {/* Absence History Table */}
                 <div className="ista-panel p-10 bg-white shadow-xl">
                     <div className="flex items-center justify-between mb-8">
-                        <div className="flex items-center gap-4">
+                        <div className="admin-header-actions">
                             <div className="p-3 bg-slate-50 rounded-2xl">
                                 <Calendar className="w-6 h-6 text-[var(--secondary)]" />
                             </div>
@@ -155,7 +156,7 @@ const StudentProfile = () => {
                                     absences.map((abs, i) => (
                                         <tr key={i} className="group hover:bg-slate-50/50 transition-colors">
                                             <td className="py-6">
-                                                <div className="flex items-center gap-4">
+                                                <div className="admin-header-actions">
                                                     <div className="w-10 h-10 bg-slate-50 rounded-xl flex items-center justify-center text-slate-400 group-hover:bg-white group-hover:text-[var(--secondary)] transition-all">
                                                         <Clock className="w-4 h-4" />
                                                     </div>
@@ -207,7 +208,7 @@ const StudentProfile = () => {
                 {/* Discipline Section */}
                 <div className="ista-panel p-10 bg-white shadow-xl relative overflow-hidden">
                     <div className="flex items-center justify-between mb-8">
-                        <div className="flex items-center gap-4">
+                        <div className="admin-header-actions">
                             <div className="p-3 bg-red-50 rounded-2xl">
                                 <ShieldAlert className="w-6 h-6 text-red-500" />
                             </div>

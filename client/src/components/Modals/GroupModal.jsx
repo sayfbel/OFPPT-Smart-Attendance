@@ -5,6 +5,7 @@ import axios from 'axios';
 import { useNotification } from '../../hooks/useNotification';
 import { useTranslation } from 'react-i18next';
 import ConfirmationModal from './ConfirmationModal';
+import './GroupModal.css';
 
 const GroupModal = ({ isOpen, onClose, newGroup, setNewGroup, handleAddGroup, formateurs = [], groups = [], isEditing = false }) => {
     const { addNotification } = useNotification();
@@ -122,23 +123,23 @@ const GroupModal = ({ isOpen, onClose, newGroup, setNewGroup, handleAddGroup, fo
     if (!isOpen) return null;
 
     return ReactDOM.createPortal(
-        <div className="fixed inset-0 z-[9999] bg-black/60 backdrop-blur-md flex items-center justify-center p-4 sm:p-8 animate-in fade-in duration-300">
-            <div className="bg-white rounded-3xl w-full max-w-2xl shadow-2xl relative overflow-hidden flex flex-col">
+        <div className="group-modal-overlay">
+            <div className="group-modal-content">
 
                 {/* Header */}
-                <div className="p-8 border-b border-[var(--border)] bg-gradient-to-r from-[var(--secondary)] to-[#003d6b] text-white relative">
-                    <button onClick={onClose} className="absolute top-6 right-6 p-2 hover:bg-white/10 rounded-full transition-all z-50">
-                        <X className="w-6 h-6" />
+                <div className="group-modal-header">
+                    <button onClick={onClose} className="group-modal-close-btn">
+                        <X className="group-modal-icon" />
                     </button>
-                    <div className={`flex items-center gap-4 ${isRtl ? 'flex-row-reverse text-right' : ''}`}>
-                        <div className="w-12 h-12 bg-white/10 rounded-xl flex items-center justify-center border border-white/20">
-                            <BookOpen className="w-6 h-6" />
+                    <div className={`group-modal-header-info ${isRtl ? 'rtl' : ''}`}>
+                        <div className="group-modal-header-icon-wrapper">
+                            <BookOpen className="group-modal-header-icon" />
                         </div>
                         <div>
-                            <h2 className="text-2xl font-black uppercase italic leading-none mb-1">
+                            <h2 className="group-modal-title">
                                 {isEditing ? t('groups.update_title') : t('groups.init_title')}
                             </h2>
-                            <p className="text-[10px] font-bold text-white/60 tracking-widest uppercase">
+                            <p className="group-modal-subtitle">
                                 {t('groups.init_subtitle')}
                             </p>
                         </div>
@@ -146,53 +147,53 @@ const GroupModal = ({ isOpen, onClose, newGroup, setNewGroup, handleAddGroup, fo
                 </div>
 
                 {/* Form */}
-                <form onSubmit={handleFormSubmit} className="p-8 space-y-8">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div className="space-y-2">
-                            <label className="text-[10px] font-black tracking-widest text-[var(--text-muted)] uppercase">{t('modals.group.group_code')}</label>
+                <form onSubmit={handleFormSubmit} className="group-modal-form">
+                    <div className="group-modal-grid">
+                        <div className="group-modal-field">
+                            <label className="group-modal-label">{t('modals.group.group_code')}</label>
                             <input
                                 type="text"
                                 required
                                 value={newGroup.id}
                                 onChange={e => setNewGroup({ ...newGroup, id: e.target.value.toUpperCase() })}
                                 placeholder="EX: DEV101"
-                                className="w-full bg-slate-50 border border-[var(--border)] rounded-xl p-4 text-sm font-bold text-[var(--secondary)] focus:ring-4 focus:ring-green-500/10 focus:border-[var(--primary)] outline-none transition-all"
+                                className="group-modal-input"
                             />
                         </div>
 
-                        <div className="space-y-2 relative">
-                            <label className="text-[10px] font-black tracking-widest text-[var(--text-muted)] uppercase">{t('modals.group.filiere')}</label>
+                        <div className="group-modal-field">
+                            <label className="group-modal-label">{t('modals.group.filiere')}</label>
                             {!isFiliereAutre ? (
-                                <div className="space-y-2">
+                                <>
                                     <div
                                         onClick={() => setIsFiliereDropdownOpen(!isFiliereDropdownOpen)}
-                                        className="w-full bg-slate-50 border border-[var(--border)] rounded-xl p-4 flex justify-between items-center cursor-pointer hover:border-[var(--primary)] transition-all"
+                                        className="group-modal-dropdown-toggle"
                                     >
-                                        <div className="flex items-center gap-3 flex-1 min-w-0">
-                                            <BookOpen className="w-4 h-4 text-[var(--primary)] flex-shrink-0" />
-                                            <span className="text-sm font-bold text-[var(--secondary)] uppercase tracking-tight truncate-text flex-1">
+                                        <div className="group-modal-dropdown-info">
+                                            <BookOpen className="group-modal-dropdown-icon" />
+                                            <span className="group-modal-dropdown-text">
                                                 {selectedFiliereNom || t('modals.group.select')}
                                             </span>
                                         </div>
-                                        <ChevronDown className={`w-5 h-5 text-[var(--primary)] transition-transform ${isFiliereDropdownOpen ? 'rotate-180' : ''}`} />
+                                        <ChevronDown className={`group-modal-chevron ${isFiliereDropdownOpen ? 'open' : ''}`} />
                                     </div>
 
                                     {isFiliereDropdownOpen && (
-                                        <div className="absolute top-full left-0 w-full mt-2 bg-white border border-slate-100 rounded-2xl shadow-2xl z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                                        <div className="group-modal-dropdown-menu scrollable">
                                             {availableFilieres.map(f => (
                                                 <div
                                                     key={f.id}
-                                                    className={`px-6 py-4 cursor-pointer flex items-center justify-between hover:bg-slate-50 transition-colors ${Number(newGroup.filiereId) === Number(f.id) ? 'bg-green-50' : ''}`}
+                                                    className={`group-modal-dropdown-item ${Number(newGroup.filiereId) === Number(f.id) ? 'selected' : ''}`}
                                                     onClick={() => {
                                                         setNewGroup({ ...newGroup, filiereId: f.id });
                                                         setIsFiliereDropdownOpen(false);
                                                     }}
                                                 >
-                                                    <span className={`text-xs font-bold uppercase truncate-text flex-1 ${Number(newGroup.filiereId) === Number(f.id) ? 'text-[var(--primary)]' : 'text-[var(--secondary)]'}`}>
+                                                    <span className={`group-modal-item-text ${Number(newGroup.filiereId) === Number(f.id) ? 'selected' : 'unselected'}`}>
                                                         {f.nom}
                                                     </span>
-                                                    <div className="flex items-center gap-1">
-                                                        {Number(newGroup.filiereId) === Number(f.id) && <div className="w-1.5 h-1.5 bg-[var(--primary)] rounded-full mr-2"></div>}
+                                                    <div className="group-modal-item-actions">
+                                                        {Number(newGroup.filiereId) === Number(f.id) && <div className="group-modal-indicator"></div>}
                                                         <button
                                                             type="button"
                                                             onClick={(e) => {
@@ -204,27 +205,27 @@ const GroupModal = ({ isOpen, onClose, newGroup, setNewGroup, handleAddGroup, fo
                                                                     message: "Voulez-vous vraiment supprimer cette filière ?"
                                                                 });
                                                             }}
-                                                            className="p-1.5 hover:bg-red-100 rounded-lg text-red-400 hover:text-red-500 transition-all opacity-50 hover:opacity-100"
+                                                            className="group-modal-delete-btn"
                                                         >
-                                                            <Trash2 className="w-3.5 h-3.5" />
+                                                            <Trash2 className="group-modal-delete-icon" />
                                                         </button>
                                                     </div>
                                                 </div>
                                             ))}
                                             <div
-                                                className="px-6 py-4 cursor-pointer flex items-center justify-between transition-colors border-t border-slate-50 bg-slate-50/50 hover:bg-slate-100"
+                                                className="group-modal-dropdown-item border-top"
                                                 onClick={() => {
                                                     setIsFiliereAutre(true);
                                                     setIsFiliereDropdownOpen(false);
                                                 }}
                                             >
-                                                <span className="text-xs font-black text-[var(--primary)] uppercase tracking-widest">{t('modals.group.other_custom')}</span>
+                                                <span className="group-modal-other-text">{t('modals.group.other_custom')}</span>
                                             </div>
                                         </div>
                                     )}
-                                </div>
+                                </>
                             ) : (
-                                <div className="relative">
+                                <>
                                     <input
                                         type="text"
                                         autoFocus
@@ -232,159 +233,155 @@ const GroupModal = ({ isOpen, onClose, newGroup, setNewGroup, handleAddGroup, fo
                                         value={customFiliere.nom}
                                         onChange={e => setCustomFiliere({ ...customFiliere, nom: e.target.value.toUpperCase() })}
                                         placeholder="NOM DE LA FILIÈRE..."
-                                        className="w-full bg-slate-50 border border-[var(--border)] rounded-xl p-4 pr-12 text-sm font-bold text-[var(--secondary)] focus:ring-4 focus:ring-green-500/10 focus:border-[var(--primary)] outline-none transition-all"
+                                        className="group-modal-input pr-12"
                                     />
                                     <button
                                         type="button"
                                         onClick={() => setIsFiliereAutre(false)}
-                                        className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 hover:bg-slate-200 rounded-full transition-all text-slate-400"
+                                        className="group-modal-clear-input-btn"
                                     >
-                                        <X className="w-4 h-4" />
+                                        <X className="group-modal-delete-icon" />
                                     </button>
-                                </div>
+                                </>
                             )}
                         </div>
                     </div>
 
-                    <div className="space-y-6">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div className="space-y-2 relative">
-                                <label className="text-[10px] font-black tracking-widest text-[var(--text-muted)] uppercase">{t('modals.group.school_year')}</label>
-                                <div
-                                    onClick={() => setIsAnneeDropdownOpen(!isAnneeDropdownOpen)}
-                                    className="w-full bg-slate-50 border border-[var(--border)] rounded-xl p-4 flex justify-between items-center cursor-pointer hover:border-[var(--primary)] transition-all"
-                                >
-                                    <div className="flex items-center gap-3">
-                                        <BookOpen className="w-4 h-4 text-[var(--primary)]" />
-                                        <span className="text-sm font-bold text-[var(--secondary)] uppercase tracking-tight">
-                                            {newGroup.année_scolaire || t('modals.group.select')}
-                                        </span>
-                                    </div>
-                                    <ChevronDown className={`w-5 h-5 text-[var(--primary)] transition-transform ${isAnneeDropdownOpen ? 'rotate-180' : ''}`} />
-                                </div>
-
-                                {isAnneeDropdownOpen && (
-                                    <div className="absolute top-full left-0 w-full mt-2 bg-white border border-slate-100 rounded-2xl shadow-2xl z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-                                        {anneesScolaires.map((annee) => (
-                                            <div
-                                                key={annee}
-                                                className={`px-6 py-4 cursor-pointer flex items-center justify-between hover:bg-slate-50 transition-colors ${newGroup.année_scolaire === annee ? 'bg-green-50' : ''}`}
-                                                onClick={() => {
-                                                    setNewGroup({ ...newGroup, année_scolaire: annee });
-                                                    setIsAnneeDropdownOpen(false);
-                                                }}
-                                            >
-                                                <span className={`text-xs font-bold uppercase ${newGroup.année_scolaire === annee ? 'text-[var(--primary)]' : 'text-[var(--secondary)]'}`}>
-                                                    {annee}
-                                                </span>
-                                                {newGroup.année_scolaire === annee && <div className="w-1.5 h-1.5 bg-[var(--primary)] rounded-full"></div>}
-                                            </div>
-                                        ))}
-                                    </div>
-                                )}
-                            </div>
-                            <div className="space-y-2 relative">
-                                <label className="text-[10px] font-black tracking-widest text-[var(--text-muted)] uppercase">{t('modals.group.room_assignment')}</label>
-                                <div
-                                    onClick={() => setIsSalleDropdownOpen(!isSalleDropdownOpen)}
-                                    className="w-full bg-slate-50 border border-[var(--border)] rounded-xl p-4 flex justify-between items-center cursor-pointer hover:border-[var(--primary)] transition-all"
-                                >
-                                    <div className="flex items-center gap-3">
-                                        <Layers className="w-4 h-4 text-[var(--primary)]" />
-                                        <span className={`text-sm font-bold uppercase truncate-text flex-1 ${newGroup.salleIds?.length > 0 ? 'text-[var(--secondary)]' : 'text-slate-400'}`}>
-                                            {newGroup.salleIds?.length > 0 
-                                                ? availableSalles.filter(s => newGroup.salleIds.includes(s.id)).map(s => s.nom).join(', ') 
-                                                : t('modals.group.select')}
-                                        </span>
-                                    </div>
-                                    <ChevronDown className={`w-5 h-5 text-[var(--primary)] transition-transform ${isSalleDropdownOpen ? 'rotate-180' : ''}`} />
-                                </div>
-
-                                {isSalleDropdownOpen && (
-                                    <div className="absolute top-full left-0 w-full mt-2 bg-white border border-slate-100 rounded-2xl shadow-2xl z-50 max-h-48 overflow-y-auto ista-scrollbar animate-in fade-in zoom-in-95 duration-200">
-                                        <div
-                                            className="px-6 py-4 cursor-pointer flex items-center justify-between hover:bg-slate-50 transition-colors"
-                                            onClick={() => {
-                                                setNewGroup({ ...newGroup, salleIds: [] });
-                                            }}
-                                        >
-                                            <span className="text-xs font-bold uppercase text-slate-400">{t('modals.group.deselect_all')}</span>
-                                        </div>
-                                        {availableSalles.map((s) => {
-                                                const isSelected = newGroup.salleIds?.includes(s.id);
-                                                return (
-                                                    <div
-                                                        key={s.id}
-                                                        className={`px-6 py-4 cursor-pointer flex items-center justify-between hover:bg-slate-50 transition-colors ${isSelected ? 'bg-green-50' : ''}`}
-                                                        onClick={() => {
-                                                            const currentIds = Array.isArray(newGroup.salleIds) ? newGroup.salleIds : [];
-                                                            const nextIds = isSelected 
-                                                                ? currentIds.filter(id => id !== s.id)
-                                                                : [...currentIds, s.id];
-                                                            setNewGroup({ ...newGroup, salleIds: nextIds });
-                                                        }}
-                                                    >
-                                                        <span className={`text-xs font-bold uppercase truncate-text flex-1 ${isSelected ? 'text-[var(--primary)]' : 'text-[var(--secondary)]'}`}>{s.nom}</span>
-                                                        {isSelected ? <CheckSquare className="w-4 h-4 text-[var(--primary)]" /> : <Square className="w-4 h-4 text-slate-200" />}
-                                                    </div>
-                                                );
-                                            }
-                                        )}
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-
-                        <div className="space-y-2 relative">
-                            <label className="text-[10px] font-black tracking-widest text-[var(--text-muted)] uppercase">{t('modals.group.leads')}</label>
+                    <div className="group-modal-grid">
+                        <div className="group-modal-field">
+                            <label className="group-modal-label">{t('modals.group.school_year')}</label>
                             <div
-                                onClick={() => setIsFormateurDropdownOpen(!isFormateurDropdownOpen)}
-                                className="w-full bg-slate-50 border border-[var(--border)] rounded-xl p-4 flex justify-between items-center cursor-pointer hover:border-[var(--primary)] transition-all"
+                                onClick={() => setIsAnneeDropdownOpen(!isAnneeDropdownOpen)}
+                                className="group-modal-dropdown-toggle"
                             >
-                                <div className="flex items-center gap-3">
-                                    <UserCheck className="w-4 h-4 text-[var(--primary)]" />
-                                    <span className={`text-sm font-bold uppercase truncate-text flex-1 ${newGroup.lead?.length > 0 ? 'text-[var(--secondary)]' : 'text-slate-400'}`}>
-                                        {newGroup.lead?.length > 0 ? newGroup.lead.join(', ') : t('modals.group.select')}
+                                <div className="group-modal-dropdown-info">
+                                    <BookOpen className="group-modal-dropdown-icon" />
+                                    <span className="group-modal-dropdown-text">
+                                        {newGroup.année_scolaire || t('modals.group.select')}
                                     </span>
                                 </div>
-                                <ChevronDown className={`w-5 h-5 text-[var(--primary)] transition-transform ${isFormateurDropdownOpen ? 'rotate-180' : ''}`} />
+                                <ChevronDown className={`group-modal-chevron ${isAnneeDropdownOpen ? 'open' : ''}`} />
                             </div>
 
-                            {isFormateurDropdownOpen && (
-                                <div className="absolute bottom-full left-0 w-full mb-2 bg-white border border-slate-100 rounded-2xl shadow-2xl z-50 max-h-48 overflow-y-auto ista-scrollbar animate-in fade-in slide-in-from-bottom-2 duration-200">
-                                    {formateurs.map((f) => {
-                                        const isSelected = newGroup.lead?.includes(f.name);
-                                        return (
-                                            <div
-                                                key={f.id}
-                                                className={`px-6 py-4 cursor-pointer flex items-center justify-between hover:bg-slate-50 transition-colors ${isSelected ? 'bg-green-50' : ''}`}
-                                                onClick={() => {
-                                                    const currentLeads = Array.isArray(newGroup.lead) ? newGroup.lead : [];
-                                                    const newLead = isSelected
-                                                        ? currentLeads.filter(l => l !== f.name)
-                                                        : [...currentLeads, f.name];
-                                                    setNewGroup({ ...newGroup, lead: newLead });
-                                                }}
-                                            >
-                                                <span className={`text-xs font-bold uppercase truncate-text flex-1 ${isSelected ? 'text-[var(--primary)]' : 'text-[var(--secondary)]'}`}>{f.name}</span>
-                                                {isSelected ? <CheckSquare className="w-4 h-4 text-[var(--primary)]" /> : <Square className="w-4 h-4 text-slate-200" />}
-                                            </div>
-                                        );
-                                    })}
+                            {isAnneeDropdownOpen && (
+                                <div className="group-modal-dropdown-menu">
+                                    {anneesScolaires.map((annee) => (
+                                        <div
+                                            key={annee}
+                                            className={`group-modal-dropdown-item ${newGroup.année_scolaire === annee ? 'selected' : ''}`}
+                                            onClick={() => {
+                                                setNewGroup({ ...newGroup, année_scolaire: annee });
+                                                setIsAnneeDropdownOpen(false);
+                                            }}
+                                        >
+                                            <span className={`group-modal-item-text ${newGroup.année_scolaire === annee ? 'selected' : 'unselected'}`}>
+                                                {annee}
+                                            </span>
+                                            {newGroup.année_scolaire === annee && <div className="group-modal-indicator"></div>}
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="group-modal-field">
+                            <label className="group-modal-label">{t('modals.group.room_assignment')}</label>
+                            <div
+                                onClick={() => setIsSalleDropdownOpen(!isSalleDropdownOpen)}
+                                className="group-modal-dropdown-toggle"
+                            >
+                                <div className="group-modal-dropdown-info">
+                                    <Layers className="group-modal-dropdown-icon" />
+                                    <span className={`group-modal-dropdown-text ${newGroup.salleIds?.length > 0 ? '' : 'muted'}`}>
+                                        {newGroup.salleIds?.length > 0 
+                                            ? availableSalles.filter(s => newGroup.salleIds.includes(s.id)).map(s => s.nom).join(', ') 
+                                            : t('modals.group.select')}
+                                    </span>
+                                </div>
+                                <ChevronDown className={`group-modal-chevron ${isSalleDropdownOpen ? 'open' : ''}`} />
+                            </div>
+
+                            {isSalleDropdownOpen && (
+                                <div className="group-modal-dropdown-menu scrollable">
+                                    <div
+                                        className="group-modal-dropdown-item"
+                                        onClick={() => {
+                                            setNewGroup({ ...newGroup, salleIds: [] });
+                                        }}
+                                    >
+                                        <span className="group-modal-item-text muted">{t('modals.group.deselect_all')}</span>
+                                    </div>
+                                    {availableSalles.map((s) => {
+                                            const isSelected = newGroup.salleIds?.includes(s.id);
+                                            return (
+                                                <div
+                                                    key={s.id}
+                                                    className={`group-modal-dropdown-item ${isSelected ? 'selected' : ''}`}
+                                                    onClick={() => {
+                                                        const currentIds = Array.isArray(newGroup.salleIds) ? newGroup.salleIds : [];
+                                                        const nextIds = isSelected 
+                                                            ? currentIds.filter(id => id !== s.id)
+                                                            : [...currentIds, s.id];
+                                                        setNewGroup({ ...newGroup, salleIds: nextIds });
+                                                    }}
+                                                >
+                                                    <span className={`group-modal-item-text ${isSelected ? 'selected' : 'unselected'}`}>{s.nom}</span>
+                                                    {isSelected ? <CheckSquare className="group-modal-checkbox-icon checked" /> : <Square className="group-modal-checkbox-icon unchecked" />}
+                                                </div>
+                                            );
+                                        }
+                                    )}
                                 </div>
                             )}
                         </div>
                     </div>
 
+                    <div className="group-modal-field">
+                        <label className="group-modal-label">{t('modals.group.leads')}</label>
+                        <div
+                            onClick={() => setIsFormateurDropdownOpen(!isFormateurDropdownOpen)}
+                            className="group-modal-dropdown-toggle"
+                        >
+                            <div className="group-modal-dropdown-info">
+                                <UserCheck className="group-modal-dropdown-icon" />
+                                <span className={`group-modal-dropdown-text ${newGroup.lead?.length > 0 ? '' : 'muted'}`}>
+                                    {newGroup.lead?.length > 0 ? newGroup.lead.join(', ') : t('modals.group.select')}
+                                </span>
+                            </div>
+                            <ChevronDown className={`group-modal-chevron ${isFormateurDropdownOpen ? 'open' : ''}`} />
+                        </div>
 
+                        {isFormateurDropdownOpen && (
+                            <div className="group-modal-dropdown-menu scrollable upwards">
+                                {formateurs.map((f) => {
+                                    const isSelected = newGroup.lead?.includes(f.name);
+                                    return (
+                                        <div
+                                            key={f.id}
+                                            className={`group-modal-dropdown-item ${isSelected ? 'selected' : ''}`}
+                                            onClick={() => {
+                                                const currentLeads = Array.isArray(newGroup.lead) ? newGroup.lead : [];
+                                                const newLead = isSelected
+                                                    ? currentLeads.filter(l => l !== f.name)
+                                                    : [...currentLeads, f.name];
+                                                setNewGroup({ ...newGroup, lead: newLead });
+                                            }}
+                                        >
+                                            <span className={`group-modal-item-text ${isSelected ? 'selected' : 'unselected'}`}>{f.name}</span>
+                                            {isSelected ? <CheckSquare className="group-modal-checkbox-icon checked" /> : <Square className="group-modal-checkbox-icon unchecked" />}
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        )}
+                    </div>
 
-
-                    <div className="pt-4">
+                    <div className="group-modal-submit-container">
                         <button
                             type="submit"
-                            className="w-full btn-ista py-5 rounded-xl font-black uppercase tracking-widest shadow-xl flex items-center justify-center gap-3 hover:scale-[1.01] active:scale-[0.99] transition-all"
+                            className="btn-ista group-modal-submit-btn"
                         >
-                            <UserCheck className="w-5 h-5" />
+                            <UserCheck className="group-modal-submit-icon" />
                             {t('modals.group.create')}
                         </button>
                     </div>
@@ -400,11 +397,6 @@ const GroupModal = ({ isOpen, onClose, newGroup, setNewGroup, handleAddGroup, fo
                 message={deleteModalInfo.message}
             />
 
-            <style>{`
-                .ista-scrollbar::-webkit-scrollbar { width: 4px; }
-                .ista-scrollbar::-webkit-scrollbar-track { background: transparent; }
-                .ista-scrollbar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
-            `}</style>
         </div>,
         document.body
     );

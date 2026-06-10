@@ -1,0 +1,310 @@
+/* RapportModal.css */
+.rapport-modal-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    background-color: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(12px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    animation: fadeIn 0.3s ease-out;
+}
+@media (min-width: 640px) { .rapport-modal-overlay { padding: 2rem; } }
+
+.rapport-modal-content {
+    background-color: white;
+    border-radius: 2.5rem;
+    width: 100%;
+    max-width: 72rem;
+    height: 90vh;
+    max-height: 850px;
+    display: flex;
+    flex-direction: column;
+    box-shadow: var(--shadow-2xl);
+    position: relative;
+    overflow: hidden;
+    animation: zoomIn 0.3s ease-out;
+}
+@media (min-width: 768px) { .rapport-modal-content { flex-direction: row; } }
+.rapport-modal-content.rtl { direction: rtl; }
+@media (min-width: 768px) { .rapport-modal-content.rtl { flex-direction: row-reverse; } }
+
+.rapport-modal-close-btn {
+    position: absolute;
+    top: 2rem;
+    right: 2rem;
+    padding: 0.75rem;
+    border-radius: 1rem;
+    transition: all 0.3s;
+    color: #cbd5e1;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    z-index: 50;
+}
+.rapport-modal-close-btn:hover { background-color: #f8fafc; color: var(--secondary); }
+.rapport-modal-close-btn.rtl { right: auto; left: 2rem; }
+
+/* Left Side (Info Panel) */
+.rapport-modal-info-panel {
+    width: 100%;
+    background: linear-gradient(to bottom right, var(--secondary), #003d6b);
+    color: white;
+    padding: 3rem;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+}
+@media (min-width: 768px) { .rapport-modal-info-panel { width: 35%; } }
+
+.rapport-modal-info-top { margin-bottom: auto; }
+
+.rapport-modal-icon-wrapper {
+    width: 4rem;
+    height: 4rem;
+    background-color: rgba(255, 255, 255, 0.1);
+    border-radius: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    margin-bottom: 2rem;
+}
+.rapport-modal-icon { width: 2rem; height: 2rem; color: white; }
+
+.rapport-modal-title {
+    font-size: 3rem;
+    font-weight: 900;
+    font-style: italic;
+    letter-spacing: -0.05em;
+    line-height: 0.9;
+    margin-bottom: 1rem;
+}
+.rapport-modal-title.rtl { text-align: right; }
+
+.rapport-modal-highlight { color: var(--primary); }
+
+.rapport-modal-subtitle {
+    font-size: 10px;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.5);
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+}
+.rapport-modal-subtitle.rtl { text-align: right; }
+
+.rapport-modal-status-box {
+    margin-top: 3rem;
+    background-color: rgba(0, 0, 0, 0.1);
+    padding: 2rem;
+    border-radius: 1.5rem;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+
+.rapport-modal-status-item { display: flex; flex-direction: column; gap: 0.25rem; }
+.rapport-modal-status-item.rtl { text-align: right; }
+
+.rapport-modal-status-label { font-size: 9px; font-weight: 900; color: rgba(255, 255, 255, 0.4); letter-spacing: 0.1em; text-transform: uppercase; }
+.rapport-modal-status-value { font-size: 1.25rem; font-weight: 900; font-style: italic; text-transform: uppercase; letter-spacing: -0.025em; color: var(--primary); }
+
+.rapport-modal-status-indicator { display: flex; align-items: center; gap: 0.5rem; }
+.rapport-modal-status-indicator.rtl { flex-direction: row-reverse; }
+
+.rapport-modal-dot { width: 0.5rem; height: 0.5rem; border-radius: 9999px; animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+.rapport-modal-dot.validated { background-color: var(--primary); }
+.rapport-modal-dot.waiting { background-color: #fbbf24; }
+
+.rapport-modal-status-text { font-size: 10px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.1em; }
+
+.rapport-modal-group-value { font-size: 0.875rem; font-weight: 700; text-transform: uppercase; letter-spacing: -0.025em; color: rgba(255, 255, 255, 0.7); }
+
+.rapport-modal-actions { margin-top: auto; display: flex; flex-direction: column; gap: 1rem; padding-top: 2rem; }
+
+.rapport-modal-actions-wrapper { display: flex; flex-direction: column; gap: 0.5rem; }
+
+.rapport-modal-actions-label { font-size: 9px; font-weight: 900; color: rgba(255, 255, 255, 0.4); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 0.25rem; }
+.rapport-modal-actions-label.rtl { text-align: right; }
+
+.rapport-modal-export-btn {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background-color: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    padding: 0.75rem;
+    border-radius: 0.75rem;
+    transition: all 0.3s;
+    color: white;
+    cursor: pointer;
+}
+.rapport-modal-export-btn.rtl { flex-direction: row-reverse; }
+.rapport-modal-export-btn:hover:not(:disabled) { background-color: rgba(255, 255, 255, 0.2); }
+.rapport-modal-export-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.rapport-modal-export-text { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; }
+.rapport-modal-export-icon { width: 1rem; height: 1rem; }
+.rapport-modal-export-icon.bounce { animation: bounce 1s infinite; }
+
+.rapport-modal-system-tag { display: none; font-size: 8px; font-weight: 700; color: rgba(255, 255, 255, 0.3); letter-spacing: 0.4em; text-transform: uppercase; margin-top: 0.5rem; }
+@media (min-width: 768px) { .rapport-modal-system-tag { display: block; } }
+.rapport-modal-system-tag.rtl { text-align: right; }
+
+/* Right Side (Content Area) */
+.rapport-modal-content-area { flex: 1; background-color: white; display: flex; flex-direction: column; position: relative; overflow: hidden; border-top-right-radius: 2.5rem; border-bottom-right-radius: 2.5rem; }
+
+.rapport-modal-header {
+    padding: 2rem 3rem 1.5rem 3rem;
+    background-color: white;
+    z-index: 20;
+    flex-shrink: 0;
+    border-bottom: 1px solid #f1f5f9;
+    box-shadow: 0 5px 15px -10px rgba(0,0,0,0.05);
+}
+
+.rapport-modal-header-title { font-size: 1.5rem; font-weight: 900; font-style: italic; letter-spacing: -0.025em; color: var(--secondary); text-transform: uppercase; margin-bottom: 0.5rem; }
+.rapport-modal-header-title.rtl { text-align: right; }
+
+.rapport-modal-header-subtitle { font-size: 10px; font-weight: 700; color: #94a3b8; letter-spacing: 0.1em; text-transform: uppercase; }
+.rapport-modal-header-subtitle.rtl { text-align: right; }
+
+
+.rapport-modal-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 2rem 3rem 3rem 3rem;
+    display: flex;
+    flex-direction: column;
+    gap: 2.5rem;
+}
+
+.rapport-modal-grid {
+    display: grid;
+    grid-template-columns: repeat(1, minmax(0, 1fr));
+    gap: 1.5rem;
+}
+@media (min-width: 768px) { .rapport-modal-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 2rem; } }
+
+.rapport-modal-info-block { display: flex; flex-direction: column; gap: 0.25rem; border-left: 4px solid #f1f5f9; padding-left: 1rem; }
+@media (min-width: 768px) { .rapport-modal-info-block { padding-left: 1.5rem; } }
+.rapport-modal-info-block.primary { border-left-color: var(--primary); }
+.rapport-modal-info-block.rtl { border-left: none; border-right: 4px solid #f1f5f9; padding-left: 0; padding-right: 1rem; text-align: right; }
+@media (min-width: 768px) { .rapport-modal-info-block.rtl { padding-right: 1.5rem; } }
+.rapport-modal-info-block.primary.rtl { border-right-color: var(--primary); }
+
+.rapport-modal-info-label { font-size: 9px; font-weight: 900; color: #94a3b8; letter-spacing: 0.1em; text-transform: uppercase; }
+.rapport-modal-info-value { font-size: 1.125rem; font-weight: 900; font-style: italic; color: var(--secondary); text-transform: uppercase; }
+
+.rapport-modal-info-flex { display: flex; align-items: center; gap: 0.5rem; }
+.rapport-modal-info-flex.rtl { flex-direction: row-reverse; }
+
+.rapport-modal-info-icon { width: 0.75rem; height: 0.75rem; color: var(--primary); }
+.rapport-modal-info-text { font-size: 0.875rem; font-weight: 700; color: var(--secondary); text-transform: uppercase; font-family: monospace; }
+
+.rapport-modal-schedule-flex { display: flex; align-items: center; gap: 1rem; }
+.rapport-modal-schedule-flex.rtl { flex-direction: row-reverse; }
+
+
+/* Students List */
+.rapport-modal-list-section { display: flex; flex-direction: column; gap: 1rem; }
+
+.rapport-modal-list-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    background-color: white;
+    z-index: 10;
+    padding-bottom: 1rem;
+}
+.rapport-modal-list-header.rtl { flex-direction: row-reverse; }
+
+.rapport-modal-list-label { display: flex; align-items: center; gap: 0.5rem; font-size: 10px; font-weight: 900; letter-spacing: 0.1em; color: #94a3b8; text-transform: uppercase; }
+.rapport-modal-list-label.rtl { flex-direction: row-reverse; }
+
+.rapport-modal-list-icon { width: 0.75rem; height: 0.75rem; color: var(--primary); }
+
+.rapport-modal-list-count { font-size: 10px; font-weight: 900; color: var(--primary); text-transform: uppercase; }
+
+.rapport-modal-table-container { border: 1px solid #f1f5f9; border-radius: 1.5rem; overflow: hidden; background-color: rgba(248, 250, 252, 0.3); }
+
+.rapport-modal-table { width: 100%; text-align: left; border-collapse: collapse; }
+.rapport-modal-table th { padding: 1rem; background-color: #f8fafc; font-size: 9px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.1em; color: #94a3b8; position: sticky; top: 0; z-index: 10; }
+@media (min-width: 768px) { .rapport-modal-table th { padding: 1.5rem; } }
+.rapport-modal-table th.rtl { text-align: right; }
+.rapport-modal-table td { padding: 1rem; transition: background-color 0.3s; }
+@media (min-width: 768px) { .rapport-modal-table td { padding: 1.5rem; } }
+.rapport-modal-table td.rtl { text-align: right; }
+.rapport-modal-table tr:hover td { background-color: white; }
+
+.rapport-modal-table tbody tr { border-top: 1px solid #f1f5f9; }
+
+.rapport-modal-table-name { font-size: 0.875rem; font-weight: 900; font-style: italic; color: var(--secondary); text-transform: uppercase; }
+.rapport-modal-table-id { font-size: 10px; font-weight: 700; color: #94a3b8; font-family: monospace; letter-spacing: 0.1em; }
+
+.rapport-modal-status-badge {
+    font-size: 9px;
+    font-weight: 900;
+    letter-spacing: 0.1em;
+    padding: 0.375rem 1rem;
+    border-radius: 0.5rem;
+    border: 1px solid transparent;
+    text-transform: uppercase;
+}
+.rapport-modal-status-badge.absent { border-color: #ef4444; color: #ef4444; background-color: #fef2f2; }
+.rapport-modal-status-badge.present { border-color: var(--primary); color: var(--primary); background-color: #f0fdf4; }
+
+
+/* Signature */
+.rapport-modal-signature-section { padding-top: 2rem; display: flex; justify-content: flex-end; margin-top: auto; }
+.rapport-modal-signature-section.rtl { justify-content: flex-start; }
+
+.rapport-modal-signature-container { display: flex; flex-direction: column; align-items: center; }
+
+.rapport-modal-signature-label { font-size: 9px; font-weight: 900; letter-spacing: 0.3em; color: var(--secondary); text-transform: uppercase; margin-bottom: 1rem; }
+
+.rapport-modal-signature-box {
+    width: 16rem;
+    height: 8rem;
+    background-color: #f8fafc;
+    border: 1px dashed #e2e8f0;
+    border-radius: 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem;
+    box-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, 0.06);
+    position: relative;
+    overflow: hidden;
+}
+
+.rapport-modal-signature-bg {
+    position: absolute;
+    inset: 0;
+    opacity: 0.03;
+    background-image: url('https://www.transparenttextures.com/patterns/graphy.png');
+}
+
+.rapport-modal-signature-img { max-height: 100%; position: relative; z-index: 10; }
+
+.rapport-modal-signature-text {
+    font-family: 'Brush Script MT', cursive;
+    font-style: italic;
+    font-size: 1.875rem;
+    color: var(--secondary);
+    opacity: 0.1;
+    position: relative;
+    z-index: 10;
+}
+
+
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes zoomIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .5; } }
+@keyframes bounce { 0%, 100% { transform: translateY(-25%); animation-timing-function: cubic-bezier(0.8,0,1,1); } 50% { transform: translateY(0); animation-timing-function: cubic-bezier(0,0,0.2,1); } }

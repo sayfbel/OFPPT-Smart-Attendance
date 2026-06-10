@@ -1,20 +1,283 @@
+/* Profile.css */
+.profile-container {
+    max-width: 72rem;
+    margin: 0 auto;
+    animation: fadeUp 0.5s ease-out;
+}
+.profile-container.rtl { text-align: right; }
+
+.profile-header {
+    margin-bottom: 2rem;
+}
+.profile-header.rtl { text-align: right; }
+.profile-header.ltr { text-align: left; }
+
+.profile-title {
+    font-size: 1.875rem;
+    font-weight: 700;
+    color: var(--secondary);
+    margin-bottom: 0.25rem;
+}
+.profile-subtitle {
+    font-size: 0.875rem;
+    color: #64748b;
+}
+
+.profile-layout {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+@media (min-width: 1024px) {
+    .profile-layout { flex-direction: row; }
+    .profile-layout.rtl { flex-direction: row-reverse; }
+}
+
+.profile-sidebar {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+@media (min-width: 1024px) {
+    .profile-sidebar { width: 33.333333%; }
+}
+
+.profile-user-card {
+    background-color: white;
+    border-radius: 1rem;
+    padding: 1.5rem;
+    box-shadow: var(--shadow-sm);
+    border: 1px solid #f1f5f9;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+}
+
+.profile-avatar-wrapper {
+    position: relative;
+    margin-bottom: 1rem;
+    cursor: pointer;
+}
+.profile-avatar-wrapper:hover .profile-camera-btn { transform: scale(1.05); }
+
+.profile-avatar {
+    width: 7rem;
+    height: 7rem;
+    border-radius: 9999px;
+    overflow: hidden;
+    background-color: #f8fafc;
+    border: 4px solid white;
+    box-shadow: var(--shadow-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.profile-avatar-img { width: 100%; height: 100%; object-fit: cover; }
+.profile-avatar-placeholder { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background-color: #f8fafc; color: #cbd5e1; }
+.profile-avatar-icon { width: 3rem; height: 3rem; }
+
+.profile-camera-btn {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    padding: 0.5rem;
+    background-color: var(--primary);
+    color: white;
+    border-radius: 9999px;
+    box-shadow: var(--shadow-lg);
+    transition: transform 0.3s;
+    border: none;
+    cursor: pointer;
+}
+.profile-camera-icon { width: 1rem; height: 1rem; }
+
+.profile-user-name { font-size: 1.25rem; font-weight: 700; color: var(--secondary); margin-bottom: 0.25rem; }
+.profile-user-email { font-size: 0.875rem; color: #64748b; margin-bottom: 1rem; }
+
+.profile-role-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.25rem 0.75rem;
+    border-radius: 9999px;
+    background-color: #eff6ff;
+    color: #2563eb;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+.profile-role-icon { width: 0.875rem; height: 0.875rem; }
+
+.profile-nav {
+    background-color: white;
+    border-radius: 1rem;
+    box-shadow: var(--shadow-sm);
+    border: 1px solid #f1f5f9;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
 .profile-tab-btn {
-  border-left: 4px solid transparent;
-  border-right: 4px solid transparent;
-  transition: var(--transition-smooth);
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1rem 1.5rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    transition: background-color 0.3s, color 0.3s;
+    border: none;
+    cursor: pointer;
+    background: transparent;
+    text-align: left;
+}
+.profile-tab-btn.rtl { flex-direction: row-reverse; text-align: right; }
+.profile-tab-btn.border-t { border-top: 1px solid #f1f5f9; }
+
+.profile-tab-btn.active { background-color: var(--primary); color: white; }
+.profile-tab-btn.inactive { color: #475569; }
+.profile-tab-btn.inactive:hover { background-color: #f8fafc; }
+
+.profile-tab-icon { width: 1.25rem; height: 1.25rem; }
+
+.profile-main-content {
+    width: 100%;
+}
+@media (min-width: 1024px) {
+    .profile-main-content { width: 66.666667%; }
 }
 
-.profile-tab-btn.active-tab {
-  background-color: var(--color-bg-main);
-  color: var(--color-secondary-green) !important;
+.profile-card {
+    background-color: white;
+    border-radius: 1rem;
+    box-shadow: var(--shadow-sm);
+    border: 1px solid #f1f5f9;
+    padding: 1.5rem;
+}
+@media (min-width: 768px) {
+    .profile-card { padding: 2rem; }
 }
 
-html:not([dir="rtl"]) .profile-tab-btn.active-tab {
-  border-left-color: var(--color-secondary-green);
-  border-right-color: transparent;
+.profile-fade-in { animation: fadeIn 0.3s ease-out; }
+
+.profile-section-title {
+    font-size: 1.125rem;
+    font-weight: 700;
+    color: var(--secondary);
+    margin-bottom: 1.5rem;
+}
+.profile-section-title.rtl { text-align: right; }
+
+.profile-form { display: flex; flex-direction: column; gap: 1.5rem; }
+
+.profile-form-grid {
+    display: grid;
+    grid-template-columns: repeat(1, minmax(0, 1fr));
+    gap: 1.5rem;
+}
+@media (min-width: 768px) {
+    .profile-form-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
-html[dir="rtl"] .profile-tab-btn.active-tab {
-  border-right-color: var(--color-secondary-green);
-  border-left-color: transparent;
+.profile-input-group { display: flex; flex-direction: column; gap: 0.5rem; }
+
+.profile-label { font-size: 0.875rem; font-weight: 500; color: #334155; }
+.profile-label.rtl { text-align: right; }
+
+.profile-input-wrapper { position: relative; }
+
+.profile-input-icon-wrapper {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    display: flex;
+    align-items: center;
+    pointer-events: none;
 }
+.profile-input-icon-wrapper.ltr { left: 0; padding-left: 0.75rem; }
+.profile-input-icon-wrapper.rtl { right: 0; padding-right: 0.75rem; }
+.profile-input-icon { width: 1.25rem; height: 1.25rem; color: #94a3b8; }
+
+.profile-input {
+    display: block;
+    width: 100%;
+    border-radius: 0.75rem;
+    border: 1px solid #e2e8f0;
+    background-color: white;
+    padding-top: 0.75rem;
+    padding-bottom: 0.75rem;
+    font-size: 0.875rem;
+    color: var(--secondary);
+    transition: all 0.3s;
+    outline: none;
+}
+.profile-input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(0, 102, 92, 0.1); }
+.profile-input.ltr { padding-left: 2.5rem; padding-right: 0.75rem; }
+.profile-input.rtl { padding-right: 2.5rem; padding-left: 0.75rem; text-align: right; }
+.profile-input::placeholder { color: #94a3b8; }
+
+.profile-form-footer {
+    padding-top: 1.5rem;
+    border-top: 1px solid #f1f5f9;
+}
+.profile-form-footer.rtl { text-align: right; }
+.profile-form-footer.ltr { text-align: left; }
+.profile-form-footer-flex {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+}
+@media (min-width: 640px) {
+    .profile-form-footer-flex { flex-direction: row; }
+    .profile-form-footer-flex.rtl { flex-direction: row-reverse; }
+}
+
+.profile-btn-submit {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    background-color: var(--primary);
+    color: white;
+    font-size: 0.875rem;
+    font-weight: 600;
+    border-radius: 0.75rem;
+    transition: background-color 0.3s, opacity 0.3s;
+    border: none;
+    cursor: pointer;
+    box-shadow: var(--shadow-sm);
+}
+.profile-btn-submit.full-width { width: 100%; }
+@media (min-width: 640px) {
+    .profile-btn-submit.full-width { width: auto; }
+}
+.profile-btn-submit:hover { opacity: 0.9; }
+.profile-btn-submit:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.profile-btn-submit-secondary { background-color: var(--secondary); }
+
+.profile-spinner {
+    width: 1.25rem;
+    height: 1.25rem;
+    border: 2px solid white;
+    border-top-color: transparent;
+    border-radius: 9999px;
+    animation: spin 1s linear infinite;
+}
+
+.profile-hint {
+    font-size: 0.75rem;
+    color: #64748b;
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+}
+.profile-hint-icon { width: 1rem; height: 1rem; }
+
+@keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes spin { to { transform: rotate(360deg); } }

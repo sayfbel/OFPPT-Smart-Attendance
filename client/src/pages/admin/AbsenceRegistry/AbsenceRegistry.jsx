@@ -11,6 +11,7 @@ import { CustomDatePicker } from '../../../components/Forms';
 import reportService from '../../../services/reportService';
 import studentService from '../../../services/studentService';
 import './AbsenceRegistry.css';
+import '../../../styles/admin-shared.css';
 
 const AbsenceRegistry = () => {
     const location = useLocation();
@@ -75,7 +76,6 @@ const AbsenceRegistry = () => {
         if (groupFilter) setSelectedGroup(groupFilter);
     }, [groupFilter]);
 
-    // Close dropdowns on outside click
     useEffect(() => {
         const handleClickOutside = () => {
             setIsStatusOpen(false);
@@ -123,31 +123,31 @@ const AbsenceRegistry = () => {
     });
 
     if (loading) {
-        return <div className="flex items-center justify-center h-[50vh] animate-pulse uppercase tracking-[0.5em] font-black italic text-slate-400">{t('absence_registry.sync')}</div>;
+        return <div className="registry-loading">{t('absence_registry.sync')}</div>;
     }
 
     return (
-        <div className="space-y-12 fade-up max-w-[1600px] mx-auto">
-            {/* Header section */}
-            <div className={`flex flex-col md:flex-row md:items-center justify-between gap-8 transition-all duration-500 ${isRtl ? 'flex-row-reverse' : ''}`}>
-                <div className="space-y-2">
-                    <h1 className={`text-5xl md:text-[64px] font-black tracking-tighter text-[var(--secondary)] uppercase italic leading-none ${isRtl ? 'text-right' : ''}`}>
+        <div className={`registry-container ${isRtl ? 'rtl' : ''}`}>
+            
+            <div className={`admin-header-row ${isRtl ? 'rtl' : ''}`}>
+                <div className={`admin-header-text ${isRtl ? 'rtl' : ''}`}>
+                    <h1 className="admin-page-title">
                         {t('absence_registry.title')}
                     </h1>
-                    <p className={`text-[10px] text-slate-400 font-bold tracking-[0.3em] uppercase ${isRtl ? 'text-right' : ''}`}>
+                    <p className="admin-page-subtitle">
                         {t('absence_registry.subtitle')}
                     </p>
                 </div>
 
-                <div className={`flex items-center gap-4 ${isRtl ? 'flex-row-reverse' : ''}`}>
+                <div className="registry-actions-group">
                     <CustomDatePicker
                         selectedDate={selectedDate}
                         onChange={setSelectedDate}
                         placeholder={t('absence_registry.filter_date') || 'FILTRER PAR DATE'}
                     />
 
-                    <div className="flex items-center bg-white border border-slate-200 rounded-2xl px-5 py-3 hover:border-slate-300 transition-all shadow-sm">
-                        <svg className="w-4 h-4 text-slate-400 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <div className={`registry-search-wrapper ${isRtl ? 'rtl' : ''}`}>
+                        <svg className="registry-search-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                             <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                         </svg>
                         <input
@@ -155,26 +155,25 @@ const AbsenceRegistry = () => {
                             placeholder={t('absence_registry.search')}
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            className="bg-transparent border-none text-[10px] font-bold tracking-widest focus:ring-0 text-[var(--secondary)] placeholder-slate-300 p-0 uppercase"
+                            className={`registry-search-input ${isRtl ? 'rtl' : ''}`}
                         />
                     </div>
 
-                    {/* Status Dropdown */}
-                    <div className="relative" onClick={(e) => e.stopPropagation()}>
+                    <div className="registry-dropdown-wrapper" onClick={(e) => e.stopPropagation()}>
                         <button 
                             onClick={() => { setIsStatusOpen(!isStatusOpen); setIsJustifOpen(false); }}
-                            className={`flex items-center gap-4 bg-white border border-slate-200 rounded-xl px-5 py-2.5 text-[9px] font-black tracking-widest text-[var(--secondary)] uppercase transition-all shadow-sm hover:border-[var(--primary)] ${isStatusOpen ? 'border-[var(--primary)] ring-2 ring-[var(--primary)]/10' : ''}`}
+                            className={`registry-dropdown-btn ${isStatusOpen ? 'open' : ''}`}
                         >
                             <span>{statusOptions.find(o => o.value === filterStatus)?.label}</span>
-                            <ChevronDown className={`w-3 h-3 text-[var(--primary)] transition-transform duration-300 ${isStatusOpen ? 'rotate-180' : ''}`} />
+                            <ChevronDown className={`registry-dropdown-chevron ${isStatusOpen ? 'open' : ''}`} />
                         </button>
                         {isStatusOpen && (
-                            <div className="absolute top-full right-0 mt-2 bg-white border border-slate-100 rounded-xl z-50 shadow-2xl min-w-[180px] overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                            <div className="registry-dropdown-menu">
                                 {statusOptions.map(opt => (
                                     <div 
                                         key={opt.value}
                                         onClick={() => { setFilterStatus(opt.value); setIsStatusOpen(false); }}
-                                        className={`px-5 py-3 cursor-pointer text-[9px] font-black tracking-widest uppercase transition-colors ${filterStatus === opt.value ? 'bg-[var(--primary)] text-white' : 'text-slate-400 hover:bg-slate-50 hover:text-[var(--primary)]'}`}
+                                        className={`registry-dropdown-item ${filterStatus === opt.value ? 'active' : 'inactive'}`}
                                     >
                                         {opt.label}
                                     </div>
@@ -183,22 +182,21 @@ const AbsenceRegistry = () => {
                         )}
                     </div>
 
-                    {/* Justification Dropdown */}
-                    <div className="relative" onClick={(e) => e.stopPropagation()}>
+                    <div className="registry-dropdown-wrapper" onClick={(e) => e.stopPropagation()}>
                         <button 
                             onClick={() => { setIsJustifOpen(!isJustifOpen); setIsStatusOpen(false); }}
-                            className={`flex items-center gap-4 bg-white border border-slate-200 rounded-xl px-5 py-2.5 text-[9px] font-black tracking-widest text-[var(--secondary)] uppercase transition-all shadow-sm hover:border-[var(--primary)] ${isJustifOpen ? 'border-[var(--primary)] ring-2 ring-[var(--primary)]/10' : ''}`}
+                            className={`registry-dropdown-btn ${isJustifOpen ? 'open' : ''}`}
                         >
                             <span>{justifOptions.find(o => o.value === filterJustified)?.label}</span>
-                            <ChevronDown className={`w-3 h-3 text-[var(--primary)] transition-transform duration-300 ${isJustifOpen ? 'rotate-180' : ''}`} />
+                            <ChevronDown className={`registry-dropdown-chevron ${isJustifOpen ? 'open' : ''}`} />
                         </button>
                         {isJustifOpen && (
-                            <div className="absolute top-full right-0 mt-2 bg-white border border-slate-100 rounded-xl z-50 shadow-2xl min-w-[180px] overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                            <div className="registry-dropdown-menu">
                                 {justifOptions.map(opt => (
                                     <div 
                                         key={opt.value}
                                         onClick={() => { setFilterJustified(opt.value); setIsJustifOpen(false); }}
-                                        className={`px-5 py-3 cursor-pointer text-[9px] font-black tracking-widest uppercase transition-colors ${filterJustified === opt.value ? 'bg-[var(--primary)] text-white' : 'text-slate-400 hover:bg-slate-50 hover:text-[var(--primary)]'}`}
+                                        className={`registry-dropdown-item ${filterJustified === opt.value ? 'active' : 'inactive'}`}
                                     >
                                         {opt.label}
                                     </div>
@@ -209,31 +207,22 @@ const AbsenceRegistry = () => {
                 </div>
             </div>
 
-            {/* Class Cards */}
-            <div className={`flex gap-6 overflow-x-auto pb-6 ista-scrollbar ${isRtl ? 'flex-row-reverse' : ''}`}>
+            <div className="admin-group-cards-row ista-scrollbar">
                 <div
                     onClick={() => setSelectedGroup('all')}
-                    className={`min-w-[320px] p-8 rounded-[24px] cursor-pointer transition-all duration-300 border ${
-                        selectedGroup === 'all' 
-                            ? 'bg-white border-[var(--primary)] shadow-lg shadow-[var(--primary)]/5' 
-                            : 'bg-white border-slate-100 hover:border-slate-300 opacity-60 hover:opacity-100'
-                    }`}
+                    className={`admin-group-card ${selectedGroup === 'all' ? 'active' : 'inactive'}`}
                 >
-                    <div className={`flex justify-between items-center mb-6 ${isRtl ? 'flex-row-reverse' : ''}`}>
-                        <span className={`text-[12px] font-black uppercase tracking-widest truncate-text flex-1 ${
-                            selectedGroup === 'all' ? 'text-[var(--primary)]' : 'text-[var(--secondary)]'
-                        } ${isRtl ? 'text-right' : ''}`}>
+                    <div className={`admin-group-card-header ${isRtl ? 'rtl' : ''}`}>
+                        <span className={`admin-group-card-id ${selectedGroup === 'all' ? 'active' : 'inactive'} ${isRtl ? 'rtl' : ''}`}>
                             {t('reports.all_groups')}
                         </span>
-                        <div className={`w-2.5 h-2.5 rounded-full outline outline-4 outline-offset-2 ${
-                            selectedGroup === 'all' ? 'bg-[var(--primary)] outline-[var(--primary)]/20' : 'bg-slate-200 outline-slate-100'
-                        }`}></div>
+                        <div className={`admin-group-card-indicator ${selectedGroup === 'all' ? 'active' : 'inactive'}`}></div>
                     </div>
-                    <h3 className={`text-2xl font-black italic text-[var(--secondary)] uppercase tracking-tight mb-8 truncate-text ${isRtl ? 'text-right' : ''}`}>
+                    <h3 className={`admin-group-card-title ${isRtl ? 'rtl' : ''}`}>
                         {t('reports.all_groups')}
                     </h3>
-                    <p className={`text-[9px] font-bold text-slate-400 uppercase tracking-widest ${isRtl ? 'text-right' : ''}`}>
-                        {t('absence_registry.title')}: <span className="text-[var(--secondary)] ml-1 truncate-text inline-block align-bottom max-w-[150px]">
+                    <p className={`admin-group-card-subtitle ${isRtl ? 'rtl' : ''}`}>
+                        {t('absence_registry.title')}: <span className="admin-group-card-highlight">
                             {registry.length} {t('absence_registry.filter_absences')}
                         </span>
                     </p>
@@ -246,122 +235,111 @@ const AbsenceRegistry = () => {
                                 <div
                                     key={grp.id}
                                     onClick={() => setSelectedGroup(grp.id)}
-                                    className={`min-w-[320px] p-8 rounded-[24px] cursor-pointer transition-all duration-300 border ${
-                                        selectedGroup === grp.id 
-                                            ? 'bg-white border-[var(--primary)] shadow-lg shadow-[var(--primary)]/5' 
-                                            : 'bg-white border-slate-100 hover:border-slate-300 opacity-60 hover:opacity-100'
-                                    }`}
+                                    className={`admin-group-card ${selectedGroup === grp.id ? 'active' : 'inactive'}`}
                                 >
-                                    <div className={`flex justify-between items-center mb-6 ${isRtl ? 'flex-row-reverse' : ''}`}>
-                                        <span className={`text-[12px] font-black uppercase tracking-widest truncate-text flex-1 ${
-                                            selectedGroup === grp.id ? 'text-[var(--primary)]' : 'text-[var(--secondary)]'
-                                        } ${isRtl ? 'text-right' : ''}`}>
+                                    <div className={`admin-group-card-header ${isRtl ? 'rtl' : ''}`}>
+                                        <span className={`admin-group-card-id ${selectedGroup === grp.id ? 'active' : 'inactive'} ${isRtl ? 'rtl' : ''}`}>
                                             {(grp.id || '').split('-')[0].trim()}
                                         </span>
-                                        <div className={`w-2.5 h-2.5 rounded-full outline outline-4 outline-offset-2 ${
-                                            selectedGroup === grp.id ? 'bg-[var(--primary)] outline-[var(--primary)]/20' : 'bg-slate-200 outline-slate-100'
-                                        }`}></div>
+                                        <div className={`admin-group-card-indicator ${selectedGroup === grp.id ? 'active' : 'inactive'}`}></div>
                                     </div>
-                                    <h3 className={`text-2xl font-black italic text-[var(--secondary)] uppercase tracking-tight mb-8 truncate-text ${isRtl ? 'text-right' : ''}`}>
+                                    <h3 className={`admin-group-card-title ${isRtl ? 'rtl' : ''}`}>
                                         {grp.id}
                                     </h3>
-                                    <p className={`text-[9px] font-bold text-slate-400 uppercase tracking-widest ${isRtl ? 'text-right' : ''}`}>
-                                        {t('accounts.col_filiere')}: <span className="text-[var(--secondary)] ml-1 truncate-text inline-block align-bottom max-w-[150px]">
+                                    <p className={`admin-group-card-subtitle ${isRtl ? 'rtl' : ''}`}>
+                                        {t('accounts.col_filiere')}: <span className="admin-group-card-highlight">
                                             {grp.filiere || 'GESTION DES ENTREPRISES'}
                                         </span>
-                                        <span className="mx-2">•</span>
-                                        <span className="text-red-500 font-black">{grpAbsenceCount}</span>
+                                        <span className="admin-group-card-dot">•</span>
+                                        <span className="admin-group-card-count error">{grpAbsenceCount}</span>
                                     </p>
                                 </div>
                             );
                         })
                 ) : (
-                    <div className="min-w-[320px] p-8 rounded-[24px] bg-white border border-slate-100 opacity-60 flex items-center justify-center">
-                        <p className="text-[10px] font-black text-slate-400 tracking-widest uppercase">{t('accounts.no_groups_available')}</p>
+                    <div className="admin-no-groups">
+                        <p className="admin-no-groups-text">{t('accounts.no_groups_available')}</p>
                     </div>
                 )}
             </div>
 
-            {/* Registry Table */}
-            <div className="bg-white border border-slate-100 rounded-[32px] overflow-hidden shadow-sm">
-                <div className="overflow-x-auto ista-scrollbar">
-                    <table className={`w-full text-left border-collapse ${isRtl ? 'text-right' : ''}`}>
+            <div className="admin-table-container">
+                <div className="admin-table-wrapper ista-scrollbar">
+                    <table className={`admin-table ${isRtl ? 'rtl' : ''}`}>
                         <thead>
-                            <tr className="border-b border-slate-50 bg-slate-50/30">
-                                <th className="p-8 text-[9px] font-black text-slate-300 uppercase tracking-widest">{t('absence_registry.col_student')}</th>
-                                <th className="p-8 text-[9px] font-black text-slate-300 uppercase tracking-widest text-center">{t('absence_registry.col_session')}</th>
-                                <th className="p-8 text-[9px] font-black text-slate-300 uppercase tracking-widest text-center">{t('absence_registry.col_status')}</th>
-                                <th className="p-8 text-[9px] font-black text-slate-300 uppercase tracking-widest text-center">{t('absence_registry.col_reported_by')}</th>
-                                <th className={`p-8 text-[9px] font-black text-slate-300 uppercase tracking-widest ${isRtl ? 'text-left' : 'text-right'}`}>{t('absence_registry.col_actions')}</th>
+                            <tr className="admin-thead-tr">
+                                <th className="admin-th">{t('absence_registry.col_student')}</th>
+                                <th className="admin-th-center">{t('absence_registry.col_session')}</th>
+                                <th className="admin-th-center">{t('absence_registry.col_status')}</th>
+                                <th className="admin-th-center">{t('absence_registry.col_reported_by')}</th>
+                                <th className={`admin-th ${isRtl ? 'rtl' : 'ltr'}`}>{t('absence_registry.col_actions')}</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-slate-50">
+                        <tbody className="admin-tbody">
                             {filteredRegistry.map((item) => (
-                                <tr key={item.record_id} className="hover:bg-slate-50/50 transition-colors group">
-                                    <td className="p-8">
-                                        <div className={`flex items-center gap-4 ${isRtl ? 'flex-row-reverse' : ''}`}>
-                                            <div className="w-12 h-12 bg-[var(--primary)]/10 text-[var(--primary)] rounded-xl flex items-center justify-center text-[11px] font-black italic">
+                                <tr key={item.record_id} className="admin-tr group">
+                                    <td className="admin-td">
+                                        <div className="registry-student-cell">
+                                            <div className="registry-student-avatar">
                                                 {item.student_name.split(' ').map(n => n[0]).join('')}
                                             </div>
-                                            <div className="flex flex-col">
-                                                <Link to={`/admin/student/${item.student_id}`} className="text-sm font-black italic text-[var(--secondary)] uppercase tracking-tight hover:text-[var(--primary)] transition-colors">{item.student_name}</Link>
-                                                <span className="text-[9px] font-bold text-slate-400 tracking-widest uppercase">ID: {item.student_id} / GROUP: {item.class_id}</span>
+                                            <div className="registry-student-info">
+                                                <Link to={`/admin/student/${item.student_id}`} className="registry-student-name">{item.student_name}</Link>
+                                                <span className="registry-student-meta">ID: {item.student_id} / GROUP: {item.class_id}</span>
                                             </div>
                                         </div>
                                     </td>
-                                    <td className="p-8 text-center">
-                                        <div className="flex flex-col items-center gap-1">
-                                            <span className="text-xs font-black text-[var(--secondary)] uppercase italic">{item.subject}</span>
-                                            <div className="flex items-center gap-2 text-[9px] font-bold text-slate-400 tracking-widest">
-                                                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                    <td className="admin-td">
+                                        <div className="registry-session-cell">
+                                            <span className="registry-session-subject">{item.subject}</span>
+                                            <div className="registry-session-datetime">
+                                                <svg className="registry-datetime-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                                                     <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                                                 </svg>
                                                 {new Date(item.session_date).toLocaleDateString('fr-FR')} 
-                                                <span className="mx-1">•</span>
-                                                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                                <span className="registry-datetime-dot">•</span>
+                                                <svg className="registry-datetime-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                                                     <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                                                 </svg>
                                                 {item.session_time}
                                             </div>
                                         </div>
                                     </td>
-                                    <td className="p-8 text-center">
-                                        <div className="flex flex-col items-center gap-2">
+                                    <td className="admin-td">
+                                        <div className="registry-status-cell">
                                             {item.justified === 'JUSTIFIÉ' ? (
-                                                <span className="px-3 py-1 bg-green-50 text-[var(--primary)] text-[9px] font-black rounded-full border border-green-100 uppercase tracking-widest shadow-sm">
+                                                <span className="registry-status-badge justified">
                                                     {t('absence_registry.status_justified')}
                                                 </span>
                                             ) : item.justified === 'NON JUSTIFIÉ' ? (
-                                                <span className="px-3 py-1 bg-red-100 text-red-600 text-[9px] font-black rounded-full border border-red-200 uppercase tracking-widest shadow-sm">
+                                                <span className="registry-status-badge not-justified">
                                                     {t('absence_registry.status_not_justified')}
                                                 </span>
                                             ) : (
-                                                <span className="px-3 py-1 bg-red-50 text-red-500 text-[9px] font-black rounded-full border border-red-100 uppercase tracking-widest shadow-sm">
+                                                <span className="registry-status-badge absence">
                                                     {t('absence_registry.status_absence')}
                                                 </span>
                                             )}
                                         </div>
                                     </td>
-                                    <td className="p-8 text-center">
-                                        <div className="flex flex-col items-center">
-                                            <span className="text-[10px] font-black text-[var(--secondary)] uppercase italic leading-none">{item.formateur_name}</span>
-                                            <span className="text-[8px] font-bold text-slate-300 uppercase tracking-widest mt-1">FORMATEUR</span>
+                                    <td className="admin-td">
+                                        <div className="registry-reported-cell">
+                                            <span className="registry-reported-name">{item.formateur_name}</span>
+                                            <span className="registry-reported-label">FORMATEUR</span>
                                         </div>
                                     </td>
-                                    <td className={`p-8 ${isRtl ? 'text-left' : 'text-right'}`}>
+                                    <td className={`admin-td ${isRtl ? 'rtl' : 'ltr'}`}>
                                         {item.status !== 'PRESENT' && (
-                                            <div className={`flex items-center justify-end gap-2 transition-opacity ${isRtl ? 'flex-row-reverse' : ''}`}>
+                                            <div className={`registry-actions-cell ${isRtl ? 'rtl' : ''}`}>
                                                 <button 
                                                     onClick={() => handleJustify(item.record_id, item.justified)}
-                                                    className={`px-4 py-2 border rounded-xl text-[9px] font-black tracking-widest uppercase transition-all shadow-sm ${item.justified === 'JUSTIFIÉ' 
-                                                        ? 'bg-amber-50 text-amber-600 border-amber-100 hover:bg-amber-100' 
-                                                        : 'bg-green-50 text-[var(--primary)] border-green-100 hover:bg-[var(--primary)] hover:text-white'}`}
+                                                    className={`registry-btn-action ${item.justified === 'JUSTIFIÉ' ? 'cancel-justify' : 'justify'}`}
                                                 >
                                                     {item.justified === 'JUSTIFIÉ' ? t('absence_registry.btn_cancel_justif') : t('absence_registry.btn_justify')}
                                                 </button>
                                                 <button 
                                                     onClick={() => navigate('/admin/penalty-decision', { state: { student: item } })}
-                                                    className="px-4 py-2 bg-red-50 text-red-500 border border-red-100 rounded-xl text-[9px] font-black tracking-widest uppercase hover:bg-red-500 hover:text-white transition-all shadow-sm"
+                                                    className="registry-btn-action sanction"
                                                 >
                                                     {t('absence_registry.btn_sanction')}
                                                 </button>

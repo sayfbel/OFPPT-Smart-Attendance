@@ -10,6 +10,7 @@ import { formatDate } from '../../../utils/dateUtils';
 import studentService from '../../../services/studentService';
 import reportService from '../../../services/reportService';
 import './Rapports.css';
+import '../../../styles/admin-shared.css';
 
 const Rapports = () => {
     const { t, i18n } = useTranslation();
@@ -130,21 +131,21 @@ const Rapports = () => {
                 const taux = total > 0 ? Math.round((absents.length / total) * 100) : 0;
 
                 const ws_data = [
-                    ["RAPPORT D'ABSENCE"],
-                    ["Modèle professionnel (version modernisée)"],
+                    [t('reports.export_title')],
+                    [t('reports.export_subtitle', 'Modèle professionnel (version modernisée)')],
                     [],
-                    ["Groupe", rapport.group_id],
-                    ["Salle", rapport.salle || 'N/A'],
-                    ["Date", rapport.date],
-                    ["Horaire", rapport.heure || 'N/A'],
-                    ["Formateur", rapport.formateur],
+                    [t('reports.col_group'), rapport.group_id],
+                    [t('reports.export_salle', 'Salle'), rapport.salle || 'N/A'],
+                    [t('reports.col_date'), rapport.date],
+                    [t('reports.export_time', 'Horaire'), rapport.heure || 'N/A'],
+                    [t('reports.col_formateur'), rapport.formateur],
                     [],
-                    ["Nombre total", total],
-                    ["Absents", absents.length],
-                    ["Taux d'absence", `${taux}%`],
+                    [t('reports.export_total', 'Nombre total'), total],
+                    [t('reports.export_absents_count', 'Absents'), absents.length],
+                    [t('reports.col_absent_rate'), `${taux}%`],
                     [],
-                    ["N°", "Nom du stagiaire", "Matricule", "Statut"],
-                    ...absents.map((s, i) => [i + 1, s.name, s.id, 'Absent'])
+                    [t('reports.export_num', 'N°'), t('reports.export_student'), t('reports.export_id'), t('reports.export_status')],
+                    ...absents.map((s, i) => [i + 1, s.name, s.id, t('reports.absent_label')])
                 ];
 
                 const colWidths = [
@@ -166,44 +167,35 @@ const Rapports = () => {
     };
 
     return (
-        <div className="space-y-12 fade-up transition-all duration-500">
-            {/* Header */}
-            <div className={`flex flex-col md:flex-row items-start md:items-end justify-between border-b border-slate-100 pb-8 lg:pb-12 gap-6 lg:gap-8 ${isRtl ? 'text-right' : ''}`}>
-                <div className="space-y-4">
-                    <h1 className="text-4xl md:text-5xl lg:text-7xl font-black tracking-tighter text-[var(--secondary)] uppercase italic leading-[0.9]">
+        <div className={`rapports-container ${isRtl ? 'rtl' : ''}`}>
+            
+            <div className={`rapports-header ${isRtl ? 'rtl' : ''}`}>
+                <div className="rapports-title-wrapper">
+                    <h1 className="rapports-title">
                         {t('reports.title')}
                     </h1>
-                    <p className="text-[var(--text-muted)] text-[10px] lg:text-xs tracking-[0.4em] uppercase font-black">
+                    <p className="rapports-subtitle">
                         {t('reports.subtitle')}
                     </p>
                 </div>
             </div>
 
-            {/* Class Cards */}
-            <div className={`flex gap-6 overflow-x-auto pb-6 ista-scrollbar ${isRtl ? 'flex-row-reverse' : ''}`}>
+            <div className="rapports-group-cards-row ista-scrollbar">
                 <div
                     onClick={() => setGroupFilter('ALL')}
-                    className={`min-w-[320px] p-8 rounded-[24px] cursor-pointer transition-all duration-300 border ${
-                        groupFilter === 'ALL' 
-                            ? 'bg-white border-[var(--primary)] shadow-lg shadow-[var(--primary)]/5' 
-                            : 'bg-white border-slate-100 hover:border-slate-300 opacity-60 hover:opacity-100'
-                    }`}
+                    className={`rapports-group-card ${groupFilter === 'ALL' ? 'active' : 'inactive'}`}
                 >
-                    <div className={`flex justify-between items-center mb-6 ${isRtl ? 'flex-row-reverse' : ''}`}>
-                        <span className={`text-[12px] font-black uppercase tracking-widest truncate-text flex-1 ${
-                            groupFilter === 'ALL' ? 'text-[var(--primary)]' : 'text-[var(--secondary)]'
-                        } ${isRtl ? 'text-right' : ''}`}>
+                    <div className={`rapports-card-header ${isRtl ? 'rtl' : ''}`}>
+                        <span className={`rapports-card-id ${groupFilter === 'ALL' ? 'active' : 'inactive'} ${isRtl ? 'rtl' : ''}`}>
                             {t('reports.all_groups')}
                         </span>
-                        <div className={`w-2.5 h-2.5 rounded-full outline outline-4 outline-offset-2 ${
-                            groupFilter === 'ALL' ? 'bg-[var(--primary)] outline-[var(--primary)]/20' : 'bg-slate-200 outline-slate-100'
-                        }`}></div>
+                        <div className={`rapports-card-indicator ${groupFilter === 'ALL' ? 'active' : 'inactive'}`}></div>
                     </div>
-                    <h3 className={`text-2xl font-black italic text-[var(--secondary)] uppercase tracking-tight mb-8 truncate-text ${isRtl ? 'text-right' : ''}`}>
+                    <h3 className={`rapports-card-title ${isRtl ? 'rtl' : ''}`}>
                         {t('reports.all_groups')}
                     </h3>
-                    <p className={`text-[9px] font-bold text-slate-400 uppercase tracking-widest ${isRtl ? 'text-right' : ''}`}>
-                        {t('reports.title')}: <span className="text-[var(--secondary)] ml-1 truncate-text inline-block align-bottom max-w-[150px]">
+                    <p className={`rapports-card-subtitle ${isRtl ? 'rtl' : ''}`}>
+                        {t('reports.title')}: <span className="rapports-card-highlight">
                             {allReports.length} {t('reports.export_button')}s
                         </span>
                     </p>
@@ -216,95 +208,86 @@ const Rapports = () => {
                             <div
                                 key={grp.id}
                                 onClick={() => setGroupFilter(grp.id)}
-                                className={`min-w-[320px] p-8 rounded-[24px] cursor-pointer transition-all duration-300 border ${
-                                    groupFilter === grp.id 
-                                        ? 'bg-white border-[var(--primary)] shadow-lg shadow-[var(--primary)]/5' 
-                                        : 'bg-white border-slate-100 hover:border-slate-300 opacity-60 hover:opacity-100'
-                                }`}
+                                className={`rapports-group-card ${groupFilter === grp.id ? 'active' : 'inactive'}`}
                             >
-                                <div className={`flex justify-between items-center mb-6 ${isRtl ? 'flex-row-reverse' : ''}`}>
-                                    <span className={`text-[12px] font-black uppercase tracking-widest truncate-text flex-1 ${
-                                        groupFilter === grp.id ? 'text-[var(--primary)]' : 'text-[var(--secondary)]'
-                                    } ${isRtl ? 'text-right' : ''}`}>
+                                <div className={`rapports-card-header ${isRtl ? 'rtl' : ''}`}>
+                                    <span className={`rapports-card-id ${groupFilter === grp.id ? 'active' : 'inactive'} ${isRtl ? 'rtl' : ''}`}>
                                         {(grp.id || '').split('-')[0].trim()}
                                     </span>
-                                    <div className={`w-2.5 h-2.5 rounded-full outline outline-4 outline-offset-2 ${
-                                        groupFilter === grp.id ? 'bg-[var(--primary)] outline-[var(--primary)]/20' : 'bg-slate-200 outline-slate-100'
-                                    }`}></div>
+                                    <div className={`rapports-card-indicator ${groupFilter === grp.id ? 'active' : 'inactive'}`}></div>
                                 </div>
-                                <h3 className={`text-2xl font-black italic text-[var(--secondary)] uppercase tracking-tight mb-8 truncate-text ${isRtl ? 'text-right' : ''}`}>
+                                <h3 className={`rapports-card-title ${isRtl ? 'rtl' : ''}`}>
                                     {grp.id}
-                                </h3>
-                                <p className={`text-[9px] font-bold text-slate-400 uppercase tracking-widest ${isRtl ? 'text-right' : ''}`}>
-                                    {t('accounts.col_filiere')}: <span className="text-[var(--secondary)] ml-1 truncate-text inline-block align-bottom max-w-[150px]">
+                               </h3>
+                                <p className={`rapports-card-subtitle ${isRtl ? 'rtl' : ''}`}>
+                                    {t('accounts.col_filiere')}: <span className="rapports-card-highlight">
                                         {grp.filiere || 'GESTION DES ENTREPRISES'}
                                     </span>
-                                    <span className="mx-2">•</span>
-                                    <span className="text-[var(--primary)] font-black">{grpReportsCount}</span>
+                                    <span className="rapports-card-dot">•</span>
+                                    <span className="rapports-card-count">{grpReportsCount}</span>
                                 </p>
                             </div>
                         );
                     })
                 ) : (
-                    <div className="min-w-[320px] p-8 rounded-[24px] bg-white border border-slate-100 opacity-60 flex items-center justify-center">
-                        <p className="text-[10px] font-black text-slate-400 tracking-widest uppercase">{t('accounts.no_groups_available')}</p>
+                    <div className="rapports-no-groups">
+                        <p className="rapports-no-groups-text">{t('accounts.no_groups_available')}</p>
                     </div>
                 )}
             </div>
 
-            {/* Filters bar */}
-            <div className={`flex flex-col md:flex-row items-center justify-between gap-6 bg-white p-6 rounded-3xl border border-slate-100 shadow-sm ${isRtl ? 'md:flex-row-reverse' : ''}`}>
-                <div className={`flex items-center gap-6 w-full md:w-auto ${isRtl ? 'flex-row-reverse' : ''}`}>
-                    <h3 className="text-[10px] font-black tracking-[0.3em] uppercase text-slate-400">{t('reports.list_title')}</h3>
-                    <div className="h-4 w-px bg-slate-100 hidden md:block"></div>
-                    <div className={`flex items-center bg-slate-50 border border-slate-100 rounded-2xl w-full md:w-64 group focus-within:border-[var(--primary)] transition-all px-4 ${isRtl ? 'flex-row-reverse' : ''}`}>
-                        <Search className="w-4 h-4 text-slate-300 group-focus-within:text-[var(--primary)] transition-colors" />
+            <div className={`rapports-filters-bar ${isRtl ? 'rtl' : ''}`}>
+                <div className={`rapports-filters-left ${isRtl ? 'rtl' : ''}`}>
+                    <h3 className="rapports-filters-title">{t('reports.list_title')}</h3>
+                    <div className="rapports-filters-divider"></div>
+                    <div className={`rapports-search-wrapper ${isRtl ? 'rtl' : ''}`}>
+                        <Search className="rapports-search-icon" />
                         <input
                             type="text"
                             placeholder={t('reports.search')}
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            className={`bg-transparent border-none text-[11px] font-bold py-3 px-3 w-full tracking-widest focus:ring-0 text-[var(--secondary)] placeholder-slate-300 uppercase ${isRtl ? 'text-right' : ''}`}
+                            className={`rapports-search-input ${isRtl ? 'rtl' : ''}`}
                         />
                     </div>
                 </div>
-                <div className={`flex items-center gap-4 w-full md:w-auto ${isRtl ? 'flex-row-reverse' : ''}`}>
+                <div className={`rapports-filters-right ${isRtl ? 'rtl' : ''}`}>
                     <CustomDatePicker
                         selectedDate={selectedDate}
                         onChange={setSelectedDate}
                         placeholder={t('reports.filter_date')}
                     />
                     
-                    <div className="relative">
+                    <div className="rapports-export-wrapper">
                         <button
                             onClick={() => setShowExportMenu(!showExportMenu)}
                             disabled={isExporting || selectedRecords.length === 0}
-                            className={`btn-ista px-6 py-3 flex items-center gap-2 transition-all ${selectedRecords.length === 0 ? 'opacity-50 cursor-not-allowed scale-95 shadow-none' : 'shadow-lg hover:scale-[1.02] active:scale-[0.98]'}`}
+                            className={`btn-ista rapports-export-btn ${selectedRecords.length === 0 ? 'disabled' : 'active'}`}
                         >
-                            <Download className={`w-4 h-4 ${isExporting ? 'animate-bounce' : ''}`} />
-                            <span className="text-[10px] uppercase font-bold tracking-widest">
+                            <Download className={`rapports-export-icon ${isExporting ? 'animating' : ''}`} />
+                            <span className="rapports-export-text">
                                 {isExporting 
-                                    ? t('reports.exporting') 
+                                    ? t('reports.exporting', 'EXPORTATION...') 
                                     : (selectedRecords.length > 0 
-                                        ? `EXPORTER (${selectedRecords.length})` 
-                                        : 'EXPORTER')}
+                                        ? `${t('reports.export_btn', 'EXPORTER')} (${selectedRecords.length})` 
+                                        : t('reports.export_btn', 'EXPORTER'))}
                             </span>
-                            <ChevronDown className="w-3 h-3 ml-1" />
+                            <ChevronDown className="rapports-export-chevron" />
                         </button>
 
                         {showExportMenu && selectedRecords.length > 0 && (
-                            <div className="absolute right-0 top-full mt-2 w-48 bg-white border border-slate-100 rounded-xl shadow-xl z-50 overflow-hidden">
+                            <div className="rapports-export-menu">
                                 <button 
                                     onClick={() => { setShowExportMenu(false); handleExportPDF(); }}
-                                    className="w-full text-left px-4 py-3 text-xs font-bold text-slate-600 hover:bg-slate-50 transition-colors border-b border-slate-50"
+                                    className="rapports-export-option border-b"
                                 >
-                                    Format PDF
+                                    {t('reports.format_pdf', 'Format PDF')}
                                 </button>
                                 <button 
                                     onClick={() => { setShowExportMenu(false); handleExportExcel(); }}
-                                    className="w-full text-left px-4 py-3 text-xs font-bold text-slate-600 hover:bg-slate-50 transition-colors"
+                                    className="rapports-export-option"
                                 >
-                                    Format EXCEL
+                                    {t('reports.format_excel', 'Format EXCEL')}
                                 </button>
                             </div>
                         )}
@@ -312,83 +295,84 @@ const Rapports = () => {
                 </div>
             </div>
 
-            {/* Table or Empty State */}
-            <div className="bg-white rounded-[32px] border border-slate-100 shadow-sm overflow-hidden">
+            <div className="rapports-table-container">
                 {loading ? (
-                    <div className="py-24 flex flex-col items-center justify-center text-center">
-                        <div className="w-12 h-12 border-4 border-slate-100 border-t-[var(--primary)] rounded-full animate-spin mb-6"></div>
-                        <span className="text-[10px] font-black tracking-[0.4em] uppercase text-slate-400">{t('reports.loading')}</span>
+                    <div className="rapports-loading-state">
+                        <div className="rapports-spinner"></div>
+                        <span className="rapports-loading-text">{t('reports.loading')}</span>
                     </div>
                 ) : displayedAbsences.length === 0 ? (
-                    <div className="py-24 flex flex-col items-center justify-center text-center opacity-50">
-                        <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mb-6">
-                            <AlertTriangle className="w-8 h-8 text-slate-200" />
+                    <div className="rapports-empty-state">
+                        <div className="rapports-empty-icon-wrapper">
+                            <AlertTriangle className="rapports-empty-icon" />
                         </div>
-                        <span className="text-[10px] font-black tracking-[0.4em] uppercase text-slate-400">{t('reports.not_found')}</span>
-                        <p className="text-[9px] font-bold tracking-widest text-slate-300 uppercase mt-2">{t('reports.adjust_filters')}</p>
+                        <span className="rapports-empty-title">{t('reports.not_found')}</span>
+                        <p className="rapports-empty-subtitle">{t('reports.adjust_filters')}</p>
                     </div>
                 ) : (
-                    <div className="overflow-x-auto ista-scrollbar">
-                        <table className={`w-full text-left border-collapse min-w-[900px] ${isRtl ? 'text-right' : ''}`}>
+                    <div className="rapports-table-wrapper ista-scrollbar">
+                        <table className={`rapports-table ${isRtl ? 'rtl' : ''}`}>
                             <thead>
-                                <tr className="bg-slate-50/50 text-slate-400 text-[9px] font-black uppercase tracking-widest border-b border-slate-100">
-                                    <th className="py-6 px-8 w-16 text-center">
-                                        <div onClick={toggleSelectAll} className="cursor-pointer flex justify-center">
+                                <tr className="rapports-thead-tr">
+                                    <th className="rapports-th-select">
+                                        <div onClick={toggleSelectAll} className="rapports-select-box">
                                             {selectedRecords.length === displayedAbsences.length && displayedAbsences.length > 0 ? (
-                                                <CheckSquare className="w-5 h-5 text-[var(--primary)]" />
+                                                <CheckSquare className="rapports-icon-selected" />
                                             ) : (
-                                                <Square className="w-5 h-5 text-slate-200 hover:text-[var(--primary)] transition-colors" />
+                                                <Square className="rapports-icon-unselected" />
                                             )}
                                         </div>
                                     </th>
-                                    <th className="py-6 px-4">{t('reports.col_date')}</th>
-                                    <th className="py-6 px-4">{t('reports.col_formateur')}</th>
-                                    <th className="py-6 px-4">{t('reports.col_subject')}</th>
-                                    <th className="py-6 px-4">{t('reports.col_group')}</th>
-                                    <th className="py-6 px-4">{t('reports.col_absent_rate')}</th>
-                                    <th className={`py-6 px-8 ${isRtl ? 'text-left' : 'text-right'}`}>{t('reports.col_actions')}</th>
+                                    <th className="rapports-th">{t('reports.col_date')}</th>
+                                    <th className="rapports-th">{t('reports.col_formateur')}</th>
+                                    <th className="rapports-th">{t('reports.col_subject')}</th>
+                                    <th className="rapports-th">{t('reports.col_group')}</th>
+                                    <th className="rapports-th">{t('reports.col_absent_rate')}</th>
+                                    <th className={`rapports-th-actions ${isRtl ? 'rtl' : 'ltr'}`}>{t('reports.col_actions')}</th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-slate-50">
+                            <tbody className="rapports-tbody">
                                 {displayedAbsences.map((record) => (
-                                    <tr key={record.id} className="hover:bg-slate-50/30 transition-colors group">
-                                        <td className="py-6 px-8 w-16 text-center">
-                                            <div onClick={() => toggleSelectRecord(record.id)} className="cursor-pointer flex justify-center">
+                                    <tr key={record.id} className="rapports-tr group">
+                                        <td className="rapports-td-select">
+                                            <div onClick={() => toggleSelectRecord(record.id)} className="rapports-select-box">
                                                 {selectedRecords.includes(record.id) ? (
-                                                    <CheckSquare className="w-5 h-5 text-[var(--primary)]" />
+                                                    <CheckSquare className="rapports-icon-selected" />
                                                 ) : (
-                                                    <Square className="w-5 h-5 text-slate-200 group-hover:text-[var(--primary)] transition-colors" />
+                                                    <Square className="rapports-icon-unselected" />
                                                 )}
                                             </div>
                                         </td>
-                                        <td className="py-6 px-4 text-[10px] font-black text-slate-400 font-mono uppercase italic">
-                                            {record.date}
+                                        <td className="rapports-td">
+                                            <span className="rapports-td-date">{record.date}</span>
                                         </td>
-                                        <td className="py-6 px-4">
-                                            <span className="text-sm font-black italic text-[var(--secondary)] uppercase group-hover:text-[var(--primary)] transition-colors">{record.formateur}</span>
+                                        <td className="rapports-td">
+                                            <span className="rapports-td-formateur">{record.formateur}</span>
                                         </td>
-                                        <td className="py-6 px-4 text-xs font-bold text-[var(--secondary)] uppercase truncate max-w-[200px]">
-                                            {record.subject}
+                                        <td className="rapports-td">
+                                            <span className="rapports-td-subject" title={record.subject}>
+                                                {record.subject}
+                                            </span>
                                         </td>
-                                        <td className="py-6 px-4">
-                                            <span className="px-3 py-1 bg-slate-50 text-[10px] font-black text-[var(--primary)] border border-green-500/10 rounded-lg">
+                                        <td className="rapports-td">
+                                            <span className="rapports-badge">
                                                 {record.group_id}
                                             </span>
                                         </td>
-                                        <td className="py-6 px-4">
-                                            <div className="flex flex-col">
-                                                <span className="text-xs font-black italic text-[var(--primary)] uppercase">
+                                        <td className="rapports-td">
+                                            <div className="rapports-rate-wrapper">
+                                                <span className="rapports-rate-val">
                                                     {(record.stagiaires || []).filter(s => s.status === 'ABSENT').length} / {record.total_group_students || (record.stagiaires || []).length}
                                                 </span>
-                                                <span className="text-[8px] font-bold text-slate-300 uppercase tracking-widest">{t('reports.absent_label')}</span>
+                                                <span className="rapports-rate-lbl">{t('reports.absent_label')}</span>
                                             </div>
                                         </td>
-                                        <td className={`py-6 px-8 ${isRtl ? 'text-left' : 'text-right'}`}>
+                                        <td className={`rapports-td-actions ${isRtl ? 'rtl' : 'ltr'}`}>
                                             <button
                                                 onClick={() => setSelectedRapport(record)}
-                                                className="p-3 bg-white border border-slate-100 hover:border-[var(--primary)] hover:text-[var(--primary)] text-slate-300 transition-all rounded-xl shadow-sm"
+                                                className="rapports-btn-view"
                                             >
-                                                <FileText className="w-4 h-4" />
+                                                <FileText className="rapports-btn-view-icon" />
                                             </button>
                                         </td>
                                     </tr>
@@ -399,7 +383,6 @@ const Rapports = () => {
                 )}
             </div>
 
-            {/* Modal for detailed rapport */}
             <RapportModal
                 isOpen={!!selectedRapport}
                 onClose={() => setSelectedRapport(null)}
@@ -409,7 +392,6 @@ const Rapports = () => {
                 isExporting={isExporting}
             />
 
-            {/* Hidden export components (REBRANDED FOR ISTA) */}
             <div className="absolute left-[-9999px] top-[-9999px] w-0 h-0 overflow-hidden">
                 {displayedAbsences.map(rapport => {
                     const absents = (rapport.stagiaires || []).filter(s => s.status === 'ABSENT');
@@ -422,102 +404,96 @@ const Rapports = () => {
                         id={`pdf-export-${rapport.id}`}
                         dir={isRtl ? 'rtl' : 'ltr'}
                         style={{ display: 'none', width: '210mm', backgroundColor: '#ffffff', color: '#000000', fontFamily: 'Helvetica, Arial, sans-serif', overflow: 'visible' }}
-                        className="px-8 py-8 relative pdf-export-element"
+                        className="rapports-pdf-container"
                     >
-                        <div className="w-full flex flex-col bg-white">
-                            {/* Title */}
-                            <h1 className="text-xl font-bold text-center mb-4 uppercase text-black">RAPPORT D'ABSENCE</h1>
-                            <h2 className="text-sm font-bold mb-4 text-black">Modèle professionnel (version modernisée)</h2>
+                        <div className="rapports-pdf-wrapper">
+                            <h1 className="rapports-pdf-title">{t('reports.export_title')}</h1>
+                            <h2 className="rapports-pdf-subtitle">{t('reports.export_subtitle', 'Modèle professionnel (version modernisée)')}</h2>
 
-                            {/* Summary Tables Container */}
-                            <div className="w-full flex flex-col items-center mb-4 space-y-4">
-                                {/* Table 1 */}
-                                <table className="w-[80%] border-collapse border border-black text-xs">
+                            <div className="rapports-pdf-info-section">
+                                <table className="rapports-pdf-table-info main">
                                     <tbody>
                                         <tr>
-                                            <td className="border border-black bg-gray-200 p-1 font-bold w-1/3">Groupe</td>
-                                            <td className="border border-black p-1">{rapport.group_id}</td>
+                                            <td className="rapports-pdf-td-label w-33">{t('reports.col_group')}</td>
+                                            <td className="rapports-pdf-td-value">{rapport.group_id}</td>
                                         </tr>
                                         <tr>
-                                            <td className="border border-black bg-gray-200 p-1 font-bold">Salle</td>
-                                            <td className="border border-black p-1">{rapport.salle || 'N/A'}</td>
+                                            <td className="rapports-pdf-td-label">{t('reports.export_salle', 'Salle')}</td>
+                                            <td className="rapports-pdf-td-value">{rapport.salle || 'N/A'}</td>
                                         </tr>
                                         <tr>
-                                            <td className="border border-black bg-gray-200 p-1 font-bold">Date</td>
-                                            <td className="border border-black p-1">{rapport.date}</td>
+                                            <td className="rapports-pdf-td-label">{t('reports.col_date')}</td>
+                                            <td className="rapports-pdf-td-value">{rapport.date}</td>
                                         </tr>
                                         <tr>
-                                            <td className="border border-black bg-gray-200 p-1 font-bold">Horaire</td>
-                                            <td className="border border-black p-1">{rapport.heure || 'N/A'}</td>
+                                            <td className="rapports-pdf-td-label">{t('reports.export_time', 'Horaire')}</td>
+                                            <td className="rapports-pdf-td-value">{rapport.heure || 'N/A'}</td>
                                         </tr>
                                         <tr>
-                                            <td className="border border-black bg-gray-200 p-1 font-bold">Formateur</td>
-                                            <td className="border border-black p-1">{rapport.formateur}</td>
+                                            <td className="rapports-pdf-td-label">{t('reports.col_formateur')}</td>
+                                            <td className="rapports-pdf-td-value">{rapport.formateur}</td>
                                         </tr>
                                     </tbody>
                                 </table>
 
-                                {/* Table 2 */}
-                                <table className="w-[60%] border-collapse border border-black text-xs">
+                                <table className="rapports-pdf-table-info secondary">
                                     <tbody>
                                         <tr>
-                                            <td className="border border-black bg-gray-200 p-1 font-bold w-1/2">Nombre total</td>
-                                            <td className="border border-black p-1">{total}</td>
+                                            <td className="rapports-pdf-td-label w-50">{t('reports.export_total', 'Nombre total')}</td>
+                                            <td className="rapports-pdf-td-value">{total}</td>
                                         </tr>
                                         <tr>
-                                            <td className="border border-black bg-gray-200 p-1 font-bold">Absents</td>
-                                            <td className="border border-black p-1">{absents.length}</td>
+                                            <td className="rapports-pdf-td-label">{t('reports.export_absents_count', 'Absents')}</td>
+                                            <td className="rapports-pdf-td-value">{absents.length}</td>
                                         </tr>
                                         <tr>
-                                            <td className="border border-black bg-gray-200 p-1 font-bold">Taux d'absence</td>
-                                            <td className="border border-black p-1">{taux}%</td>
+                                            <td className="rapports-pdf-td-label">{t('reports.col_absent_rate')}</td>
+                                            <td className="rapports-pdf-td-value">{taux}%</td>
                                         </tr>
                                     </tbody>
                                 </table>
                             </div>
 
-                            {/* Main Table */}
-                            <div className="w-full flex justify-center mb-6">
-                                <table className="w-[90%] border-collapse border border-black text-[10px]">
-                                    <thead className="bg-gray-200">
+                            <div className="rapports-pdf-students-section">
+                                <table className="rapports-pdf-table-students">
+                                    <thead>
                                         <tr>
-                                            <th className="border border-black px-1 py-0.5 text-left w-8 text-black">N°</th>
-                                            <th className="border border-black px-1 py-0.5 text-left text-black">Nom du stagiaire</th>
-                                            <th className="border border-black px-1 py-0.5 text-left w-40 text-black">Matricule</th>
-                                            <th className="border border-black px-1 py-0.5 text-left w-24 text-black">Statut</th>
+                                            <th className="rapports-pdf-th-num">{t('reports.export_num', 'N°')}</th>
+                                            <th className="rapports-pdf-th-name">{t('reports.export_student')}</th>
+                                            <th className="rapports-pdf-th-id">{t('reports.export_id')}</th>
+                                            <th className="rapports-pdf-th-status">{t('reports.export_status')}</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         {absents.map((stagiaire, idx) => (
                                             <tr key={idx}>
-                                                <td className="border border-black px-1 py-0.5 text-black">{idx + 1}</td>
-                                                <td className="border border-black px-1 py-0.5 text-black">{stagiaire.name}</td>
-                                                <td className="border border-black px-1 py-0.5 text-black">{stagiaire.id}</td>
-                                                <td className="border border-black px-1 py-0.5 text-black">Absent</td>
+                                                <td className="rapports-pdf-td">{idx + 1}</td>
+                                                <td className="rapports-pdf-td">{stagiaire.name}</td>
+                                                <td className="rapports-pdf-td">{stagiaire.id}</td>
+                                                <td className="rapports-pdf-td">{t('reports.absent_label')}</td>
                                             </tr>
                                         ))}
                                         {absents.length === 0 && (
                                             <tr>
-                                                <td colSpan="4" className="border border-black px-1 py-0.5 text-center italic text-black">Aucune absence signalée.</td>
+                                                <td colSpan="4" className="rapports-pdf-td-empty">{t('reports.no_absences_found')}</td>
                                             </tr>
                                         )}
                                     </tbody>
                                 </table>
                             </div>
 
-                            {/* Signature */}
-                            <div className="w-full mt-auto pt-2 pb-8">
-                                <h3 className="text-sm font-bold italic mb-2">Signature du formateur</h3>
+                            <div className="rapports-pdf-signature-section">
+                                <h3 className="rapports-pdf-signature-label">{t('reports.signature_label', 'Signature du formateur')}</h3>
                                 {rapport.signature ? (
-                                    <div className="h-24 flex items-start mt-2">
+                                    <div className="rapports-pdf-signature-image-wrapper">
                                         <img 
                                             src={getSignatureDataURI(rapport.signature)} 
                                             alt="Signature" 
-                                            className="max-h-24 w-auto object-contain grayscale contrast-200 mix-blend-multiply"
+                                            className="rapports-pdf-signature-image"
                                         />
                                     </div>
                                 ) : (
-                                    <div className="border-b border-black w-48 mt-10"></div>
+                                    <div className="rapports-pdf-signature-placeholder"></div>
                                 )}
                             </div>
                         </div>
